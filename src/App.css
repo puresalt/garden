@@ -91,7 +91,7 @@ header {
 
 .Board .pairings {
     float: right;
-    font-size: 1.25em;
+    font-size: 1.15em;
 }
 
 .Board .pairings tr td:nth-child(n+3):nth-child(-n+4) {
@@ -101,13 +101,13 @@ header {
 .Board.Large {
     font-size: 2em;
     height: 1023px;
-    width: 1360px;
+    width: 1380px;
 }
 
 .Board.Large header {
-    font-size: 2em;
+    font-size: 2.15em;
     height: 0.9em;
-    padding: 8px 0 0 8px;
+    padding: 16px 8px 8px 16px;
 }
 
 .Board.Large .pairings {

@@ -6,22 +6,22 @@
       {
         "name": "Zack Thompson",
         "rating": 2018,
-        "result": 1
+        "result": null
       },
       {
         "name": "Chris Giannaras",
         "rating": 2067,
-        "result": 1
+        "result": null
       },
       {
         "name": "Brian Gerra",
         "rating": 2171,
-        "result": 0.5
+        "result": null
       },
       {
         "name": "NM Peter Minear",
         "rating": 2321,
-        "result": 0
+        "result": null
       }
     ]
   },
