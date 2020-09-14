@@ -1,38 +1,169 @@
+* {
+    font-family: antarctican-headline, san serif;
+    font-weight: 700;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    background: url(./background.png) center no-repeat;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+}
+
+span,
+.active {
+    color: #ffca0a;
+}
+
+em {
+    opacity: 0.5;
+}
+
 .App {
-  text-align: center;
+    position: absolute;
+    width: 1920px;
+    height: 1080px;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.MatchResultBar,
+.TitleBar,
+header {
+    background: #006747;
+    color: #fff;
+    height: 43px;
+    line-height: 39px;
+    font-size: 36px;
+    text-transform: uppercase;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.MatchResultBar {
+    position: absolute;
+    right: 7px;
+    text-align: center;
+    top: 7px;
+    width: 517px;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.TitleBar {
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    width: 100%;
 }
 
-.App-link {
-  color: #61dafb;
+.TitleBar .TeamName {
+    position: absolute;
+    left: 8px;
+    top: 0;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.TitleBar .MatchName {
+    text-align: center;
+    width: 100%;
+}
+
+.TitleBar .Host {
+    position: absolute;
+    top: 0;
+    right: 8px;
+}
+
+.Host i {
+    color: #ffca0a;
+    font-size: 0.8em;
+    margin-right: 6px;
+}
+
+.Board,
+.Board.Large {
+    background: rgba(0, 103, 71, 0.75);
+    color: #fff;
+    position: absolute;
+    height: 507px;
+    width: 687px;
+}
+
+.Board header {
+    padding-left: 8px;
+}
+
+.Board .pairings {
+    float: right;
+    font-size: 1.25em;
+}
+
+.Board .pairings tr td:nth-child(n+3):nth-child(-n+4) {
+    text-align: right;
+}
+
+.Board.Large {
+    font-size: 2em;
+    height: 1023px;
+    width: 1360px;
+}
+
+.Board.Large header {
+    font-size: 2em;
+    height: 0.9em;
+    padding: 8px 0 0 8px;
+}
+
+.Board.Large .pairings {
+    padding: 8px 16px;
+}
+
+.Board .pairings td {
+    padding-right: 4px;
+}
+
+.Board.Large .pairings td {
+    padding-right: 8px;
+}
+
+.Faded {
+    background: rgba(64, 64, 64, 0.75);
+}
+
+.Faded header {
+    background: rgb(64, 64, 64);
+}
+
+.Faded span {
+    color: #fff;
+    opacity: 0.5;
+}
+
+#board-1 {
+    left: 7px;
+    top: 7px;
+}
+
+#board-2 {
+    left: 702px;
+    top: 7px;
+}
+
+#board-3 {
+    left: 7px;
+    top: 523px;
+}
+
+#board-4 {
+    left: 702px;
+    top: 523px;
+}
+
+tfoot tr:nth-child(1) td {
+    border-top: solid 2px #fff;
+}
+
+tfoot td {
+    text-align: right;
+}
+
+.Faded tfoot tr:nth-child(2) td {
+    color: #ffca0a;
+    filter: saturate(100%);
 }

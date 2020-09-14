@@ -1,0 +1,106 @@
+[
+  {
+    "player": "GM Mac Molner",
+    "rating": 2531,
+    "pairings": [
+      {
+        "name": "Zack Thompson",
+        "rating": 2018,
+        "result": 1
+      },
+      {
+        "name": "Chris Giannaras",
+        "rating": 2067,
+        "result": 1
+      },
+      {
+        "name": "Brian Gerra",
+        "rating": 2171,
+        "result": 0.5
+      },
+      {
+        "name": "NM Peter Minear",
+        "rating": 2321,
+        "result": 0
+      }
+    ]
+  },
+  {
+    "player": "Jason Lu",
+    "rating": 2181,
+    "pairings": [
+      {
+        "name": "Chris Giannaras",
+        "rating": 2067,
+        "result": null
+      },
+      {
+        "name": "Zack Thompson",
+        "rating": 2018,
+        "result": null
+      },
+      {
+        "name": "NM Peter Minear",
+        "rating": 2321,
+        "result": null
+      },
+      {
+        "name": "Brian Gerra",
+        "rating": 2171,
+        "result": null
+      }
+    ]
+  },
+  {
+    "player": "Sean Finn",
+    "rating": 2070,
+    "pairings": [
+      {
+        "name": "Brian Gerra",
+        "rating": 2171,
+        "result": null
+      },
+      {
+        "name": "NM Peter Minear",
+        "rating": 2321,
+        "result": null
+      },
+      {
+        "name": "Zack Thompson",
+        "rating": 2018,
+        "result": null
+      },
+      {
+        "name": "Chris Giannaras",
+        "rating": 2067,
+        "result": null
+      }
+    ]
+  },
+  {
+    "player": "Ed Knesevitch",
+    "rating": 1939,
+    "pairings": [
+       {
+        "name": "NM Peter Minear",
+        "rating": 2321,
+        "result": null
+      },
+     {
+        "name": "Brian Gerra",
+        "rating": 2171,
+        "result": null
+      },
+      {
+        "name": "Chris Giannaras",
+        "rating": 2067,
+        "result": null
+      },
+      {
+        "name": "Zack Thompson",
+        "rating": 2018,
+        "result": null
+      }
+    ]
+  }
+]
