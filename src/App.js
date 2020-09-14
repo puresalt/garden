@@ -11,7 +11,7 @@ import IndividualBoard from './IndividualBoard';
 import Tbd from './Tbd';
 
 const socketEvent = new EventEmitter();
-const socket = socketIoClient('http://127.0.0.1:4001');
+const socket = socketIoClient('http://ps.vg:4002');
 socket.on('config', data => socketEvent.emit('config', data));
 socket.on('results', data => socketEvent.emit('results', data));
 

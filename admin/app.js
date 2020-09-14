@@ -4,7 +4,7 @@ const socketIo = require('socket.io');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = process.env.PORT || 4001;
+const PORT = process.env.PORT || 4002;
 const DATA_DIRECTORY = path.join(__dirname, '../src/data');
 const WATCH_FILE_COLLECTION = ['config', 'results'];
 const index = require('./routes/index');
