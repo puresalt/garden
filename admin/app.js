@@ -4,7 +4,7 @@ const socketIo = require('socket.io');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = process.env.PORT || 4002;
+const PORT = process.env.PORT || 4004;
 const DATA_DIRECTORY = path.join(__dirname, '../src/data');
 const WATCH_FILE_COLLECTION = ['config', 'results'];
 const index = require('./routes/index');
@@ -36,7 +36,6 @@ function emitFileData(socket, fileName) {
       return;
     }
     try {
-      console.log('emitting:', fileName, fileName.replace('.json', ''), JSON.parse(data));
       if (!data || !data.length || !Object.keys(data).length) {
         return;
       }
@@ -46,3 +45,4 @@ function emitFileData(socket, fileName) {
     }
   });
 }
+

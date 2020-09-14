@@ -24,7 +24,7 @@
   "scripts": {
     "start": "npm run start:admin && npm run start:ui",
     "start:admin": "node admin/app.js",
-    "start:ui": "react-scripts start",
+    "start:ui": "PORT=4003 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

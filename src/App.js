@@ -11,7 +11,7 @@ import IndividualBoard from './IndividualBoard';
 import Tbd from './Tbd';
 
 const socketEvent = new EventEmitter();
-const socket = socketIoClient('http://ps.vg:4002');
+const socket = socketIoClient('https://state.garden.ps.vg');
 socket.on('config', data => socketEvent.emit('config', data));
 socket.on('results', data => socketEvent.emit('results', data));
 
@@ -30,8 +30,12 @@ function App() {
   const [config, setConfig] = useState(MISSING_CONFIG);
 
   useEffect(() => {
-    socketEvent.on('config', data => setConfig(data));
-    socketEvent.on('results', data => setResults(data));
+    socketEvent.on('config', setConfig);
+    socketEvent.on('results', setResults);
+    return () => {
+      socketEvent.off('config', setConfig);
+      socketEvent.off('results', setResults);
+    };
   }, []);
 
   const hostName = config.host;
