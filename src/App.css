@@ -145,14 +145,29 @@ header {
     top: 7px;
 }
 
+#board-2.Large {
+    left: 7px;
+    top: 7px;
+}
+
 #board-3 {
     left: 7px;
     top: 523px;
 }
 
+#board-3.Large {
+    left: 7px;
+    top: 7px;
+}
+
 #board-4 {
     left: 702px;
     top: 523px;
+}
+
+#board-4.Large {
+    left: 7px;
+    top: 7px;
 }
 
 tfoot tr:nth-child(1) td {
