@@ -1,0 +1,22 @@
+{
+  "port": 4003,
+  "session": {
+    "secret": "gcss"
+  },
+  "socketIo": {
+    "url": "http://127.0.0.1:4004"
+  },
+  "discord": {
+    "guild": {
+      "id": ""
+    },
+    "client": {
+      "id": "",
+      "secret": "",
+      "redirectUrl": "http://127.0.0.1:4002/callback",
+      "authorizeUrl": "https://discord.com/api/oauth2/authorize",
+      "responseType": "code",
+      "scope": "guilds identify"
+    }
+  }
+}

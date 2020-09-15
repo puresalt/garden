@@ -1,0 +1,45 @@
+{
+  "name": "gcss-state",
+  "version": "0.2.0",
+  "private": true,
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "cookie-parser": "~1.4.4",
+    "express": "^4.17.1",
+    "http-errors": "~1.6.3",
+    "lodash": "^4.17.20",
+    "node-fetch": "^2.6.1",
+    "socket.io": "^2.3.0",
+    "socket.io-client": "^2.3.0",
+    "gcss-common": "file:../common"
+  },
+  "scripts": {
+    "restart": "npm stop;npm start",
+    "restart:production": "npm run stop:production;npm run start:production",
+    "start": "pm2 start pm2.development.yml",
+    "start:production": "npm run build;pm2 start pm2.production.yml",
+    "start:admin": "node admin/app.js",
+    "start:state": "node state/app.js",
+    "start:ui": "react-scripts start",
+    "stop": "pm2 stop pm2.development.yml",
+    "stop:production": "pm2 stop pm2.production.yml",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

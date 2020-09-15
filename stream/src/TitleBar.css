@@ -1,0 +1,77 @@
+* {
+    font-family: antarctican-headline, san serif;
+    font-weight: 700;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    background: url(./background.png) center no-repeat;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+}
+
+span,
+.active {
+    color: #ffca0a;
+}
+
+em {
+    opacity: 0.5;
+}
+
+.App {
+    position: absolute;
+    width: 1920px;
+    height: 1080px;
+}
+
+.MatchResultBar,
+.TitleBar,
+header {
+    background: #006747;
+    color: #fff;
+    height: 43px;
+    line-height: 39px;
+    font-size: 36px;
+    text-transform: uppercase;
+}
+
+.MatchResultBar {
+    position: absolute;
+    right: 7px;
+    text-align: center;
+    top: 7px;
+    width: 517px;
+}
+
+.TitleBar {
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    width: 100%;
+}
+
+.TitleBar .TeamName {
+    position: absolute;
+    left: 8px;
+    top: 0;
+}
+
+.TitleBar .MatchName {
+    text-align: center;
+    width: 100%;
+}
+
+.TitleBar .Host {
+    position: absolute;
+    top: 0;
+    right: 8px;
+}
+
+.Host i {
+    color: #ffca0a;
+    font-size: 0.8em;
+    margin-right: 6px;
+}

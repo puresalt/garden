@@ -1,47 +1,23 @@
 {
-  "name": "garden",
-  "version": "0.1.0",
+  "name": "gcss",
+  "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "@testing-library/jest-dom": "^4.2.4",
-    "@testing-library/react": "^9.5.0",
-    "@testing-library/user-event": "^7.2.1",
-    "cookie-parser": "~1.4.4",
-    "debug": "~2.6.9",
-    "express": "^4.17.1",
-    "html-react-parser": "^0.14.0",
-    "http-errors": "~1.6.3",
-    "lodash": "^4.17.20",
-    "morgan": "~1.9.1",
-    "pug": "2.0.0-beta11",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1",
-    "react-router-dom": "^5.2.0",
-    "react-scripts": "3.4.3",
-    "socket.io": "^2.3.0",
-    "socket.io-client": "^2.3.0"
+    "pm2": "^4.4.1",
+    "serve": "^11.3.2"
   },
   "scripts": {
-    "start": "npm run start:admin && npm run start:ui",
-    "start:admin": "node admin/app.js",
-    "start:ui": "PORT=4003 react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "eslintConfig": {
-    "extends": "react-app"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "install": "cd admin && npm install;cd ../observe && npm install;cd ../state && npm install;cd ../stream npm install",
+    "restart": "npm stop;npm start",
+    "start": "./node_modules/.bin/pm2 start ./node_modules/.bin/pm2.production.yml",
+    "start:development": "npm run build;./node_modules/.bin/pm2 start pm2.development.yml",
+    "start:admin": "cd admin && npm start",
+    "start:observer": "cd observer && npm start",
+    "start:state": "cd state && npm start",
+    "start:stream": "cd stream && npm start",
+    "stop": "./node_modules/.bin/pm2 stop pm2.production.yml",
+    "stop:development": "./node_modules/.bin/pm2 stop pm2.development.yml",
+    "build:observer": "react-scripts build",
+    "build:admin": "react-scripts build"
   }
 }

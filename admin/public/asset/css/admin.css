@@ -1,0 +1,36 @@
+html, body {
+    background-color: #fff;
+    background-image: none;
+}
+
+.navbar {
+    background: #006747;
+    font-family: antarctican-headline, san serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 50px;
+}
+
+.navbar-brand span {
+    color: #ffca66;
+}
+
+.navbar-brand {
+    padding-top: .26rem;
+    font-size: 1em;
+    padding-bottom: .26rem;
+    cursor: pointer;
+    pointer-events: none;
+}
+
+.navbar .nav-link {
+    color: #ffca66 !important;
+    opacity: 0.75;
+}
+
+.navbar .nav-link:active,
+.navbar .nav-link:hover,
+.navbar .nav-link:focus {
+    color: #ffca66 !important;
+    opacity: 1;
+}

@@ -1,0 +1,5 @@
+{
+  "socketIo": {
+    "url": "https://state.garden.ps.vg/callback"
+  }
+}

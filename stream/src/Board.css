@@ -1,0 +1,106 @@
+.Board,
+.Board.Large {
+    background: rgba(0, 103, 71, 0.75);
+    color: #fff;
+    position: absolute;
+    height: 507px;
+    width: 687px;
+}
+
+.Board header {
+    padding-left: 8px;
+}
+
+.Board .pairings {
+    float: right;
+    font-size: 1.15em;
+}
+
+.Board .pairings tr td:nth-child(n+3):nth-child(-n+4) {
+    text-align: right;
+}
+
+.Board.Large {
+    font-size: 2em;
+    height: 1023px;
+    width: 1382px;
+}
+
+.Board.Large header {
+    font-size: 2.4em;
+    height: 0.9em;
+    padding: 18px 16px 0 16px;
+}
+
+.Board.Large .pairings {
+    padding: 8px 16px;
+}
+
+.Board .pairings td {
+    padding-right: 4px;
+}
+
+.Board.Large .pairings td {
+    padding-right: 8px;
+}
+
+.Board.Faded {
+    background: rgba(64, 64, 64, 0.75);
+}
+
+.Board.Faded header {
+    background: rgb(64, 64, 64);
+}
+
+.Board.Faded span {
+    color: #fff;
+    opacity: 0.5;
+}
+
+#board-1.Board {
+    left: 7px;
+    top: 7px;
+}
+
+#board-2.Board {
+    left: 702px;
+    top: 7px;
+}
+
+#board-2.Board.Large {
+    left: 7px;
+    top: 7px;
+}
+
+#board-3.Board {
+    left: 7px;
+    top: 523px;
+}
+
+#board-3.Board.Large {
+    left: 7px;
+    top: 7px;
+}
+
+#board-4.Board {
+    left: 702px;
+    top: 523px;
+}
+
+#board-4.Board.Large {
+    left: 7px;
+    top: 7px;
+}
+
+.Board tfoot tr:nth-child(1) td {
+    border-top: solid 2px #fff;
+}
+
+.Board tfoot td {
+    text-align: right;
+}
+
+.Board.Faded tfoot tr:nth-child(2) td {
+    color: #ffca0a;
+    filter: saturate(100%);
+}
