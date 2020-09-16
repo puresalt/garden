@@ -1,10 +1,11 @@
 import React from 'react';
-import './Board.css';
 import OrDefault from 'gscc-common/react/OrDefault';
+import Chessboard from 'gscc-common/react/Chessboard';
+import './Board.css';
 
 class Board extends React.Component {
   render() {
-    const {board, player, rating, pairings, large} = this.props;
+    const {board, player, rating, pairings, large, socketEvent} = this.props;
     const round = pairings.filter(item => item.result !== null).length + 1;
     const done = round > pairings.length;
     const tally = round > 1
@@ -12,10 +13,17 @@ class Board extends React.Component {
         .filter(item => item.result !== null)
         .reduce((gathered, item) => gathered + item.result, 0)
       : null;
+    const size = large
+      ? 936
+      : 464;
+    const chessBoard = <Chessboard boardName={'board-' + board} height={size} width={size}
+                                   viewOnly={true} coordinates={false} socketEvent={socketEvent}/>;
     return (
       <div className={"Board" + (large ? ' Large' : (done ? ' Faded' : ''))} key={board} id={'board-' + board}>
         <header><span>BOARD {board}:</span> {player} <em>{rating}</em></header>
-        <div className="board"/>
+        <div className="board">
+          {chessBoard}
+        </div>
         <div className="pairings">
           <table>
             <tbody>

@@ -1,0 +1,112 @@
+import React from 'react'
+import PropTypes from 'prop-types'
+import {Chessground as NativeChessground} from 'chessground'
+import './Chessboard/css/chessground.css';
+
+const propTypes = {
+  boardName: PropTypes.string,
+  width: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  height: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  fen: PropTypes.string,
+  orientation: PropTypes.string,
+  turnColor: PropTypes.string,
+  check: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
+  lastMove: PropTypes.array,
+  selected: PropTypes.string,
+  coordinates: PropTypes.bool,
+  autoCastle: PropTypes.bool,
+  viewOnly: PropTypes.bool,
+  disableContextMenu: PropTypes.bool,
+  resizable: PropTypes.bool,
+  addPieceZIndex: PropTypes.bool,
+  highlight: PropTypes.object,
+  animation: PropTypes.object,
+  movable: PropTypes.object,
+  premovable: PropTypes.object,
+  predroppable: PropTypes.object,
+  draggable: PropTypes.object,
+  selectable: PropTypes.object,
+  onChange: PropTypes.func,
+  onMove: PropTypes.func,
+  onDropNewPiece: PropTypes.func,
+  onSelect: PropTypes.func,
+  items: PropTypes.object,
+  drawable: PropTypes.object,
+  socketEvent: PropTypes.object
+};
+
+export default class Chessground extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleEvent = this.handleEvent.bind(this);
+  }
+
+  buildConfigFromProps(props) {
+    const config = {events: {}};
+    Object.keys(propTypes).forEach(k => {
+      const v = props[k];
+      if (typeof v !== 'undefined') {
+        const match = k.match(/^on([A-Z]\S*)/);
+        if (match) {
+          config.events[match[1].toLowerCase()] = v
+        } else {
+          config[k] = v
+        }
+      }
+    });
+    return config
+  }
+
+  handleEvent(event) {
+    if (typeof this[event.type] !== 'function') {
+      console.warn(`Unexpected board event: ${event.type}`);
+      return;
+    }
+    this[event.type](event.data);
+  }
+
+  startBoard(data) {
+    if (!this.cg) {
+      return;
+    }
+    this.cg.set({fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'});
+  }
+
+  movePiece(data) {
+    this.cg.move(data[0], data[1]);
+  }
+
+  drawArrow(shapes) {
+    if (!this.cg) {
+      return;
+    }
+    this.cg.setShapes(shapes);
+  }
+
+  componentDidMount() {
+    this.cg = NativeChessground(this.el, this.buildConfigFromProps(this.props));
+    this.socketEvent = this.props.socketEvent;
+    this.socketEvent.on(this.props.boardName, this.handleEvent);
+  }
+
+  componentWillReceiveProps(nextProps) {
+    this.cg.set(this.buildConfigFromProps(nextProps));
+  }
+
+  componentWillUnmount() {
+    this.cg.destroy();
+    this.socketEvent.off(this.props.boardName, this.handleEvent);
+  }
+
+  render() {
+    const props = {style: {...this.props.style}};
+    if (this.props.width) {
+      props.style.width = this.props.width;
+    }
+    if (this.props.height) {
+      props.style.height = this.props.height;
+    }
+
+    return React.createElement('div', {ref: el => this.el = el, ...props});
+  }
+}

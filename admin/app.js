@@ -3,36 +3,38 @@
 const serverPort = 4002;
 
 const fs = require('fs');
-const http = require('http');
 const path = require('path');
 const bodyParser = require('body-parser');
-const url = require('url');
 const fetch = require('node-fetch');
-const Config = require(path.join(__dirname, '../common/config'));
-const CONFIG = Config(process.env);
+const common = require('gscc-common');
 const express = require('express');
 const session = require('express-session');
 const mustache = require('mustache');
 mustache.escape = _ => _;
+const config = common.Config(process.env, require('../common/config/runtime.json'));
 
 const templateFileDirectory = path.join(__dirname, 'template');
-const stateLookup = require(path.join(__dirname, '../src/data/stateLookup.json'));
+const stateLookup = common.Data.StateLookup;
 const STREAMER_PERMISSION = 0x00000100;
 
 const accessConfig = {
-  authorizeUrl: CONFIG.discord.client.authorizeUrl,
-  clientId: CONFIG.discord.client.id,
-  redirectUrl: CONFIG.discord.client.redirectUrl,
-  responseType: CONFIG.discord.client.responseType,
-  scope: CONFIG.discord.client.scope
+  authorizeUrl: config.discord.client.authorizeUrl,
+  clientId: config.discord.client.id,
+  redirectUrl: config.discord.client.redirectUrl,
+  responseType: config.discord.client.responseType,
+  scope: config.discord.client.scope
 };
 
 const runApp = () => {
-
   const app = express();
   app.use(express.static(path.join(__dirname, 'public')));
-  app.use(bodyParser.urlencoded({ extended: true }));
-  app.use(session({secret: CONFIG.session.secret}));
+  app.use(bodyParser.urlencoded({extended: true}));
+  app.use(session({
+    secret: config.session.secret,
+    resave: false,
+    saveUninitialized: true,
+    cookie: {secure: true}
+  }));
 
   app.get('/', (req, res) => {
     if (req.session.isAdmin) {
@@ -45,10 +47,10 @@ const runApp = () => {
     if (req.query.code) {
       const accessCode = req.query.code;
       const data = {
-        client_id: CONFIG.discord.client.id,
-        client_secret: CONFIG.discord.client.secret,
+        client_id: config.discord.client.id,
+        client_secret: config.discord.client.secret,
         grant_type: 'authorization_code',
-        redirect_uri: CONFIG.discord.client.redirectUrl,
+        redirect_uri: config.discord.client.redirectUrl,
         code: accessCode,
         scope: 'identify guilds'
       };
@@ -73,7 +75,8 @@ const runApp = () => {
           })
             .then(guildRes => guildRes.json())
             .then(guildData => {
-              const guild = guildData.find(item => item.id === CONFIG.discord.guild.id);
+              console.log('guildData:', guildData);
+              const guild = guildData.find(item => item.id === config.discord.guild.id);
               if (!guild || (STREAMER_PERMISSION !== (guild.permissions & STREAMER_PERMISSION))) {
                 return res
                   .status(401)
@@ -115,7 +118,7 @@ const runApp = () => {
   app.post('/admin/save', (req, res) => {
     console.log(req);
     return res.json(req.body);
-    
+
     if (!req.session.isAdmin) {
       return res.status(401).json({error: 'unauthorized'});
     }

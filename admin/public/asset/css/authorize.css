@@ -68,7 +68,7 @@ body {
     border-top-right-radius: 0;
 }
 
-p {
+p.text-muted {
     position: absolute;
     bottom: -50px;
     width: 100%;

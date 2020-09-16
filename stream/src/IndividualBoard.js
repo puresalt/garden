@@ -16,6 +16,7 @@ function IndividualBoard(props) {
       player={item.player}
       rating={item.rating}
       pairings={item.pairings}
+      socketEvent={props.socketEvent}
       large={true}
     />
   );

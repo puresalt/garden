@@ -1,1 +1,1 @@
-exports.StateLookup = require('../data/stateLookup');
+exports.StateLookup = require('../data/stateLookup.json');

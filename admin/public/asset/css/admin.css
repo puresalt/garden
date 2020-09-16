@@ -5,32 +5,44 @@ html, body {
 
 .navbar {
     background: #006747;
+    color: #fff;
     font-family: antarctican-headline, san serif;
     font-weight: 700;
     text-transform: uppercase;
-    font-size: 50px;
+    font-size: 24px;
 }
 
 .navbar-brand span {
     color: #ffca66;
 }
 
-.navbar-brand {
-    padding-top: .26rem;
+.navbar-light .navbar-brand {
+    color: #fff;
     font-size: 1em;
-    padding-bottom: .26rem;
     cursor: pointer;
     pointer-events: none;
 }
 
-.navbar .nav-link {
-    color: #ffca66 !important;
+.navbar.navbar-light .nav-link {
+    color: #ffca66;
     opacity: 0.75;
 }
 
-.navbar .nav-link:active,
-.navbar .nav-link:hover,
-.navbar .nav-link:focus {
-    color: #ffca66 !important;
+.navbar.navbar-light .nav-link.active {
+    color: #fff;
     opacity: 1;
+}
+
+.navbar.navbar-light .nav-link:active,
+.navbar.navbar-light .nav-link:hover,
+.navbar.navbar-light .nav-link:focus {
+    color: #ffca66;
+    opacity: 1;
+}
+
+.navbar.navbar-light .nav-link.active:active,
+.navbar.navbar-light .nav-link.active:hover,
+.navbar.navbar-light .nav-link.active:focus {
+    color: #fff;
+    cursor: default;
 }

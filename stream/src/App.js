@@ -1,5 +1,4 @@
 import React, {useEffect, useState} from 'react';
-import path from 'path';
 import {BrowserRouter as Router, Route, Switch} from 'react-router-dom';
 import socketIoClient from 'socket.io-client';
 import {Config, Data} from 'gscc-common';
@@ -11,13 +10,12 @@ import Score from './Score';
 import TitleBar from './TitleBar';
 import IndividualBoard from './IndividualBoard';
 
-const CONFIG = Config(process.env, true);
+const CONFIG = Config(process.env);
 const StateLookup = Data.StateLookup;
 
 const socketEvent = new EventEmitter();
 const socket = socketIoClient(CONFIG.socketIo.url);
-socket.on('config', data => socketEvent.emit('config', data));
-socket.on('results', data => socketEvent.emit('results', data));
+['config', 'results', 'board-1', 'board-2', 'board-3', 'board-4'].forEach(item => socket.on(item, data => socketEvent.emit(item, data)));
 
 const MISSING_CONFIG = {
   host: null,
@@ -67,7 +65,7 @@ function App() {
       <div className="App">
         <Switch>
           <Route path="/board/:boardNumber">
-            <IndividualBoard results={results}/>
+            <IndividualBoard results={results} socketEvent={socketEvent}/>
           </Route>
           <Route path="/">
             {results.map((item, i) => {
@@ -77,6 +75,7 @@ function App() {
                 player={item.player}
                 rating={item.rating}
                 pairings={item.pairings}
+                socketEvent={socketEvent}
               />;
             })}
           </Route>
@@ -89,7 +88,8 @@ function App() {
         />
         <div className="TitleBar">
           <div className="TeamName"><span>Garden State</span> Chess Club</div>
-          <div className="MatchName">States Chess Cup: <span><OrDefault value={homeTeamName}/></span> vs <span><OrDefault
+          <div className="MatchName">States Chess Cup: <span><OrDefault
+            value={homeTeamName}/></span> vs <span><OrDefault
             value={awayTeamName}/></span></div>
           <TitleBar homeTeam={homeTeamName} awayTeam={homeTeamName} name={hostName} icons={hostIcons}/>
         </div>
