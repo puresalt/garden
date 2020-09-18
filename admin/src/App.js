@@ -1,97 +1,136 @@
-import React, {useEffect, useState} from 'react';
-import {BrowserRouter as Router, Route, Switch, useLocation} from 'react-router-dom';
-import EventEmitter from 'events';
-import Nav from 'react-bootstrap/Nav';
-import Navbar from 'react-bootstrap/Navbar';
+import React, {useEffect} from 'react';
+import {BrowserRouter as Router, Redirect, Route, Switch} from 'react-router-dom';
 import Container from 'react-bootstrap/Container';
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
-import OrDefault from 'gscc-common/react/OrDefault';
 import Dashboard from './Dashboard';
-import Boards from './Boards';
+import Board from './Boards';
 import Results from './Results';
-import Players from './Players';
-import Settings from './Settings';
-import LiveButton from './LiveButton';
-import {Data} from 'gscc-common';
+import Header from './Header';
+import {Config, Data} from 'gscc-common';
 import './App.css';
+import socketIoClient from 'socket.io-client';
+import Matches from './Matches';
 
-const STATE_LIST = Data.StateLookup;
-const socketEvent = new EventEmitter();
+const CONFIG = Config(process.env);
+const STATE_LOOKUP = Data.StateLookup;
 
-const routerLinks = [
-  ['/', 'Dashboard'],
-  ['/boards', 'Boards'],
-  ['/results', 'Results'],
-  ['/players', 'Players'],
-  ['/settings', 'Settings']
-];
+const socket = socketIoClient(CONFIG.socketIo.url, {
+  path: '/admin'
+});
 
-function Header(props) {
-  const {pathname} = useLocation();
-
-  return <Nav className="mr-auto">
-    {routerLinks.map((tuple, i) => {
-      if (pathname === tuple[0]) {
-        return <Nav.Link key={i} href="javascript:void(0);" active={true}>{tuple[1]}</Nav.Link>;
-      }
-      return <Nav.Link key={i} href={tuple[0]}>{tuple[1]}</Nav.Link>;
-    })}
-  </Nav>;
+function usePersistentState(key, defaultValue) {
+  const [state, setState] = React.useState(() => {
+    try {
+      return JSON.parse(String(localStorage.getItem(key))) || defaultValue;
+    } catch (e) {
+    }
+    return defaultValue;
+  });
+  useEffect(() => {
+    localStorage.setItem(key, JSON.stringify(state));
+  }, [key, state]);
+  return [state, setState];
 }
 
 function App() {
-  return (
-    <Router>
-      <div className="TopBar">
-        <Container>
-          <Row>
-            <Col><Match socketEvent={socketEvent}/></Col>
-            <Col xs={2} className="pull-right pr-0 pl-3"><a href="/quit">Sign Out</a></Col>
-          </Row>
-        </Container>
-      </div>
-      <Navbar>
-        <Container>
-          <Header matchId={false} matchName={false} socketEvent={socketEvent}/>
-          <LiveButton socketEvent={socketEvent} isLive={true}/>
-        </Container>
-      </Navbar>
-      <Container className="p-3">
-        <Switch>
-          <Route path="/boards" children={<Boards socketEvent={socketEvent}/>}/>
-          <Route path="/results" children={<Results socketEvent={socketEvent}/>}/>
-          <Route path="/players" exact children={<Players socketEvent={socketEvent}/>}/>
-          <Route path="/settings" children={<Settings stateList={STATE_LIST} socketEvent={socketEvent}/>}/>
-          <Route path="/" children={<Dashboard/>}/>
-        </Switch>
-      </Container>
-    </Router>
-  )
-}
-
-function Match(props) {
-  const [matchId, setMatchId] = useState(props.matchId);
-  const [matchName, setMatchName] = useState(props.matchName);
-
-  const updateMatch = (data) => {
-    setMatchName(data.name);
-    setMatchId(data.id);
+  const [currentMatchId, setCurrentMatchId] = usePersistentState('currentMatchId', 0);
+  const updateCurrentMatchId = (newMatchId) => {
+    setCurrentMatchId(newMatchId);
+  };
+  const [currentOpponent, setCurrentOpponent] = usePersistentState('currentOpponent', '');
+  const updateCurrentOpponent = (newOpponent) => {
+    setCurrentOpponent(newOpponent);
   };
 
+  const handleMatchLoad = (match) => {
+    if (match && match.id) {
+      setCurrentMatchId(match.id);
+      setCurrentOpponent(match.opponent);
+    } else {
+      setCurrentMatchId(0);
+      setCurrentOpponent('');
+    }
+  };
+  const handleMatchExistenceCheck = (data) => {
+    console.log('huh?', data, currentMatchId, data.id === currentMatchId && !data.exists);
+    if (data.id === currentMatchId && !data.exists) {
+      setCurrentMatchId(0);
+      setCurrentOpponent('');
+    }
+  };
   useEffect(() => {
-    socketEvent.on('match', updateMatch);
+    socket.on('match:loaded', handleMatchLoad);
+    socket.on('match:exists', handleMatchExistenceCheck);
     return () => {
-      socketEvent.off('match', updateMatch);
-    };
+      socket.off('match:loaded', handleMatchLoad);
+      socket.off('match:exists', handleMatchExistenceCheck);
+    }
   }, []);
 
-  let fullMatchName = matchName || '';
-  if (matchId) {
-    fullMatchName = `#${matchId} ${matchName}`;
-  }
+  useEffect(() => {
+    socket.emit('match:exist', currentMatchId);
+    socket.emit('match:load', currentMatchId);
+  }, []);
 
-  return <div className="Match">Match: <strong><OrDefault value={fullMatchName}/></strong></div>;
+  return (
+    <Router>
+      <Header
+        currentMatchId={currentMatchId}
+        currentOpponent={currentOpponent}
+        stateLookup={STATE_LOOKUP}
+        socket={socket}
+      />
+      <div className="position-relative">
+        <Container className="p-3">
+          <Switch>
+            <Route path="/boards">
+              {
+                currentMatchId
+                  ? <Board
+                    currentMatchId={currentMatchId}
+                    socket={socket}
+                  />
+                  : <Redirect to="/"/>
+              }
+            </Route>
+            <Route path="/results">
+              {
+                currentMatchId
+                  ? <Results
+                    currentMatchId={currentMatchId}
+                    currentOpponent={currentOpponent}
+                    stateLookup={STATE_LOOKUP}
+                    socket={socket}
+                  />
+                  : <Redirect to="/"/>
+              }
+            </Route>
+            <Route path="/dashboard">
+              {
+                currentMatchId
+                  ? <Dashboard
+                    currentMatchId={currentMatchId}
+                    currentOpponent={currentOpponent}
+                    updateCurrentOpponent={updateCurrentOpponent}
+                    stateLookup={STATE_LOOKUP}
+                    socket={socket}
+                  />
+                  : <Redirect to="/"/>
+              }
+            </Route>
+            <Route path="/">
+              <Matches
+                currentMatchId={currentMatchId}
+                stateLookup={STATE_LOOKUP}
+                socket={socket}
+                updateCurrentMatchId={updateCurrentMatchId}
+                updateCurrentOpponent={updateCurrentOpponent}
+              />
+            </Route>
+          </Switch>
+        </Container>
+      </div>
+    </Router>
+  )
 }
 
 export default App;

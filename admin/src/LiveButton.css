@@ -1,22 +1,19 @@
 .LiveButton {
     background: rgba(255, 255, 0, 0.65);
-    border-radius: 0.5em;
-    padding: 0.25em 0.5em;
+    border-radius: 0.25em;
+    padding: 0.25em 0.25em 0.25em 0.5em;
     text-align: right;
 }
 
-.LiveButton > .label {
-    font-weight: 700;
-    font-size: 0.9em;
-    padding-right: 0.5em;
-    line-height: 1.3em;
+.LiveButton .input-group-prepend {
+    padding-right: 0.4em;
 }
 
 .LiveButton .btn-danger {
     font-weight: 700;
-    text-transform: uppercase;
 }
 
 .LiveButton label {
-    font-family: 'Open Sans', sans-serif;
+    font-family: Menlo, Monospaced, monospace;
+    font-weight: 600;
 }

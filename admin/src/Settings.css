@@ -1,0 +1,56 @@
+.Settings .card-header {
+    background: #006747;
+    color: #fff;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 1.75rem;
+    padding-bottom: 0.25em;
+    padding-top: 0.25em;
+    line-height: 1em;
+    font-family: antarctican-headline, sans-serif;
+}
+
+.Settings .card-body {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.Settings .card-footer {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.Settings .host-toggle {
+    background: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 0.25em;
+    padding: 0.25em;
+    margin-bottom: 0.5em;
+}
+
+.Settings .host-toggle:last-child {
+    margin-bottom: -0.5em;
+}
+
+.Settings .input-group-append {
+    margin-left: 0.5em;
+    padding: 0.5em;
+    text-transform: capitalize;
+}
+
+.Settings .input-group-append i {
+    margin-right: 0.25em;
+    width: 15px;
+}
+
+.Settings .btn-danger {
+    font-weight: 700;
+}
+
+.Settings .btn-group-toggle label {
+    font-family: Menlo, Monospaced, monospace;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.Settings legend {
+    font-size: 1rem;
+}

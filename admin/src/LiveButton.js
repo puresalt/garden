@@ -2,49 +2,50 @@ import React, {useEffect, useState} from 'react';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import ToggleButton from 'react-bootstrap/ToggleButton';
 import './LiveButton.css';
+import InputGroup from 'react-bootstrap/InputGroup';
 
 function LiveButton(props) {
-  const {socketEvent} = props;
-  const [isLive, setIsLive] = useState(props.isLive);
-
+  const {socket} = props;
+  
+  const [isLive, setIsLive] = useState();
+  const updateIsLive = (newIsLive) => {
+    setIsLive(newIsLive);
+  };
   useEffect(() => {
-    socketEvent.on('live', setIsLive);
+    socket.on('live', updateIsLive);
     return () => {
-      socketEvent.off('live', setIsLive);
+      socket.off('live', updateIsLive);
     };
-  }, []);
+  }, [socket]);
 
   const handleLiveClick = (event) => {
-    const newIsLive = Number(event.target.value) === 1;
-    if (newIsLive === isLive) {
-      return;
-    }
+    const newIsLive = event.target.value === '1';
     setIsLive(newIsLive);
-    socketEvent.emit('live', newIsLive);
+    socket.emit('live', newIsLive);
   };
 
   return <div className="LiveButton clearfix">
-    <div className="label float-left">Stream</div>
-    <ButtonGroup toggle className="float-right">
-      <ToggleButton
-        name="live"
-        size="sm"
-        checked={isLive}
-        type="radio"
-        value={1}
-        variant={isLive ? 'danger' : 'secondary'}
-        onChange={handleLiveClick}
-      >On</ToggleButton>
-      <ToggleButton
-        name="live"
-        size="sm"
-        type="radio"
-        checked={!isLive}
-        value={0}
-        variant={!isLive ? 'danger' : 'secondary'}
-        onChange={handleLiveClick}
-      >Off</ToggleButton>
-    </ButtonGroup>
+    <InputGroup>
+      <InputGroup.Prepend>Stream</InputGroup.Prepend>
+      <ButtonGroup toggle className="float-right">
+        <ToggleButton
+          name="live"
+          checked={isLive}
+          type="radio"
+          value={1}
+          variant={isLive ? 'danger' : 'secondary'}
+          onChange={handleLiveClick}
+        >On</ToggleButton>
+        <ToggleButton
+          name="live"
+          type="radio"
+          checked={!isLive}
+          value={0}
+          variant={!isLive ? 'danger' : 'secondary'}
+          onChange={handleLiveClick}
+        >Off</ToggleButton>
+      </ButtonGroup>
+    </InputGroup>
   </div>;
 }
 

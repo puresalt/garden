@@ -11,7 +11,7 @@ import TitleBar from './TitleBar';
 import IndividualBoard from './IndividualBoard';
 
 const CONFIG = Config(process.env);
-const StateLookup = Data.StateLookup;
+const STATE_LOOKUP = Data.StateLookup;
 
 const socketEvent = new EventEmitter();
 const socket = socketIoClient(CONFIG.socketIo.url);
@@ -42,8 +42,8 @@ function App() {
 
   const hostName = config.host;
   const hostIcons = config.hostIcons;
-  const homeTeamName = StateLookup[config.home];
-  const awayTeamName = StateLookup[config.away];
+  const homeTeamName = STATE_LOOKUP[config.home];
+  const awayTeamName = STATE_LOOKUP[config.away];
 
   const {homeTeamScore, awayTeamScore} = results
     .filter(item => item.pairings.length)

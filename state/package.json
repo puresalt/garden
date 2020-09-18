@@ -4,11 +4,12 @@
   "private": true,
   "dependencies": {
     "body-parser": "^1.19.0",
+    "dataobject-parser": "^1.2.1",
     "express": "^4.17.1",
+    "gcss-common": "file:../common",
     "lodash": "^4.17.20",
     "node-fetch": "^2.6.1",
-    "socket.io": "^2.3.0",
-    "gcss-common": "file:../common"
+    "socket.io": "^2.3.0"
   },
   "scripts": {
     "start": "node app.js"

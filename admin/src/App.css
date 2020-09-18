@@ -1,27 +1,6 @@
-.TopBar {
-    background: #000;
-    color: #fff;
-    padding: 0.5em 0;
-}
-
-.TopBar .pull-right {
-    font-weight: 700;
-    text-align: right;
-    text-transform: uppercase;
-}
-
-.TopBar a {
-    color: #ffca66;
-    opacity: 0.75;
-}
-
-.TopBar a:active,
-.TopBar a:hover,
-.TopBar a:focus {
-    opacity: 1;
-    text-decoration: none;
-}
-
-.TopBar .col {
-    padding-left: 0.5em;
+._loading_overlay_overlay {
+    background: rgba(255, 202, 102, 0.85) !important;
+    text-align: center;
+    font-family: Monaco, Monospaced, monospace;
+    vertical-align: middle;
 }
