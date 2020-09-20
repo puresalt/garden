@@ -35,7 +35,6 @@ function App() {
 
   const [currentMatchId, setCurrentMatchId] = usePersistentState('currentMatchId', 0);
   const updateCurrentMatchId = (newMatchId) => {
-    console.log('new match id?', newMatchId);
     setCurrentMatchId(newMatchId);
   };
   const [currentOpponent, setCurrentOpponent] = usePersistentState('currentOpponent', '');

@@ -44,8 +44,9 @@ CREATE TABLE `garden_pairing` (
     match_id INT UNSIGNED NOT NULL,
     member_id INT UNSIGNED NULL,
     opponent_id INT UNSIGNED NULL,
-    result DECIMAL(1, 1) NULL,
+    result DECIMAL(2, 1) NULL,
     lichess_game_id VARCHAR(128) NULL,
+    UNIQUE INDEX(match_id, member_id, opponent_id),
     INDEX(match_id),
     INDEX(member_id),
     INDEX(opponent_id)

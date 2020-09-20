@@ -3,24 +3,24 @@ import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import ToggleButton from 'react-bootstrap/ToggleButton';
 
 function ResultForm(props) {
-  const {result, isNotReady, pairingId, updateResult} = props;
+  const {result, isNotReady, pairingIndex, updateResult} = props;
 
   const checkResult = (event) => {
     if (event.target.checked && Number(event.target.value) === result) {
       event.target.checked = false;
-      updateResult(pairingId, null);
+      updateResult(pairingIndex, null);
     }
   };
   const handleResult = (event) => {
-    updateResult(pairingId, Number(event.target.value));
+    updateResult(pairingIndex, Number(event.target.value));
   };
 
-  const pairingName = `pairing-${pairingId}`;
+  const pairingName = `pairing-${pairingIndex}`;
   const hasResult = result !== null;
   const isWin = hasResult && result === 1;
   const isDraw = hasResult && result === 0.5;
   const isLoss = hasResult && result === 0;
-
+  
   return <ButtonGroup toggle>
     <ToggleButton
       checked={isWin}

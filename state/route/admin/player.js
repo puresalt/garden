@@ -31,6 +31,7 @@ function AdminPlayerRoute(dataStore, io, socket, teamId) {
       const returnData = {teamId: teamId, members: members};
       console.log('member:updated', returnData);
       socket.broadcast.emit('member:updated', returnData);
+      getMemberList();
     });
   }
 
@@ -136,6 +137,7 @@ function AdminPlayerRoute(dataStore, io, socket, teamId) {
       const returnData = {teamId: teamId, ...cleanedMember};
       console.log('member:created', returnData);
       socket.emit('member:created', returnData);
+      getMemberList();
     });
   }
 
@@ -150,6 +152,7 @@ function AdminPlayerRoute(dataStore, io, socket, teamId) {
       }
       console.log('member:deleted', {teamId: teamId, id: memberId});
       socket.emit('member:deleted', {teamId: teamId, id: memberId});
+      getMemberList();
     });
   }
 

@@ -12,11 +12,17 @@ function Pairings(props) {
   const [isLoading, setIsLoading] = useState(true);
   const [pairings, setPairings] = useState([]);
 
-  const updateGameId = (pairingId, gameId) => {
-    socket.emit('pairing:update', {id: pairingId, gameId: gameId});
+  const updateGameId = (pairingIndex, gameId) => {
+    const newPairings = pairings.map(item => item);
+    newPairings[pairingIndex].gameId = gameId;
+    socket.emit('pairing:update', newPairings[pairingIndex]);
+    setPairings(newPairings);
   };
-  const updateResult = (pairingId, result) => {
-    socket.emit('pairing:update', {id: pairingId, result: result});
+  const updateResult = (pairingIndex, result) => {
+    const newPairings = pairings.map(item => item);
+    newPairings[pairingIndex].result = result;
+    socket.emit('pairing:update', newPairings[pairingIndex]);
+    setPairings(newPairings);
   };
 
   const checkForPairingChanges = (data) => {
@@ -51,7 +57,7 @@ function Pairings(props) {
           pairings.length
             ? pairings.map((pairing, i) => {
               return <MatchUp
-                board={i + 1}
+                matchUpIndex={i}
                 key={i}
                 pairing={pairing}
                 updateGameId={updateGameId}
@@ -69,39 +75,42 @@ function Pairings(props) {
 }
 
 function MatchUp(props) {
-  const {board, pairing, updateGameId, updateResult} = props;
+  const {matchUpIndex, pairing, updateGameId, updateResult} = props;
 
-  const hasPlayer = pairing.player;
-  const hasOpponent = pairing.opponent;
+  const hasPlayer = pairing.player.id;
+  const hasOpponent = pairing.opponent.id;
+
   const playerName = hasPlayer
-    ? <>{pairing.player.name} <em>({pairing.player.rating || '???'})</em></>
+    ? <>{pairing.player.name || pairing.player.username || 'Someone Unnamed'}
+      <em>({pairing.player.rating || '???'})</em></>
     : null;
   const opponentName = hasOpponent
-    ? <>{pairing.opponent.name} <em>({pairing.opponent.rating || '???'})</em></>
+    ? <>{pairing.opponent.name || pairing.opponent.username || 'Someone Unnamed'}
+      <em>({pairing.opponent.rating || '???'})</em></>
     : null;
   const isNotReady = !hasPlayer || !hasOpponent;
 
   return <>
-    {!((board - 1) % 4)
+    {!(matchUpIndex % 4)
       ? <tr className="table-secondary">
-        <th colSpan={5}>Round {((board - 1) / 4) + 1}</th>
+        <th colSpan={5}>Round {(matchUpIndex / 4) + 1}</th>
       </tr>
       : <></>}
     <tr>
-      <th scope="row">{board}</th>
+      <th scope="row">{matchUpIndex + 1}</th>
       <td><OrDefault value={playerName}/></td>
       <td><OrDefault value={opponentName}/></td>
       <td>
         <ResultForm
-          pairingId={pairing.id}
-          gameId={pairing.result}
+          pairingIndex={matchUpIndex}
+          result={pairing.result}
           updateResult={updateResult}
           isNotReady={isNotReady}
         />
       </td>
       <td>
         <GameIdForm
-          pairingId={pairing.id}
+          pairingIndex={matchUpIndex}
           gameId={pairing.gameId}
           updateGameId={updateGameId}
           isNotReady={isNotReady}

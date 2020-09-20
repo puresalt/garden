@@ -38,13 +38,6 @@ function Members(props) {
     setIsLoading(false);
     setMembers(data.members);
   };
-  const checkForCreatedMember = (newMember) => {
-    setMembers((previousState) => previousState.concat(newMember));
-  };
-  const checkForDeletedMember = (memberId) => {
-    console.log(members);
-//    setMembers((previousState) => previousState.filter(item => item.id === memberId));
-  };
 
   useEffect(() => {
     socket.emit('member:list');
@@ -52,17 +45,6 @@ function Members(props) {
     return () => {
       socket.off('member:listed', checkForMemberChanges);
     };
-  }, []);
-
-  useEffect(() => {
-    socket.on('member:updated', checkForMemberChanges);
-    socket.on('member:created', checkForCreatedMember);
-    socket.on('member:deleted', checkForDeletedMember);
-    return () => {
-      socket.off('member:updated', checkForMemberChanges);
-      socket.off('member:created', checkForCreatedMember);
-      socket.off('member:deleted', checkForDeletedMember);
-    }
   }, []);
 
   useEffect(() => {

@@ -4,7 +4,7 @@ const emptyPlayer = () => {
   return {
     id: null,
     name: null,
-    lichessHandle: null,
+    lichess_handle: null,
     rating: null
   }
 };
@@ -32,6 +32,28 @@ const MATCH_UPS = [
 Object.freeze(MATCH_UPS);
 
 function AdminPairingRoute(dataStore, io, socket, teamId) {
+  function updatePairing(data) {
+    console.log('pairing:update', teamId, data);
+    const values = [data.matchId, data.player.id, data.opponent.id, data.result, data.gameId, data.result, data.gameId];
+    dataStore.query(
+        `INSERT INTO garden_pairing (match_id, member_id, opponent_id, result, lichess_game_id)
+         VALUES (?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE result          = ?,
+                                 lichess_game_id = ?;`, values, (err, result) => {
+        if (err) {
+          console.log('Error updating pairin:', err);
+          console.log('pairing:updated', null);
+          socket.emit('pairing:updated', null);
+          return;
+        }
+        if (result.insertId) {
+          data.id = result.insertId;
+        }
+        console.log('pairing:updated', teamId, data);
+        socket.emit('pairing:updated', teamId, data);
+      });
+  }
+
   function getPairingList(matchId) {
     console.log('pairing:list', matchId);
     dataStore.query(
@@ -39,7 +61,8 @@ function AdminPairingRoute(dataStore, io, socket, teamId) {
                 garden_player.id               AS player_id,
                 garden_pairing.id              AS pairing_id,
                 garden_pairing.result          AS result,
-                garden_pairing.lichess_game_id AS lichess_game_id
+                garden_pairing.lichess_game_id AS lichess_game_id,
+                garden_pairing.opponent_id     AS opponent_id
          FROM garden_member
                   INNER JOIN garden_player
                              ON (garden_player.match_id = ? AND garden_player.member_id = garden_member.id)
@@ -76,16 +99,32 @@ function AdminPairingRoute(dataStore, io, socket, teamId) {
 
           const getUniquePlayers = memberPlayerList.reduce((gathered, item) => {
             if (!gathered.filter(gatheredItem => gatheredItem.id === item.id).length) {
-              gathered.push(item);
+              gathered.push({
+                id: item.id,
+                name: item.name,
+                lichessHandle: item.lichess_handle,
+                rating: item.rating
+              });
             }
             return gathered;
           }, []);
+          const pairingLookUp = memberPlayerList.reduce((gathered, item) => {
+            if (item.pairing_id) {
+              gathered[`${item.id}:${item.opponent_id}`] = {
+                id: item.pairing_id,
+                result: item.result,
+                gameId: item.lichess_game_id
+              }
+            }
+            return gathered;
+          }, {});
           getUniquePlayers.sort(ratingSort);
           const matchUps = MATCH_UPS.map((matchUp) => {
             const player = getUniquePlayers[matchUp[0]] || emptyPlayer();
             const opponent = opponentPlayerList[matchUp[1]] || emptyPlayer();
+            const pairing = pairingLookUp[`${player.id}:${opponent.id}`] || {};
             return {
-              id: player.pairing_id || null,
+              id: pairing.id || null,
               matchId: matchId,
               player: {
                 id: player.id,
@@ -99,8 +138,8 @@ function AdminPairingRoute(dataStore, io, socket, teamId) {
                 lichessHandle: opponent.lichess_handle,
                 rating: opponent.rating
               },
-              result: player.result,
-              gameId: player.lichess_game_id
+              result: pairing.result || null,
+              gameId: pairing.gameId || null
             }
           });
           console.log('pairing:listed', teamId, JSON.stringify({matchId: matchId, pairings: matchUps}, null, 2));
@@ -110,9 +149,11 @@ function AdminPairingRoute(dataStore, io, socket, teamId) {
   }
 
   socket.on('pairing:list', getPairingList);
+  socket.on('pairing:update', updatePairing);
 
   return () => {
     socket.off('pairing:list', getPairingList);
+    socket.off('pairing:update', updatePairing);
   };
 }
 

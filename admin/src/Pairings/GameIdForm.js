@@ -4,7 +4,7 @@ import InputGroup from 'react-bootstrap/InputGroup';
 import Button from 'react-bootstrap/Button';
 
 function GameIdForm(props) {
-  const {gameId, updateGameId, isNotReady, pairingId} = props;
+  const {pairingIndex, updateGameId, isNotReady} = props;
 
   const [newGameId, setNewGameId] = useState('');
   const [hasChangedGameId, setHasChangedGameId] = useState(false);
@@ -14,7 +14,7 @@ function GameIdForm(props) {
   };
   const handleGameIdSubmit = (event) => {
     event.preventDefault();
-    updateGameId(pairingId, newGameId);
+    updateGameId(pairingIndex, newGameId);
     setHasChangedGameId(false);
   };
 
