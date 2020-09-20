@@ -9,10 +9,8 @@ import LoadingOverlay from 'react-loading-overlay';
 import LoadingOverlayText from './LoadingOverlayText';
 import './Settings.css';
 
-const HOST_ICONS = ['twitter', 'instagram', 'twitch'];
-
 function Settings(props) {
-  const {currentMatchId, stateLookup, onSubmit, socket} = props;
+  const {socket, currentMatchId, stateLookup, onSubmit, updateCurrentOpponent} = props;
 
   const [isLoading, setIsLoading] = useState(true);
   const [opponent, setOpponent] = useState('');
@@ -26,39 +24,36 @@ function Settings(props) {
     setHostName(event.target.value);
     setHasChanges(true);
   };
-
-  const [hostIcons, setHostIcons] = useState([]);
-  const handleHostIcon = (icon, checked) => {
-    const inHostIcons = hostIcons.indexOf(icon) > -1;
-    if (checked && inHostIcons) {
-      return;
-    }
-    if (checked) {
-      hostIcons.push(icon);
-    } else if (!checked && inHostIcons) {
-      hostIcons.splice(hostIcons.indexOf(icon), 1);
-    }
-    hostIcons.sort();
-    setHostIcons(hostIcons);
+  const [hostInstagram, setHostInstagram] = useState(false);
+  const handleHostInstagram = (value) => {
+    setHostInstagram(value);
+    setHasChanges(true);
+  };
+  const [hostTwitch, setHostTwitch] = useState(false);
+  const handleHostTwitch = (value) => {
+    setHostTwitch(value);
+    setHasChanges(true);
+  };
+  const [hostTwitter, setHostTwitter] = useState(false);
+  const handleHostTwitter = (value) => {
+    setHostTwitter(value);
     setHasChanges(true);
   };
 
   const [hasChanges, setHasChanges] = useState(false);
   const handleSubmit = (event) => {
+    console.log('ready to submit?', opponent);
     event.preventDefault();
     onSubmit({
       opponent: opponent,
-      host: {
-        name: hostName,
-        icons: hostIcons
-      }
+      hostName: hostName,
+      hostInstagram: hostInstagram,
+      hostTwitter: hostTwitter,
+      hostTwitch: hostTwitch
     });
+    updateCurrentOpponent(opponent);
     setHasChanges(false);
   };
-
-  useEffect(() => {
-    socket.emit('match:load', currentMatchId);
-  }, [socket, currentMatchId]);
 
   useEffect(() => {
     if (!currentMatchId) {
@@ -66,13 +61,15 @@ function Settings(props) {
       return;
     }
     const handleMatchLoad = (data) => {
-      setIsLoading(false);
       if (!data.id) {
         return;
       }
+      setIsLoading(false);
       setOpponent(data.opponent);
-      setHostIcons(data.host.icons);
-      setHostName(data.host.name);
+      setHostName(data.hostName);
+      setHostInstagram(data.hostInstagram);
+      setHostTwitch(data.hostTwitch);
+      setHostTwitter(data.hostTwitter);
     };
     socket.on('match:loaded', handleMatchLoad);
     return () => {
@@ -85,7 +82,7 @@ function Settings(props) {
       <Form onSubmit={handleSubmit}>
         <Card>
           <Card.Header>
-            {currentMatchId ? `Updating: #${currentMatchId} ${stateLookup[opponent] || 'TBD'}` : 'Create New Match'}
+            {currentMatchId ? `Updating: #${currentMatchId} ${stateLookup[opponent] || 'TBD'}` : 'Add New Match'}
           </Card.Header>
           <Card.Body>
             <Form.Group controlId="opponent">
@@ -102,19 +99,29 @@ function Settings(props) {
             </Form.Group>
             <fieldset className="form-group">
               <legend className="form-label">Social Media Icons</legend>
-              {HOST_ICONS.map((icon, i) => {
-                return <Icon
-                  key={i}
-                  name={icon}
-                  checked={hostIcons.indexOf(icon) > -1}
-                  onChange={handleHostIcon}
-                />
-              })}
+              <Icon
+                name="instagram"
+                checked={hostInstagram}
+                onChange={handleHostInstagram}
+              />
+              <Icon
+                name="twitch"
+                checked={hostTwitch}
+                onChange={handleHostTwitch}
+              />
+              <Icon
+                name="twitter"
+                checked={hostTwitter}
+                onChange={handleHostTwitter}
+              />
             </fieldset>
           </Card.Body>
           <Card.Footer>
-            {currentMatchId ? <Button type="submit" disabled={!hasChanges}>Update</Button> :
-              <Button type="submit">Create</Button>}
+            {
+              currentMatchId
+                ? <Button type="submit" disabled={!hasChanges}>Update</Button>
+                : <Button type="submit">Create</Button>
+            }
           </Card.Footer>
         </Card>
       </Form>
@@ -130,7 +137,7 @@ function Icon(props) {
   const handleIsChecked = (event) => {
     const newIsChecked = Boolean(Number(event.target.value));
     setIsChecked(newIsChecked);
-    onChange(name, newIsChecked);
+    onChange(newIsChecked);
   };
 
   useEffect(() => {

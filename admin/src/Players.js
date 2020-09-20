@@ -1,121 +1,121 @@
-import React, {useEffect, useState} from 'react';
-import DataObjectParser from 'dataobject-parser';
-import Col from 'react-bootstrap/Col';
+import React, {useState} from 'react';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
 import OrDefault from 'gscc-common/react/OrDefault';
 import LoadingOverlay from 'react-loading-overlay';
 import LoadingOverlayText from './LoadingOverlayText';
-
-const boardNumbers = [0, 1, 2, 3];
+import Table from 'react-bootstrap/Table';
+import Modal from 'react-bootstrap/Modal';
 
 function Players(props) {
-  const {stateLookup, socket, currentMatchId, currentOpponent} = props;
+  const {players, teamName, onSubmit, onDelete} = props;
 
   return <div className="Players">
-    <h4>Players</h4>
+    <h4><OrDefault value={teamName}/></h4>
     <PlayerForm
-      team="player"
-      socket={socket}
-      teamName=" Garden State Chess Club"
-      currentMatchId={currentMatchId}
-    />
-    <hr/>
-    <PlayerForm
-      team="opponent"
-      socket={socket}
-      teamName={currentOpponent ? stateLookup[currentOpponent] : ''}
-      currentMatchId={currentMatchId}
+      players={players}
+      onSubmit={onSubmit}
+      onDelete={onDelete}
     />
   </div>;
 }
 
 function PlayerForm(props) {
-  const {socket, team, currentMatchId, teamName} = props;
+  const {isLoading, players, onSubmit, onDelete} = props;
 
-  const [isLoading, setIsLoading] = useState(true);
   const [hasChanges, setHasChanges] = useState(false);
-
-  const [data, setData] = useState(props.data || {});
-  const handleInput = (event) => {
-    const target = event.target;
+  const [data, setData] = useState({});
+  const handleInput = (i, key, event) => {
     setHasChanges(true);
-    setData({
-      ...data,
-      [target.name]: target.type === 'checkbox'
-        ? target.checked
-        : target.value
-    });
+    if (!data[i]) {
+      data[i] = {id: i};
+    }
+    data[i][key] = event.target.value;
+    setData(data);
   };
 
   const processChanges = (event) => {
     event.preventDefault();
-    socket.emit('match:player:update', Object.keys(data).reduce((gathered, key) => {
-      gathered.set(key, data[key]);
+    onSubmit(Object.keys(data).reduce((gathered, item) => {
+      gathered.push(data[item]);
       return gathered;
-    }, new DataObjectParser()).data());
+    }, []));
     setHasChanges(false);
   };
 
-  const checkForPlayerChanges = (incomingData) => {
-    if (incomingData.id !== currentMatchId) {
-      return;
-    }
-    setIsLoading(false);
-    const returnedData = {...data, ...(DataObjectParser.untranspose(incomingData))};
-    console.log('returnedData', returnedData);
-    setData(returnedData);
+  const [potentialDeletedPlayer, setPotentialDeletedPlayer] = useState(null);
+  const handleDeletePlayer = () => {
+    onDelete(potentialDeletedPlayer.id);
+    setPotentialDeletedPlayer(null);
+  };
+  const handleClose = () => {
+    setPotentialDeletedPlayer(null);
   };
 
-  useEffect(() => {
-    socket.emit('match:player:list', currentMatchId);
-    socket.on('match:player:updated', checkForPlayerChanges);
-    socket.on('match:player:listed', checkForPlayerChanges);
-    return () => {
-      socket.off('match:player:listed', checkForPlayerChanges);
-      socket.off('match:player:updated', checkForPlayerChanges);
-    };
-  }, []);
-
+  const hasPlayers = players.length;
   return <LoadingOverlay active={isLoading} text={<LoadingOverlayText/>} spinner={false}>
+    <Modal show={potentialDeletedPlayer !== null} onHide={handleClose} animation={false}>
+      <Modal.Header closeButton>
+        <Modal.Title>Woah!</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>You're totally about to
+        delete <strong>{potentialDeletedPlayer !== null ? potentialDeletedPlayer.name || potentialDeletedPlayer.username || 'Someone Unnamed' : ''}</strong>?</Modal.Body>
+      <Modal.Footer>
+        <Button variant="secondary" onClick={handleClose}>Cancel</Button>
+        <Button variant="danger" onClick={handleDeletePlayer}>Delete!</Button>
+      </Modal.Footer>
+    </Modal>
     <Form onSubmit={processChanges}>
-      <OrDefault value={teamName}/>
-      <fieldset className="form-group pt-2">
-        {boardNumbers.map(i => {
-          return <Form.Row key={i} className="pt-2">
-            <Col xs={5}>
-              <Form.Control
-                name={`${team}[${i}].name`}
-                placeholder={'Board ' + (i + 1)}
-                type="text"
-                value={data[`${team}[${i}].name`] || ''}
-                onChange={handleInput}
-              />
-            </Col>
-            <Col xs={4}>
-              <Form.Control
-                name={`${team}[${i}].username`}
-                placeholder="Username"
-                type="text"
-                value={data[`${team}[${i}].username`] || ''}
-                onChange={handleInput}
-              />
-            </Col>
-            <Col xs={3}>
-              <Form.Control
-                name={`${team}[${i}].rating`}
-                placeholder="Rating"
-                type="number"
-                min={0}
-                max={3000}
-                value={data[`${team}[${i}].rating`] || ''}
-                onChange={handleInput}
-              />
-            </Col>
-          </Form.Row>
-        })}
-      </fieldset>
-      <Button type="submit" disabled={!hasChanges}>Save</Button>
+      <Table className="table-hover">
+        <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Lichess Handle</th>
+          <th scope="col">Rating</th>
+          {onDelete ? <th scope="col"/> : <></>}
+        </tr>
+        </thead>
+        <tbody>
+        {
+          hasPlayers
+            ? players.map((player) => <tr key={player.id}>
+              <td>
+                <Form.Control
+                  placeholder="e.g. John Mullanaphy"
+                  type="text"
+                  defaultValue={player.name}
+                  onChange={(event) => handleInput(player.id, 'name', event)}
+                />
+              </td>
+              <td>
+                <Form.Control
+                  placeholder="e.g. YourBoyKandy"
+                  type="text"
+                  defaultValue={player.lichessHandle}
+                  onChange={(event) => handleInput(player.id, 'lichessHandle', event)}
+                />
+              </td>
+              <td>
+                <Form.Control
+                  placeholder="e.g. 2083"
+                  type="number"
+                  min={0}
+                  max={3000}
+                  defaultValue={player.rating}
+                  onChange={(event) => handleInput(player.id, 'rating', event)}
+                />
+              </td>
+              {onDelete ?
+                <td><Button variant="danger" onClick={() => setPotentialDeletedPlayer(player)}>Delete</Button>
+                </td> : <></>}
+            </tr>)
+            : <tr>
+              <td colSpan={onDelete ? 4 : 3}>No players currently added.</td>
+            </tr>
+        }
+        </tbody>
+      </Table>
+      {hasPlayers ? <Button type="submit" disabled={!hasChanges}>Save</Button> : ''}
     </Form>
   </LoadingOverlay>
 }

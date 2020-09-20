@@ -1,4 +1,4 @@
-function BoardRoute(io, socket) {
+function BoardRoute(dataStore, io, socket, accountId) {
   socket.emit('board:1', {type: 'move', from: 'e2', to: 'e4'});
   setTimeout(_ => socket.emit('board:1', {type: 'movePiece', data: ['e2', 'e4']}), 100);
   setTimeout(_ => socket.emit('board:1', {type: 'movePiece', data: ['e7', 'e5']}), 200);

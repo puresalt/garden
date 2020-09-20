@@ -1,21 +1,18 @@
 import React, {useEffect} from 'react';
+import socketIoClient from 'socket.io-client';
 import {BrowserRouter as Router, Redirect, Route, Switch} from 'react-router-dom';
 import Container from 'react-bootstrap/Container';
+import {Config, Data} from 'gscc-common';
+import Matches from './Matches';
 import Dashboard from './Dashboard';
 import Board from './Boards';
-import Results from './Results';
+import Pairings from './Pairings';
+import Members from './Members';
 import Header from './Header';
-import {Config, Data} from 'gscc-common';
 import './App.css';
-import socketIoClient from 'socket.io-client';
-import Matches from './Matches';
 
 const CONFIG = Config(process.env);
 const STATE_LOOKUP = Data.StateLookup;
-
-const socket = socketIoClient(CONFIG.socketIo.url, {
-  path: '/admin'
-});
 
 function usePersistentState(key, defaultValue) {
   const [state, setState] = React.useState(() => {
@@ -32,8 +29,13 @@ function usePersistentState(key, defaultValue) {
 }
 
 function App() {
+  const socket = socketIoClient(CONFIG.socketIo.url, {
+    path: '/admin'
+  });
+
   const [currentMatchId, setCurrentMatchId] = usePersistentState('currentMatchId', 0);
   const updateCurrentMatchId = (newMatchId) => {
+    console.log('new match id?', newMatchId);
     setCurrentMatchId(newMatchId);
   };
   const [currentOpponent, setCurrentOpponent] = usePersistentState('currentOpponent', '');
@@ -51,24 +53,19 @@ function App() {
     }
   };
   const handleMatchExistenceCheck = (data) => {
-    console.log('huh?', data, currentMatchId, data.id === currentMatchId && !data.exists);
     if (data.id === currentMatchId && !data.exists) {
       setCurrentMatchId(0);
       setCurrentOpponent('');
     }
   };
   useEffect(() => {
+    socket.emit('match:load', currentMatchId);
     socket.on('match:loaded', handleMatchLoad);
     socket.on('match:exists', handleMatchExistenceCheck);
     return () => {
       socket.off('match:loaded', handleMatchLoad);
       socket.off('match:exists', handleMatchExistenceCheck);
     }
-  }, []);
-
-  useEffect(() => {
-    socket.emit('match:exist', currentMatchId);
-    socket.emit('match:load', currentMatchId);
   }, []);
 
   return (
@@ -92,10 +89,10 @@ function App() {
                   : <Redirect to="/"/>
               }
             </Route>
-            <Route path="/results">
+            <Route path="/pairings">
               {
                 currentMatchId
-                  ? <Results
+                  ? <Pairings
                     currentMatchId={currentMatchId}
                     currentOpponent={currentOpponent}
                     stateLookup={STATE_LOOKUP}
@@ -116,6 +113,11 @@ function App() {
                   />
                   : <Redirect to="/"/>
               }
+            </Route>
+            <Route path="/members">
+              <Members
+                socket={socket}
+              />
             </Route>
             <Route path="/">
               <Matches

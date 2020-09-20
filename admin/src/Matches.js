@@ -39,6 +39,8 @@ function Matches(props) {
           socket={socket}
           stateLookup={stateLookup}
           onSubmit={createNewMatch}
+          updateCurrentMatchId={updateCurrentMatchId}
+          updateCurrentOpponent={updateCurrentOpponent}
         />
       </Col>
       <Col>
@@ -147,7 +149,7 @@ function MatchList(props) {
                     {
                       !isCurrentMatch
                         ?
-                        <Button variant="primary" onClick={() => updateCurrentMatchId(match.id)}>View</Button>
+                        <Button variant="primary" onClick={() => updateCurrentMatchId(match.id)}>Manage</Button>
                         : ''
                     }
                     <Button variant="danger" onClick={() => handlePotentialDeleteMatchId(match.id)}>Delete</Button>

@@ -1,10 +1,21 @@
 {
-  "port": 4003,
+  "port": {
+    "admin": 4002,
+    "state": 4003,
+    "observer": 4004,
+    "stream": 4005
+  },
   "session": {
     "secret": "gcss"
   },
   "socketIo": {
     "url": "http://127.0.0.1:4003"
+  },
+  "state": {
+    "mysql": {
+      "host": "localhost",
+      "multipleStatements": true
+    }
   },
   "discord": {
     "guild": {

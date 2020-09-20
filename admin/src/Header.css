@@ -1,6 +1,7 @@
 .navbar-brand {
     padding-bottom: 0.5rem !important;
-    padding-top: 0.5rem !important;;
+    padding-top: 0.5rem !important;
+    margin-left: 1rem;
 }
 
 .navbar-brand:after {
@@ -32,10 +33,13 @@
     text-decoration: none;
 }
 
-.TopBar .col {
-    padding-left: 0.5em;
+.TopBar .nav a {
+    margin-left: 0;
+    padding-left: 0;
 }
 
-.TopBar strong {
-    padding-left: 0.5em;
+.TopBar a.active{
+    opacity: 1;
+    color: #fff;
+    cursor: pointer;
 }
