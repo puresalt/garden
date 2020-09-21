@@ -32,7 +32,7 @@ const propTypes = {
   onSelect: PropTypes.func,
   items: PropTypes.object,
   drawable: PropTypes.object,
-  socketEvent: PropTypes.object
+  socket: PropTypes.object
 };
 
 export default class Chessground extends React.Component {
@@ -85,17 +85,17 @@ export default class Chessground extends React.Component {
 
   componentDidMount() {
     this.cg = NativeChessground(this.el, this.buildConfigFromProps(this.props));
-    this.socketEvent = this.props.socketEvent;
-    this.socketEvent.on(this.props.boardName, this.handleEvent);
+    this.socket = this.props.socket;
+    this.socket.on(this.props.boardName, this.handleEvent);
   }
 
   componentWillReceiveProps(nextProps) {
-    this.cg.set(this.buildConfigFromProps(nextProps));
+    this.cg = NativeChessground(this.el, this.buildConfigFromProps(this.props));
   }
 
   componentWillUnmount() {
     this.cg.destroy();
-    this.socketEvent.off(this.props.boardName, this.handleEvent);
+    this.socket.off(this.props.boardName, this.handleEvent);
   }
 
   render() {

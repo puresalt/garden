@@ -250,8 +250,6 @@ K
 state/route/admin/player.js,1/a/1aaed9b8aa49c7db0f8d357f7faf56e3af5afb90
 @
 state/src/key.js,a/1/a1e917e47739488223674202c86f97ed13eea949
-D
-state/route/admin.js,a/d/ada553cff4af61159af74f89f27606040e095d32
 G
 admin/src/LiveButton.js,5/9/59d33f9f7589bdedb9584bdaced98eed5d34902c
 C
@@ -274,3 +272,9 @@ D
 admin/src/App.js,a/2/a22ea86ff47cb49b97708e5bd1c1bc8b8d298cf0
 D
 admin/src/Players.js,6/8/68e521ebf085dfe9cc11d76c8b6071356bd86fab
+H
+common/src/ratingSort.js,4/7/4724c8212e9ebcfc0b0060dc44647268ef68fcc6
+S
+#.idea/sonarlint/issuestore/index.pb,9/f/9fe84ebb15faf917b7def6236dba604453cc61e0
+J
+state/route/admin/match.js,f/8/f8937745eba0e9394a3cfc9546e659f3d60e3e96

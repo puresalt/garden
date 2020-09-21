@@ -64,7 +64,6 @@ const runApp = () => {
       })
         .then(discordRes => discordRes.json())
         .then(info => {
-          console.log(info);
           return info;
         })
         .then(info => {

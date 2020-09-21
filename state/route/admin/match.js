@@ -1,4 +1,3 @@
-const _ = require('lodash');
 const STATE_LOOKUP = require('gcss-common/data/stateLookup.json');
 
 const matchKeys = [
@@ -122,8 +121,9 @@ function adminMatchRoute(dataStore, io, socket, teamId) {
           return;
         }
         if (result.changedRows) {
-          console.log('match:updated', teamId, {teamId: teamId, id: data.id, data: data});
-          socket.broadcast.emit('match:updated', {teamId: teamId, id: data.id, data: data});
+          const returnData = {teamId: teamId, ...data};
+          console.log('match:updated', teamId, returnData);
+          socket.broadcast.emit('match:updated', returnData);
         }
       }
     );
@@ -154,7 +154,7 @@ function adminMatchRoute(dataStore, io, socket, teamId) {
         return;
       }
       if (!result.length) {
-        console.log('match:loaded', {id: 0});
+        console.log('match:loaded', teamId, {id: 0});
         socket.emit('match:loaded', {id: 0});
         return;
       }
@@ -162,8 +162,10 @@ function adminMatchRoute(dataStore, io, socket, teamId) {
         gathered[keys[1]] = result[0][keys[0]] || null;
         return gathered;
       }, {id: result[0].id});
+      console.log('match:loaded', teamId, returnData);
       socket.emit('match:loaded', returnData);
     };
+
     const findLatestMatch = () => {
       dataStore.query('SELECT * FROM garden_match WHERE team_id = ? ORDER BY id DESC LIMIT 1;', teamId, load);
     };

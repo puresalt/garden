@@ -3,9 +3,13 @@ import Board from './Board';
 import {useParams} from 'react-router-dom';
 
 function IndividualBoard(props) {
+  const {socket, players} = props;
+
   const {boardNumber} = useParams();
-  const item = props.results[boardNumber - 1];
-  if (!item) {
+
+  const player = players[boardNumber - 1];
+
+  if (!player) {
     return (
       <div className="NoPlayer">TBD</div>
     )
@@ -13,10 +17,10 @@ function IndividualBoard(props) {
   return (
     <Board
       board={boardNumber}
-      player={item.player}
-      rating={item.rating}
-      pairings={item.pairings}
-      socketEvent={props.socketEvent}
+      name={player.name}
+      rating={player.rating}
+      pairings={player.pairings}
+      socket={socket}
       large={true}
     />
   );

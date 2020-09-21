@@ -50,7 +50,7 @@ function AdminPairingRoute(dataStore, io, socket, teamId) {
           data.id = result.insertId;
         }
         console.log('pairing:updated', teamId, data);
-        socket.emit('pairing:updated', teamId, data);
+        io.sockets.emit('pairing:updated', teamId, data);
       });
   }
 
@@ -102,7 +102,7 @@ function AdminPairingRoute(dataStore, io, socket, teamId) {
               gathered.push({
                 id: item.id,
                 name: item.name,
-                lichessHandle: item.lichess_handle,
+                lichess_handle: item.lichess_handle,
                 rating: item.rating
               });
             }
@@ -138,7 +138,7 @@ function AdminPairingRoute(dataStore, io, socket, teamId) {
                 lichessHandle: opponent.lichess_handle,
                 rating: opponent.rating
               },
-              result: pairing.result || null,
+              result: pairing.result !== null && pairing.result !== undefined ? pairing.result : null,
               gameId: pairing.gameId || null
             }
           });

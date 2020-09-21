@@ -5,7 +5,7 @@ import './Board.css';
 
 class Board extends React.Component {
   render() {
-    const {board, player, rating, pairings, large, socketEvent} = this.props;
+    const {board, name, rating, pairings, large, socket} = this.props;
     const round = pairings.filter(item => item.result !== null).length + 1;
     const done = round > pairings.length;
     const tally = round > 1
@@ -16,11 +16,17 @@ class Board extends React.Component {
     const size = large
       ? 936
       : 464;
-    const chessBoard = <Chessboard boardName={'board-' + board} height={size} width={size}
-                                   viewOnly={true} coordinates={false} socketEvent={socketEvent}/>;
+    const chessBoard = <Chessboard
+      boardName={'board-' + board}
+      height={size}
+      width={size}
+      viewOnly={true}
+      coordinates={false}
+      socket={socket}
+    />;
     return (
       <div className={"Board" + (large ? ' Large' : (done ? ' Faded' : ''))} key={board} id={'board-' + board}>
-        <header><span>BOARD {board}:</span> {player} <em>{rating}</em></header>
+        <header><span>BOARD {board}:</span> <OrDefault value={name}/> <em>{rating}</em></header>
         <div className="board">
           {chessBoard}
         </div>

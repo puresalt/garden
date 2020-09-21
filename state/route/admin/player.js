@@ -71,7 +71,7 @@ function AdminPlayerRoute(dataStore, io, socket, teamId) {
   function updateOpponentList(data) {
     console.log('opponent:update', teamId, data);
     data.opponents = data.opponents.map(sanitize);
-    const values = data.opponents.reduce(sanitizePlayerList(), []);
+    const values = data.opponents.reduce(sanitizePlayerList, []);
     const countToSave = values.length / 4;
     const query = (new Array(countToSave))
       .fill('UPDATE garden_opponent SET name = ?, lichess_handle = ?, rating = ? WHERE id = ?', 0, countToSave)
@@ -84,7 +84,7 @@ function AdminPlayerRoute(dataStore, io, socket, teamId) {
       }
       const returnData = {teamId: teamId, ...data};
       console.log('opponent:updated', returnData);
-      socket.broadcase.emit('opponent:updated', returnData);
+      socket.broadcast.emit('opponent:updated', returnData);
     });
   }
 

@@ -37,7 +37,7 @@ function Router(dataStore, config) {
   }
   const boardRoute = require('./route/board');
   boardIo.on('connection', (socket) => {
-    const disconnectCallback = boardRoute(dataStore, boardIo, socket, teamId);
+    const disconnectCallback = boardRoute(dataStore, boardIo, socket, teamId, config);
     socket.on('disconnect', () => disconnectCallback());
   });
 

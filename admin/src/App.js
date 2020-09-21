@@ -13,6 +13,9 @@ import './App.css';
 
 const CONFIG = Config(process.env);
 const STATE_LOOKUP = Data.StateLookup;
+const socket = socketIoClient(CONFIG.socketIo.url, {
+  path: '/admin'
+});
 
 function usePersistentState(key, defaultValue) {
   const [state, setState] = React.useState(() => {
@@ -29,10 +32,6 @@ function usePersistentState(key, defaultValue) {
 }
 
 function App() {
-  const socket = socketIoClient(CONFIG.socketIo.url, {
-    path: '/admin'
-  });
-
   const [currentMatchId, setCurrentMatchId] = usePersistentState('currentMatchId', 0);
   const updateCurrentMatchId = (newMatchId) => {
     setCurrentMatchId(newMatchId);
