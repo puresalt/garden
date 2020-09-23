@@ -47,10 +47,6 @@ function Members(props) {
     };
   }, []);
 
-  useEffect(() => {
-    console.log('members', members);
-  })
-  console.log('members:', members);
   return <div className="Members">
     <LoadingOverlay
       active={isLoading}

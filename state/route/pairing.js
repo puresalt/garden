@@ -31,47 +31,52 @@ const MATCH_UPS = [
 ];
 Object.freeze(MATCH_UPS);
 
-function AdminPairingRoute(dataStore, io, socket, teamId) {
-  function updatePairing(data) {
-    console.log('pairing:update', teamId, data);
-    const values = [data.matchId, data.player.id, data.opponent.id, data.result, data.gameId, data.result, data.gameId];
-    dataStore.query(
-        `INSERT INTO garden_pairing (match_id, member_id, opponent_id, result, lichess_game_id)
-         VALUES (?, ?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE result          = ?,
-                                 lichess_game_id = ?;`, values, (err, result) => {
-        if (err) {
-          console.log('Error updating pairin:', err);
-          console.log('pairing:updated', null);
-          socket.emit('pairing:updated', null);
-          return;
-        }
-        if (result.insertId) {
-          data.id = result.insertId;
-        }
-        console.log('pairing:updated', teamId, data);
-        io.sockets.emit('pairing:updated', teamId, data);
-      });
-  }
+function updatePairing(db, io, socket, teamId, data, callback) {
+  console.log('pairing:update', teamId, data);
+  const values = [data.matchId, data.player.id, data.opponent.id, data.result, data.gameId, data.result, data.gameId];
+  db.query(
+      `INSERT INTO garden_pairing (match_id, member_id, opponent_id, result, lichess_game_id)
+       VALUES (?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE result = ?,
+                            lichess_game_id = ?;`, values, (err, result) => {
+      if (err) {
+        console.log('Error updating pairin:', err);
+        console.log('pairing:updated', null);
+        socket.emit('pairing:updated', null);
+        return callback && callback(err);
+      }
+      if (result.insertId) {
+        data.id = result.insertId;
+      }
+      console.log('pairing:updated', teamId, data);
+      io.sockets.emit('pairing:updated', teamId, data);
+      callback && callback(null);
+    });
+}
+
+function PairingRoute(db, redis, io, socket, teamId) {
+  const _updatePairing = (data) => {
+    updatePairing(db, io, socket, teamId, data);
+  };
 
   function getPairingList(matchId) {
     console.log('pairing:list', matchId);
-    dataStore.query(
+    db.query(
         `SELECT garden_member.*,
-                garden_player.id               AS player_id,
-                garden_pairing.id              AS pairing_id,
-                garden_pairing.result          AS result,
-                garden_pairing.lichess_game_id AS lichess_game_id,
-                garden_pairing.opponent_id     AS opponent_id
+             garden_player.id AS player_id,
+             garden_pairing.id AS pairing_id,
+             garden_pairing.result AS result,
+             garden_pairing.lichess_game_id AS lichess_game_id,
+             garden_pairing.opponent_id AS opponent_id
          FROM garden_member
-                  INNER JOIN garden_player
-                             ON (garden_player.match_id = ? AND garden_player.member_id = garden_member.id)
-                  LEFT JOIN garden_pairing
-                            ON (garden_pairing.match_id = garden_player.match_id AND
-                                garden_pairing.member_id = garden_player.member_id)
-                  LEFT JOIN garden_opponent
-                            ON (garden_opponent.match_id = garden_player.match_id AND
-                                garden_opponent.id = garden_pairing.opponent_id)
+              INNER JOIN garden_player
+                         ON (garden_player.match_id = ? AND garden_player.member_id = garden_member.id)
+              LEFT JOIN garden_pairing
+                        ON (garden_pairing.match_id = garden_player.match_id AND
+                            garden_pairing.member_id = garden_player.member_id)
+              LEFT JOIN garden_opponent
+                        ON (garden_opponent.match_id = garden_player.match_id AND
+                            garden_opponent.id = garden_pairing.opponent_id)
          WHERE garden_member.team_id = ?
            AND garden_member.deleted = false
          ORDER BY garden_pairing.id DESC, garden_member.rating DESC;
@@ -82,14 +87,14 @@ function AdminPairingRoute(dataStore, io, socket, teamId) {
           socket.emit('pairing:listed', null);
           return;
         }
-        dataStore.query(`SELECT garden_opponent.*, garden_match.deleted
-                         FROM garden_opponent
-                                  INNER JOIN garden_match
-                                             ON (garden_opponent.match_id = garden_match.id
-                                                 AND garden_match.team_id = ?
-                                                 AND garden_match.deleted = false)
-                         WHERE garden_opponent.match_id = ?
-                         ORDER BY garden_opponent.rating DESC;`, [teamId, matchId], (err, opponentPlayerList) => {
+        db.query(`SELECT garden_opponent.*, garden_match.deleted
+                  FROM garden_opponent
+                       INNER JOIN garden_match
+                                  ON (garden_opponent.match_id = garden_match.id
+                                      AND garden_match.team_id = ?
+                                      AND garden_match.deleted = false)
+                  WHERE garden_opponent.match_id = ?
+                  ORDER BY garden_opponent.rating DESC;`, [teamId, matchId], (err, opponentPlayerList) => {
           if (err) {
             console.log('Error retrieving opponent pairing list:', err);
             console.log('pairing:listed', null);
@@ -149,12 +154,13 @@ function AdminPairingRoute(dataStore, io, socket, teamId) {
   }
 
   socket.on('pairing:list', getPairingList);
-  socket.on('pairing:update', updatePairing);
+  socket.on('pairing:update', _updatePairing);
 
   return () => {
     socket.off('pairing:list', getPairingList);
-    socket.off('pairing:update', updatePairing);
+    socket.off('pairing:update', _updatePairing);
   };
 }
 
-module.exports = AdminPairingRoute;
+const pairingRoute = module.exports = PairingRoute;
+pairingRoute.updatePairing = updatePairing;

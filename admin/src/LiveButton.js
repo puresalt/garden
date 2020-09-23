@@ -5,23 +5,29 @@ import './LiveButton.css';
 import InputGroup from 'react-bootstrap/InputGroup';
 
 function LiveButton(props) {
-  const {socket} = props;
-  
-  const [isLive, setIsLive] = useState();
-  const updateIsLive = (newIsLive) => {
-    setIsLive(newIsLive);
+  const {socket, currentMatchId} = props;
+
+  const [isLive, setIsLive] = useState(null);
+  const streamUpdated = (data) => {
+    if (data.matchId !== currentMatchId) {
+      return;
+    }
+    setIsLive(data.isLive);
   };
   useEffect(() => {
-    socket.on('live', updateIsLive);
+    socket.emit('stream:load', currentMatchId);
+    socket.on('stream:loaded', streamUpdated);
+    socket.on('stream:updated', streamUpdated);
     return () => {
-      socket.off('live', updateIsLive);
+      socket.off('stream:loaded', streamUpdated);
+      socket.off('stream:updated', streamUpdated);
     };
-  }, [socket]);
+  }, []);
 
   const handleLiveClick = (event) => {
     const newIsLive = event.target.value === '1';
     setIsLive(newIsLive);
-    socket.emit('live', newIsLive);
+    socket.emit('stream:update', {matchId: currentMatchId, isLive: newIsLive});
   };
 
   return <div className="LiveButton clearfix">

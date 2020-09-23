@@ -42,7 +42,6 @@ function Settings(props) {
 
   const [hasChanges, setHasChanges] = useState(false);
   const handleSubmit = (event) => {
-    console.log('ready to submit?', opponent);
     event.preventDefault();
     onSubmit({
       opponent: opponent,

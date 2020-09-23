@@ -63,7 +63,6 @@ function App() {
     }, [[], 0, 0]);
     setAwayTeamScore(awayTeamScore);
     setHomeTeamScore(homeTeamScore);
-    console.log('parsedPairings:', parsedPairings);
     setPairings(parsedPairings);
   };
   useEffect(() => {
@@ -73,7 +72,7 @@ function App() {
       socket.off('pairing:listed', loadPairings);
     };
   }, []);
-  
+
   const requestPairingList = () => socket.emit('pairing:list', currentMatchId);
   useEffect(() => {
     socket.on('member:updated', requestPairingList);

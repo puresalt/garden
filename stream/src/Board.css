@@ -125,8 +125,67 @@
     position: absolute;
     left: 0;
     top: 43px;
+    width: 100%;
 }
 
 .Board.Large .board {
     top: 87px;
+}
+
+.Board .eventData {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 223px;
+}
+
+.Board .eventData .clock {
+    font-size: 1.5em;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 0.1em 0 0.2em;
+}
+
+.Board .eventData .clock.active {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.Board .eventData .clock.flagged {
+    background: rgba(255, 0, 0, 0.5) !important;
+    color: #500 !important;
+}
+
+.Board .eventData .moveList {
+    background: #fff;
+    max-height: 198px;
+    padding: 0.25em;
+}
+
+.Board .eventData .moveList a {
+    font-size: 0.75rem;
+    font-weight: normal;
+    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+    color: #006747;
+    display: inline;
+    opacity: 0.8;
+}
+
+.Board .eventData .moveList a:last-child {
+    font-weight: 700;
+    opacity: 1;
+}
+
+.Board .eventData .moveList .waiting {
+    color: #006747;
+    opacity: 0.8;
+    text-align: center;
+}
+
+.Board .eventData .moveList {
+    counter-reset: section;
+}
+
+.Board .eventData .moveList a:nth-child(odd)::before {
+    counter-increment: section;
+    content: counters(section, ".") ". ";
 }

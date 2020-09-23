@@ -1,7 +1,12 @@
 import React from 'react'
+import {duration} from 'moment';
 import PropTypes from 'prop-types'
 import {Chessground as NativeChessground} from 'chessground'
 import './Chessboard/css/chessground.css';
+
+const parseClock = (minutes, seconds) => {
+  return (minutes ? String(minutes) + ':' + String(seconds).padStart(2, '0') : String(seconds));
+};
 
 const propTypes = {
   boardName: PropTypes.string,
@@ -35,10 +40,28 @@ const propTypes = {
   socket: PropTypes.object
 };
 
-export default class Chessground extends React.Component {
+export default class Chessground extends React.PureComponent {
   constructor(props) {
     super(props);
+    const homeClock = duration().add(this.props.timeLimt || 900, 's');
+    const awayClock = duration().add(this.props.timeLimt || 900, 's');
+    this.state = {
+      moveList: [],
+      homeClock: homeClock,
+      homeMinutes: homeClock.minutes(),
+      homeSeconds: homeClock.seconds(),
+      awayClock: awayClock,
+      awayMinutes: awayClock.minutes(),
+      awaySeconds: awayClock.seconds(),
+      moving: 'home',
+      pauseClocks: true,
+      pausePosition: true,
+      currentMove: 0,
+      gameId: null
+    };
     this.handleEvent = this.handleEvent.bind(this);
+    this.sendEvent = this.sendEvent.bind(this);
+    this.updateClocks = this.updateClocks.bind(this);
   }
 
   buildConfigFromProps(props) {
@@ -48,9 +71,9 @@ export default class Chessground extends React.Component {
       if (typeof v !== 'undefined') {
         const match = k.match(/^on([A-Z]\S*)/);
         if (match) {
-          config.events[match[1].toLowerCase()] = v
+          config.events[match[1].toLowerCase()] = v;
         } else {
-          config[k] = v
+          config[k] = v;
         }
       }
     });
@@ -58,44 +81,175 @@ export default class Chessground extends React.Component {
   }
 
   handleEvent(event) {
+    if (!this.cg) {
+      console.warn(`Board is not ready.`);
+      return;
+    }
     if (typeof this[event.type] !== 'function') {
       console.warn(`Unexpected board event: ${event.type}`);
       return;
     }
+    console.log('incoming:', event);
     this[event.type](event.data);
   }
 
-  startBoard(data) {
-    if (!this.cg) {
+  sendEvent(id) {
+    this.setState({pausePosition: true, pauseClocks: true});
+    if (!this.socket) {
+      console.warn(`Socket is not ready.`);
       return;
     }
-    this.cg.set({fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'});
+    this.socket.emit(`${this.boardName}:goto`, {id: id, paused: id < this.state.moveList.length});
   }
 
-  movePiece(data) {
-    this.cg.move(data[0], data[1]);
+  start(data) {
+    console.log('starting?', this.boardName, data);
+    this.cg.set({fen: data.fen});
+    this.cg.setShapes([]);
+    const homeClock = duration().add(data.clock[0], 's');
+    const awayClock = duration().add(data.clock[1], 's');
+    const moveList = data.moveList || [];
+    this.setState({
+      homeClock: homeClock,
+      homeMinutes: homeClock.minutes(),
+      homeSeconds: homeClock.seconds(),
+      awayClock: awayClock,
+      awayMinutes: awayClock.minutes(),
+      awaySeconds: awayClock.seconds(),
+      moving: data.moving || 'home',
+      moveList: moveList,
+      pauseClocks: true,
+      pausePosition: false,
+      currentMove: moveList.length - 1
+    });
   }
 
-  drawArrow(shapes) {
-    if (!this.cg) {
-      return;
+  result(data) {
+    this.setState({
+      pauseClocks: true,
+      pausePosition: true
+    });
+  }
+
+  updateClocks() {
+    const x = setInterval(() => {
+      let {pauseClocks, pausePosition, homeClock, awayClock, moving} = this.state;
+
+      if (pauseClocks || pausePosition) {
+        return;
+      }
+
+      if (homeClock <= 0 || awayClock <= 0) {
+        return clearInterval(x);
+      }
+
+      switch (moving) {
+        case 'home':
+          homeClock = homeClock.subtract(1, 's');
+          this.setState({
+            homeClock: homeClock,
+            homeMinutes: homeClock.minutes(),
+            homeSeconds: homeClock.seconds()
+          });
+          break;
+        case 'away':
+          awayClock = awayClock.subtract(1, 's');
+          this.setState({
+            awayClock: awayClock,
+            awayMinutes: awayClock.minutes(),
+            awaySeconds: awayClock.seconds()
+          });
+          break;
+        default:
+      }
+    }, 1000);
+  }
+
+  move(data) {
+    this.cg.move(data.move[0], data.move[1]);
+    this.cg.setShapes([]);
+    let homeClock = duration().add(data.clock[0], 's');
+    let awayClock = duration().add(data.clock[1], 's');
+    let pauseClocks = false;
+    if (homeClock.as('seconds') > this.state.homeClock.as('seconds') + data.clock[2]) {
+      homeClock = this.state.homeClock;
+      pauseClocks = true;
     }
-    this.cg.setShapes(shapes);
+    if (awayClock.as('seconds') > this.state.awayClock.as('seconds') + data.clock[2]) {
+      awayClock = this.state.awayClock;
+      pauseClocks = true;
+    }
+    if (data.id > this.state.moveList.length) {
+      const moveList = this.state.moveList.map(item => item);
+      moveList.push(data.pgn);
+      this.setState({moveList: moveList});
+    }
+    this.setState({
+      homeClock: homeClock,
+      homeMinutes: homeClock.minutes(),
+      homeSeconds: homeClock.seconds(),
+      awayClock: awayClock,
+      awayMinutes: awayClock.minutes(),
+      awaySeconds: awayClock.seconds(),
+      moving: data.moving,
+      pauseClocks: pauseClocks,
+      currentMove: data.id
+    });
+  }
+
+  goto(data) {
+    this.cg.set({fen: data.fen});
+    this.cg.setShapes(data.shapes || []);
+    const homeClock = duration().add(data.clock[0], 's');
+    const awayClock = duration().add(data.clock[1], 's');
+    this.setState({
+      homeClock: homeClock,
+      homeMinutes: homeClock.minutes(),
+      homeSeconds: homeClock.seconds(),
+      awayClock: awayClock,
+      awayMinutes: awayClock.minutes(),
+      awaySeconds: awayClock.seconds(),
+      moving: data.moving,
+      pauseClocks: true,
+      pausePosition: true,
+      currentMove: data.id
+    });
+  }
+
+  draw(data) {
+    this.cg.setShapes(data.draw);
+  }
+
+  finished(data) {
+    this.setState({
+      pauseClock: true,
+      pausePosition: true,
+      winner: data.winner
+    })
   }
 
   componentDidMount() {
-    this.cg = NativeChessground(this.el, this.buildConfigFromProps(this.props));
+    this.cg = NativeChessground(this.chessBoard, this.buildConfigFromProps(this.props));
     this.socket = this.props.socket;
-    this.socket.on(this.props.boardName, this.handleEvent);
+    this.boardName = `${this.props.viewOnly ? 'viewer:' : ''}${this.props.boardName}`;
+    this.socket.on(this.boardName, this.handleEvent);
+    if (this.props.gameId) {
+      this.socket.emit(`${this.boardName}:start`, this.props.gameId);
+    }
+    this.updateClocks();
   }
 
   componentWillReceiveProps(nextProps) {
-    this.cg = NativeChessground(this.el, this.buildConfigFromProps(this.props));
+    if (nextProps.gameId && this.state.gameId !== nextProps.gameId) {
+      this.setState({gameId: nextProps.gameId});
+      this.socket.emit(`${this.boardName}:start`, this.props.gameId);
+    }
   }
 
   componentWillUnmount() {
+    this.updateClocks();
     this.cg.destroy();
-    this.socket.off(this.props.boardName, this.handleEvent);
+    this.socket.off(this.boardName, this.handleEvent);
   }
 
   render() {
@@ -107,6 +261,96 @@ export default class Chessground extends React.Component {
       props.style.height = this.props.height;
     }
 
-    return React.createElement('div', {ref: el => this.el = el, ...props});
+    const awayActive = this.state.moving === 'away' ? ' active' : '';
+    const awayFlagged = !this.state.awayClock ? ' flagged' : '';
+    const awayClock = parseClock(this.state.awayMinutes, this.state.awaySeconds);
+
+    const homeActive = this.state.moving === 'home' ? ' active' : '';
+    const homeFlagged = !this.state.homeClock ? ' flagged' : '';
+    const homeClock = parseClock(this.state.homeMinutes, this.state.homeSeconds);
+    const maxMove = this.state.moveList.length - 1;
+    const setCurrentMove = (newCurrentMove, latest) => {
+      this.setState({
+        currentMove: newCurrentMove,
+        pausePosition: !latest,
+        pauseClocks: !latest
+      });
+      console.log('emit?', `${this.boardName}:goto`);
+      this.socket.emit(`${this.boardName}:goto`, {
+        id: newCurrentMove,
+        paused: !latest,
+        stopJumping: !latest
+      });
+    };
+    const changePlayState = (newPlayState) => {
+      console.log(`${this.boardName}:pause`)
+      if (!newPlayState && !this.state.moveList.length) {
+        this.socket.emit(`${this.boardName}:start`, this.state.gameId);
+        return;
+      }
+      this.setState({pausePosition: newPlayState});
+      this.socket.emit(`${this.boardName}:pause`, newPlayState);
+    };
+
+    return React.createElement('div', {className: 'board'}, [
+      React.createElement('div', {
+        ref: el => this.chessBoard = el,
+        style: {height: this.props.size, width: this.props.size}
+      }),
+      React.createElement('div', {className: 'eventData'}, [
+        React.createElement('div', {className: `clock homeClock${awayActive}${awayFlagged}`}, awayClock),
+        React.createElement('div', {className: 'moveList'},
+          this.state.moveList.length
+            ? this.state.moveList.map((move, i) => {
+              return React.createElement('a',
+                {
+                  onClick: () => this.sendEvent(i)
+                },
+                i + 1 === this.state.currentMove
+                  ? React.createElement('strong', {}, move)
+                  : move)
+            })
+            : React.createElement('div', {className: 'waiting'}, 'Waiting to begin...')
+        ),
+        React.createElement('div', {className: `clock homeClock${homeActive}${homeFlagged}`}, homeClock),
+        this.props.viewOnly ? '' : React.createElement('div', {className: 'ml-auto actions'}, [
+          React.createElement('button', {
+              className: `btn btn-sm btn-${!this.state.currentMove ? 'secondary' : 'primary'}`,
+              onClick: () => setCurrentMove(0),
+              disabled: !this.state.currentMove
+            },
+            React.createElement('i', {className: 'fas fa-step-backward'})
+          ),
+          React.createElement('button', {
+              className: `btn btn-sm btn-${!this.state.currentMove ? 'secondary' : 'primary'}`,
+              onClick: () => setCurrentMove(this.state.currentMove - 1),
+              disabled: !this.state.currentMove
+            },
+            React.createElement('i', {className: 'fas fa-backward'})
+          ),
+          React.createElement('button', {
+              className: `btn btn-sm btn-${this.state.pausePosition ? 'success' : 'danger'}`,
+              disabled: this.state.gameId === null,
+              onClick: () => changePlayState(!this.state.pausePosition)
+            },
+            React.createElement('i', {className: `fas fa-${this.state.pausePosition ? 'play' : 'pause'}`})
+          ),
+          React.createElement('button', {
+              className: `btn btn-sm btn-${this.state.currentMove === maxMove ? 'secondary' : 'primary'}`,
+              onClick: () => setCurrentMove(this.state.currentMove + 1),
+              disabled: !this.state.currentMove === maxMove
+            },
+            React.createElement('i', {className: 'fas fa-forward'})
+          ),
+          React.createElement('button', {
+              className: `btn btn-sm btn-${this.state.currentMove === maxMove ? 'secondary' : 'primary'}`,
+              onClick: () => setCurrentMove(maxMove),
+              disabled: !this.state.currentMove === maxMove
+            },
+            React.createElement('i', {className: 'fas fa-forward'})
+          )
+        ])
+      ])
+    ]);
   }
 }

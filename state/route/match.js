@@ -8,9 +8,9 @@ const matchKeys = [
   ['host_twitter', 'hostTwitter']
 ];
 
-function adminMatchRoute(dataStore, io, socket, teamId) {
+function matchRoute(db, redis, io, socket, teamId) {
   function existMatch(matchId) {
-    dataStore.query('SELECT COUNT(*) AS count FROM `garden_match` WHERE team_id = ? AND id = ? LIMIT 1;', [teamId, matchId], (err, result) => {
+    db.query('SELECT COUNT(*) AS count FROM `garden_match` WHERE team_id = ? AND id = ? LIMIT 1;', [teamId, matchId], (err, result) => {
       if (err) {
         console.error('Error checking for existence on:', teamId, matchId, err);
         socket.emit('match:exists', null);
@@ -31,16 +31,16 @@ function adminMatchRoute(dataStore, io, socket, teamId) {
       insertData.opponent = null;
     }
     insertData.team_id = teamId;
-    dataStore.beginTransaction((err) => {
+    db.beginTransaction((err) => {
       if (err) {
         console.error('Error beginning create match transaction:', teamId, data, err);
         console.log('match:created', teamId, null);
         socket.emit('match:created', null);
         return;
       }
-      dataStore.query('INSERT INTO garden_match SET ?', insertData, (err, result) => {
+      db.query('INSERT INTO garden_match SET ?', insertData, (err, result) => {
         if (err || !(result || {}).insertId) {
-          return dataStore.rollback(() => {
+          return db.rollback(() => {
             console.error('Error creating match:', teamId, data, result, err);
             console.log('match:created', teamId, null);
             socket.emit('match:created', null);
@@ -50,26 +50,25 @@ function adminMatchRoute(dataStore, io, socket, teamId) {
         io.sockets.emit('match:created', {teamId: teamId, id: result.insertId, match: data});
 
         const matchId = result.insertId;
-        dataStore.query('INSERT INTO garden_player (match_id) VALUES (?), (?), (?), (?);', [matchId, matchId, matchId, matchId], (err, playerInsertResult) => {
-          console.log('RETURN:', playerInsertResult.insertId);
+        db.query('INSERT INTO garden_player (match_id) VALUES (?), (?), (?), (?);', [matchId, matchId, matchId, matchId], (err, playerInsertResult) => {
           if (err || !playerInsertResult.insertId) {
-            return dataStore.rollback(() => {
+            return db.rollback(() => {
               console.error('Error creating player list:', teamId, data, result, err);
               console.log('match:created', teamId, null);
               socket.emit('match:created', null);
             });
           }
-          dataStore.query('INSERT INTO garden_opponent (match_id) VALUES (?), (?), (?), (?);', [matchId, matchId, matchId, matchId], (err, opponentInsertResult) => {
+          db.query('INSERT INTO garden_opponent (match_id) VALUES (?), (?), (?), (?);', [matchId, matchId, matchId, matchId], (err, opponentInsertResult) => {
             if (err || !opponentInsertResult.insertId) {
-              return dataStore.rollback(() => {
+              return db.rollback(() => {
                 console.error('Error creating opponent list:', teamId, data, result, err);
                 console.log('match:created', teamId, null);
                 socket.emit('match:created', null);
               });
             }
-            dataStore.commit((err) => {
+            db.commit((err) => {
               if (err) {
-                return dataStore.rollback(() => {
+                return db.rollback(() => {
                   console.error('Error creating error committing:', teamId, data, result, err);
                   console.log('match:created', teamId, null);
                   socket.emit('match:created', null);
@@ -112,8 +111,7 @@ function adminMatchRoute(dataStore, io, socket, teamId) {
     const columns = (new Array(columnCount)).fill('?? = ?', 0, columnCount).join(', ');
     updateData.push(teamId);
     updateData.push(data.id);
-    console.log(updateData);
-    dataStore.query(`UPDATE garden_match SET ${columns} WHERE team_id = ? AND id = ?;`, updateData, (err, result) => {
+    db.query(`UPDATE garden_match SET ${columns} WHERE team_id = ? AND id = ?;`, updateData, (err, result) => {
         if (err) {
           console.error('Error updating:', teamId, data, result, err);
           console.log('match:updated', teamId, null);
@@ -131,7 +129,7 @@ function adminMatchRoute(dataStore, io, socket, teamId) {
 
   function deleteMatch(matchId) {
     console.log('match:delete', matchId);
-    dataStore.query('UPDATE garden_match SET deleted = true WHERE team_id = ? AND id = ?;', [teamId, matchId], (err, result) => {
+    db.query('UPDATE garden_match SET deleted = true WHERE team_id = ? AND id = ?;', [teamId, matchId], (err, result) => {
         if (err) {
           console.error('Error deleting:', matchId, err);
           console.log('match:deleted:ok', false);
@@ -167,12 +165,12 @@ function adminMatchRoute(dataStore, io, socket, teamId) {
     };
 
     const findLatestMatch = () => {
-      dataStore.query('SELECT * FROM garden_match WHERE team_id = ? ORDER BY id DESC LIMIT 1;', teamId, load);
+      db.query('SELECT * FROM garden_match WHERE team_id = ? ORDER BY id DESC LIMIT 1;', teamId, load);
     };
     if (matchId === null) {
       findLatestMatch();
     } else {
-      dataStore.query('SELECT * FROM garden_match WHERE team_id = ? AND id = ?;', [teamId, matchId], (err, result) => {
+      db.query('SELECT * FROM garden_match WHERE team_id = ? AND id = ?;', [teamId, matchId], (err, result) => {
         if (err) {
           return load(err);
         }
@@ -186,7 +184,7 @@ function adminMatchRoute(dataStore, io, socket, teamId) {
 
   function index() {
     console.log('match:list');
-    dataStore.query('SELECT * FROM garden_match WHERE team_id = ?', [teamId], (err, result) => {
+    db.query('SELECT * FROM garden_match WHERE team_id = ?', [teamId], (err, result) => {
       if (err) {
         console.log('Error retrieving match list:', err);
         console.log('match:listed', []);
@@ -219,4 +217,4 @@ function adminMatchRoute(dataStore, io, socket, teamId) {
   };
 }
 
-module.exports = adminMatchRoute;
+module.exports = matchRoute;

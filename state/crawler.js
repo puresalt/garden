@@ -3,7 +3,7 @@ const common = require('gcss-common');
 const config = common.Config(process.env, require(path.join(__dirname, '../common/config/runtime.json')));
 const mysql = require('mysql');
 const redis = require('redis');
-const router = require('./router');
+const crawlerLoop = require('./src/crawler');
 
 const db = mysql.createConnection(config.state.mysql);
 const client = redis.createClient();
@@ -20,5 +20,5 @@ db.connect((err) => {
   if (process.env.PORT) {
     config.port.state = process.env.PORT;
   }
-  router(db, client, config);
+  crawlerLoop(db, client, 1, process.env.MATCH_ID, config);
 });

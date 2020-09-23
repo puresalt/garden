@@ -1,10 +1,47 @@
-.Board,
-.Board.Large {
+.Board {
+    font-family: antarctican-headline, san serif;
+    font-weight: 700;
+}
+
+.Board em {
+    opacity: 0.5;
+}
+
+.Board span, .Board .active {
+    color: #ffca0a;
+}
+
+.Board header {
+    background: #006747;
+    color: #fff;
+    height: 31px;
+    line-height: 30px;
+    font-size: 24px;
+    text-transform: uppercase;
+    position: relative;
+}
+
+.Board header .input-group {
+    background: rgba(0, 0, 0, 0.5);
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: auto;
+}
+
+.Board header .input-group .input-group-prepend {
+    font-weight: normal;
+    margin: 0 0.25em;
+}
+
+.Board {
     background: rgba(0, 103, 71, 0.75);
     color: #fff;
-    position: absolute;
-    height: 507px;
-    width: 687px;
+    float: left;
+    margin: 0 0 3em 1em;
+    position: relative;
+    height: 353px;
+    width: 500px;
 }
 
 .Board header {
@@ -57,51 +94,16 @@
     opacity: 0.5;
 }
 
-#board-1.Board {
-    left: 7px;
-    top: 7px;
-}
-
 #board-1.Board .cg-wrap {
     background-image: url(Board/brown.svg)
-}
-
-#board-2.Board {
-    left: 702px;
-    top: 7px;
-}
-
-#board-2.Board.Large {
-    left: 7px;
-    top: 7px;
 }
 
 #board-2.Board .cg-wrap {
     background-image: url(Board/purple.svg)
 }
 
-#board-3.Board {
-    left: 7px;
-    top: 523px;
-}
-
-#board-3.Board.Large {
-    left: 7px;
-    top: 7px;
-}
-
 #board-3.Board .cg-wrap {
     background-image: url(Board/green.svg)
-}
-
-#board-4.Board {
-    left: 702px;
-    top: 523px;
-}
-
-#board-4.Board.Large {
-    left: 7px;
-    top: 7px;
 }
 
 #board-4.Board .cg-wrap {
@@ -122,11 +124,82 @@
 }
 
 .Board .board {
-    position: absolute;
-    left: 0;
-    top: 43px;
+
+    width: 100%;
 }
 
-.Board.Large .board {
-    top: 87px;
+.Board .eventData {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 180px;
+}
+
+.Board .eventData .clock {
+    font-size: 1.2em;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 0.1em 0 0.2em;
+}
+
+.Board .eventData .clock.active {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.Board .eventData .clock.flagged {
+    background: rgba(255, 0, 0, 0.5) !important;
+    color: #500 !important;
+}
+
+.Board .eventData .moveList {
+    background: #fff;
+    max-height: 198px;
+    padding: 0.25em;
+    overflow-y: auto;
+}
+
+.Board .eventData .moveList a {
+    font-size: 0.6rem;
+    font-weight: normal;
+    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+    color: #006747;
+    margin-left: 0.5em;
+    line-height: 5px;
+    opacity: 0.8;
+}
+
+.Board .eventData .moveList a:last-child {
+    font-weight: 700;
+    opacity: 1;
+}
+
+.Board .eventData .moveList .waiting {
+    color: #006747;
+    opacity: 0.8;
+    text-align: center;
+}
+
+.Board .eventData .moveList {
+    counter-reset: section;
+}
+
+.Board .eventData .moveList a:nth-child(odd)::before {
+    counter-increment: section;
+    content: counters(section, ".") ". ";
+}
+
+.Board .game-form {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+}
+
+.Board .container {
+    margin-top: 2px;
+    background: rgba(0, 103, 71, 0.75);
+}
+
+.Board .actions {
+    position: absolute;
+    bottom: -30px;
+    right: 0;
 }

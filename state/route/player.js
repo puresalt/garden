@@ -1,3 +1,5 @@
+const state = require('../src/state');
+
 const sanitize = (item) => {
   item.id = item.id !== null ? Number(item.id) : null;
   item.rating = item.rating !== null ? Number(item.rating) : null;
@@ -13,7 +15,7 @@ const sanitizePlayerList = (gathered, item) => {
   return gathered;
 };
 
-function AdminPlayerRoute(dataStore, io, socket, teamId) {
+function playerRoute(db, redis, io, socket, teamId) {
   function updateMemberList(data) {
     console.log('member:update', teamId, data);
     const members = data.map(sanitize);
@@ -22,7 +24,7 @@ function AdminPlayerRoute(dataStore, io, socket, teamId) {
     const query = (new Array(countToSave))
       .fill('UPDATE garden_member SET name = ?, lichess_handle = ?, rating = ? WHERE id = ?', 0, countToSave)
       .join(';');
-    dataStore.query(query, values, (err) => {
+    db.query(query, values, (err) => {
       if (err) {
         console.error('Could not clear previous member data:', teamId, data.matchId, err);
         socket.emit('opponent:updated', []);
@@ -37,12 +39,12 @@ function AdminPlayerRoute(dataStore, io, socket, teamId) {
 
   function getPlayerList(matchId) {
     console.log('player:list', matchId);
-    dataStore.query(
+    db.query(
         `SELECT garden_member.*, garden_player.id AS selected
          FROM garden_member
-                  LEFT JOIN garden_player
-                            ON (garden_player.match_id = ?
-                                AND garden_player.member_id = garden_member.id)
+              LEFT JOIN garden_player
+                        ON (garden_player.match_id = ?
+                            AND garden_player.member_id = garden_member.id)
          WHERE garden_member.team_id = ?
            AND garden_member.deleted = false
          ORDER BY garden_member.rating DESC;
@@ -76,7 +78,7 @@ function AdminPlayerRoute(dataStore, io, socket, teamId) {
     const query = (new Array(countToSave))
       .fill('UPDATE garden_opponent SET name = ?, lichess_handle = ?, rating = ? WHERE id = ?', 0, countToSave)
       .join(';');
-    dataStore.query(query, values, (err, result) => {
+    db.query(query, values, (err, result) => {
       if (err) {
         console.error('Could not clear previous opponent data:', teamId, data.matchId, err);
         socket.emit('opponent:updated', []);
@@ -85,18 +87,19 @@ function AdminPlayerRoute(dataStore, io, socket, teamId) {
       const returnData = {teamId: teamId, ...data};
       console.log('opponent:updated', returnData);
       socket.broadcast.emit('opponent:updated', returnData);
+      state.updatePlayerList(db, redis, teamId, data.matchId, (err) => err && console.log('Error updating state.updatePlayerList:', err));
     });
   }
 
   function getOpponentList(matchId) {
-    dataStore.query(`SELECT garden_opponent.*, garden_match.deleted
-                     FROM garden_opponent
-                              INNER JOIN garden_match
-                                         ON (garden_opponent.match_id = garden_match.id
-                                             AND garden_match.team_id = ?
-                                             AND garden_match.deleted = false)
-                     WHERE garden_opponent.match_id = ?
-                     ORDER BY garden_opponent.rating DESC;`, [teamId, matchId], (err, result) => {
+    db.query(`SELECT garden_opponent.*, garden_match.deleted
+              FROM garden_opponent
+                   INNER JOIN garden_match
+                              ON (garden_opponent.match_id = garden_match.id
+                                  AND garden_match.team_id = ?
+                                  AND garden_match.deleted = false)
+              WHERE garden_opponent.match_id = ?
+              ORDER BY garden_opponent.rating DESC;`, [teamId, matchId], (err, result) => {
       if (err) {
         console.log('Error retrieving opponent list:', err);
         console.log('opponent:listed', null);
@@ -120,7 +123,7 @@ function AdminPlayerRoute(dataStore, io, socket, teamId) {
   function createNewMember(data) {
     console.log('member:create', teamId, data);
     const saveData = [teamId, data.name || '', data.lichessHandle || '', data.rating !== null ? Number(data.rating) : null];
-    dataStore.query('INSERT INTO garden_member (team_id, name, lichess_handle, rating) VALUES (?, ?, ?, ?);', saveData, (err, result) => {
+    db.query('INSERT INTO garden_member (team_id, name, lichess_handle, rating) VALUES (?, ?, ?, ?);', saveData, (err, result) => {
       console.log(err, result, saveData);
       if (err || !result.insertId) {
         console.log('Error creating member:', teamId, (result || {}).insertId, err);
@@ -143,9 +146,9 @@ function AdminPlayerRoute(dataStore, io, socket, teamId) {
 
   function deleteMember(memberId) {
     console.log('member:delete');
-    dataStore.query(`UPDATE garden_member
-                     SET deleted = true
-                     WHERE id = ?`, [memberId], (err, result) => {
+    db.query(`UPDATE garden_member
+              SET deleted = true
+              WHERE id = ?`, [memberId], (err, result) => {
       if (err) {
         console.log('Error deleting member:', teamId, memberId, err);
         return;
@@ -158,7 +161,7 @@ function AdminPlayerRoute(dataStore, io, socket, teamId) {
 
   function getMemberList() {
     console.log('member:list', teamId);
-    dataStore.query(
+    db.query(
         `SELECT *
          FROM garden_member
          WHERE team_id = ?
@@ -187,16 +190,16 @@ function AdminPlayerRoute(dataStore, io, socket, teamId) {
 
   function selectMember(data) {
     console.log('player:select', teamId, data);
-    dataStore.beginTransaction((err) => {
+    db.beginTransaction((err) => {
       if (err) {
         console.error('Error beginning player select transaction:', teamId, data, err);
         console.log('player:selected', teamId, null);
         socket.emit('player:selected', null);
         return;
       }
-      dataStore.query('DELETE FROM garden_player WHERE match_id = ?;', [data.matchId], (err) => {
+      db.query('DELETE FROM garden_player WHERE match_id = ?;', [data.matchId], (err) => {
         if (err) {
-          return dataStore.rollback(() => {
+          return db.rollback(() => {
             console.error('Error removing player selected data:', teamId, data, err);
             console.log('player:selected', teamId, null);
             socket.emit('player:selected', null);
@@ -210,17 +213,17 @@ function AdminPlayerRoute(dataStore, io, socket, teamId) {
           gathered.push(data.matchId, memberId);
           return gathered;
         }, []);
-        dataStore.query(`INSERT INTO garden_player (match_id, member_id) VALUES ${inserts}`, values, (err, result) => {
+        db.query(`INSERT INTO garden_player (match_id, member_id) VALUES ${inserts}`, values, (err, result) => {
           if (err || !(result || {}).insertId) {
-            return dataStore.rollback(() => {
+            return db.rollback(() => {
               console.error('Error inserting player selected data:', teamId, !(result || {}).insertId, data, err);
               console.log('player:selected', teamId, null);
               socket.emit('player:selected', null);
             });
           }
-          dataStore.commit((err) => {
+          db.commit((err) => {
             if (err) {
-              return dataStore.rollback(() => {
+              return db.rollback(() => {
                 console.error('Error creating error committing:', teamId, data, err);
                 console.log('match:created', teamId, null);
                 socket.emit('match:created', null);
@@ -255,4 +258,4 @@ function AdminPlayerRoute(dataStore, io, socket, teamId) {
   };
 }
 
-module.exports = AdminPlayerRoute;
+module.exports = playerRoute;

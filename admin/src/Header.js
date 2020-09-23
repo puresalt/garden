@@ -77,7 +77,7 @@ function Navigation(props) {
           return <Nav.Link key={i} href={tuple[0]}>{tuple[1]}</Nav.Link>;
         })}
       </Nav>
-      <LiveButton socket={socket}/>
+      <LiveButton socket={socket} currentMatchId={currentMatchId}/>
     </Container>
   </Navbar>;
 }

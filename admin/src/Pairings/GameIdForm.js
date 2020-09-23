@@ -4,7 +4,7 @@ import InputGroup from 'react-bootstrap/InputGroup';
 import Button from 'react-bootstrap/Button';
 
 function GameIdForm(props) {
-  const {pairingIndex, updateGameId, isNotReady} = props;
+  const {pairingIndex, currentGameId, size, updateGameId, isNotReady} = props;
 
   const [newGameId, setNewGameId] = useState('');
   const [hasChangedGameId, setHasChangedGameId] = useState(false);
@@ -23,10 +23,12 @@ function GameIdForm(props) {
       <Form.Control
         placeholder="Lichess.org Game ID"
         type="text"
+        size={size}
+        defaultValue={currentGameId}
         onChange={handleGameIdChange}
       />
       <InputGroup.Append>
-        <Button type="submit" variant="primary" disabled={isNotReady || !hasChangedGameId}>Set</Button>
+        <Button type="submit" size={size} variant="primary" disabled={isNotReady || !hasChangedGameId}>Set</Button>
       </InputGroup.Append>
     </InputGroup>
   </Form>;
