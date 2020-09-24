@@ -13,21 +13,16 @@
 #
 
 apps:
-  - script: admin/app.js
-      instances: 2
-      exec_mode: cluster
-      env:
-        NODE_ENV: production
-        PORT: 4002
-  - script: state/app.js
-    instances: 2
-    exec_mode: cluster
+  - script: node ./admin/app.js
+    env:
+      NODE_ENV: production
+      PORT: 4002
+  - script: node ./state/app.js
     env:
       NODE_ENV: production
       PORT: 4003
-  - script: node_modules/.bin/serve
+  - script: ./node_modules/.bin/serve stream/build
     env:
       NODE_ENV: production
-      PM2_SERVE_PATH: stream/build
-      PM2_SERVE_PORT: 4004
+      PORT: 4004
 

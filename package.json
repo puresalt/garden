@@ -9,7 +9,7 @@
   "scripts": {
     "install": "cd admin && npm install;cd ../state && npm install;cd ../stream npm install",
     "restart": "npm stop;npm start",
-    "start": "./node_modules/.bin/pm2 start ./node_modules/.bin/pm2.production.yml",
+    "start": "./node_modules/.bin/pm2 start pm2.production.yml",
     "start:development": "npm run build;./node_modules/.bin/pm2 start pm2.development.yml",
     "start:admin": "cd admin && npm start",
     "start:state": "cd state && npm start",

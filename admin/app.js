@@ -11,7 +11,7 @@ const express = require('express');
 const session = require('express-session');
 const mustache = require('mustache');
 mustache.escape = _ => _;
-const config = common.Config(process.env, require('../common/config/runtime.json'));
+const config = common.Config(process.env, require(path.join(__dirname, '../common/config/runtime.json')));
 
 const templateFileDirectory = path.join(__dirname, 'template');
 const STREAMER_PERMISSION = 0x00000100;
