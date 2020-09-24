@@ -5,14 +5,15 @@ import './LiveButton.css';
 import InputGroup from 'react-bootstrap/InputGroup';
 
 function LiveButton(props) {
-  const {socket, currentMatchId} = props;
+  const {socket, currentMatchId, isLive, updateSetIsLive} = props;
 
-  const [isLive, setIsLive] = useState(null);
+  const [currentIsLive, setIsLive] = useState(isLive);
   const streamUpdated = (data) => {
     if (data.matchId !== currentMatchId) {
       return;
     }
     setIsLive(data.isLive);
+    updateSetIsLive(data.isLive);
   };
   useEffect(() => {
     socket.emit('stream:load', currentMatchId);
@@ -27,6 +28,7 @@ function LiveButton(props) {
   const handleLiveClick = (event) => {
     const newIsLive = event.target.value === '1';
     setIsLive(newIsLive);
+    updateSetIsLive(newIsLive);
     socket.emit('stream:update', {matchId: currentMatchId, isLive: newIsLive});
   };
 
@@ -39,15 +41,15 @@ function LiveButton(props) {
           checked={isLive}
           type="radio"
           value={1}
-          variant={isLive ? 'danger' : 'secondary'}
+          variant={currentIsLive ? 'danger' : 'secondary'}
           onChange={handleLiveClick}
         >On</ToggleButton>
         <ToggleButton
           name="live"
           type="radio"
-          checked={!isLive}
+          checked={!currentIsLive}
           value={0}
-          variant={!isLive ? 'danger' : 'secondary'}
+          variant={!currentIsLive ? 'danger' : 'secondary'}
           onChange={handleLiveClick}
         >Off</ToggleButton>
       </ButtonGroup>

@@ -7,17 +7,15 @@
     "serve": "^11.3.2"
   },
   "scripts": {
-    "install": "cd admin && npm install;cd ../observe && npm install;cd ../state && npm install;cd ../stream npm install",
+    "install": "cd admin && npm install;cd ../state && npm install;cd ../stream npm install",
     "restart": "npm stop;npm start",
     "start": "./node_modules/.bin/pm2 start ./node_modules/.bin/pm2.production.yml",
     "start:development": "npm run build;./node_modules/.bin/pm2 start pm2.development.yml",
     "start:admin": "cd admin && npm start",
-    "start:observer": "cd observer && npm start",
     "start:state": "cd state && npm start",
     "start:stream": "cd stream && npm start",
     "stop": "./node_modules/.bin/pm2 stop pm2.production.yml",
     "stop:development": "./node_modules/.bin/pm2 stop pm2.development.yml",
-    "build:observer": "react-scripts build",
     "build:admin": "react-scripts build"
   }
 }

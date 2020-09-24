@@ -5,7 +5,8 @@ const matchKeys = [
   ['host_name', 'hostName'],
   ['host_instagram', 'hostInstagram'],
   ['host_twitch', 'hostTwitch'],
-  ['host_twitter', 'hostTwitter']
+  ['host_twitter', 'hostTwitter'],
+  ['home', 'isHome']
 ];
 
 function matchRoute(db, redis, io, socket, teamId) {

@@ -22,6 +22,7 @@ function Board(props) {
     const stopGameState = (gameId) => {
       socket.emit(`viewer:board:${board}:stop`, gameId);
     };
+    socket.emit(`viewer:board:${board}:ready`);
     socket.on(`viewer:board:${board}:started`, requestGameState);
     socket.on(`viewer:board:${board}:stopped`, stopGameState);
     return () => {
@@ -37,6 +38,7 @@ function Board(props) {
         size={size}
         viewOnly={true}
         coordinates={false}
+        orientation={pairings[round - 1].orientation}
         socket={socket}
       />
       <div className="pairings">

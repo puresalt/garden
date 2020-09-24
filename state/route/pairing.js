@@ -1,5 +1,8 @@
 const ratingSort = require('gcss-common/src/ratingSort');
 
+const CHESS_BLACK = 'black';
+const CHESS_WHITE = 'white';
+
 const emptyPlayer = () => {
   return {
     id: null,
@@ -12,22 +15,22 @@ const emptyPlayer = () => {
 const COMPLETE_LIST = [0, -1];
 Object.freeze(COMPLETE_LIST);
 const MATCH_UPS = [
-  [0, 3],
-  [1, 2],
-  [2, 1],
-  [3, 0],
-  [0, 2],
-  [1, 3],
-  [2, 0],
-  [3, 1],
-  [0, 1],
-  [1, 0],
-  [2, 3],
-  [3, 2],
-  [0, 0],
-  [1, 1],
-  [2, 2],
-  [3, 3]
+  [0, 3, CHESS_BLACK, CHESS_WHITE],
+  [1, 2, CHESS_BLACK, CHESS_WHITE],
+  [2, 1, CHESS_WHITE, CHESS_BLACK],
+  [3, 0, CHESS_WHITE, CHESS_BLACK],
+  [0, 2, CHESS_WHITE, CHESS_BLACK],
+  [1, 3, CHESS_WHITE, CHESS_BLACK],
+  [2, 0, CHESS_BLACK, CHESS_WHITE],
+  [3, 1, CHESS_BLACK, CHESS_WHITE],
+  [0, 1, CHESS_WHITE, CHESS_BLACK],
+  [1, 0, CHESS_WHITE, CHESS_BLACK],
+  [2, 3, CHESS_BLACK, CHESS_WHITE],
+  [3, 2, CHESS_BLACK, CHESS_WHITE],
+  [0, 0, CHESS_BLACK, CHESS_WHITE],
+  [1, 1, CHESS_BLACK, CHESS_WHITE],
+  [2, 2, CHESS_WHITE, CHESS_BLACK],
+  [3, 3, CHESS_WHITE, CHESS_BLACK]
 ];
 Object.freeze(MATCH_UPS);
 
@@ -49,7 +52,7 @@ function updatePairing(db, io, socket, teamId, data, callback) {
         data.id = result.insertId;
       }
       console.log('pairing:updated', teamId, data);
-      io.sockets.emit('pairing:updated', teamId, data);
+      io.sockets.emit('pairing:updated', data);
       callback && callback(null);
     });
 }
@@ -67,15 +70,17 @@ function PairingRoute(db, redis, io, socket, teamId) {
              garden_pairing.id AS pairing_id,
              garden_pairing.result AS result,
              garden_pairing.lichess_game_id AS lichess_game_id,
-             garden_pairing.opponent_id AS opponent_id
+             garden_pairing.opponent_id AS opponent_id,
+             garden_match.home AS home
          FROM garden_member
+              INNER JOIN garden_match ON (garden_match.id = ?)
               INNER JOIN garden_player
-                         ON (garden_player.match_id = ? AND garden_player.member_id = garden_member.id)
+                         ON (garden_player.match_id = garden_match.id AND garden_player.member_id = garden_member.id)
               LEFT JOIN garden_pairing
-                        ON (garden_pairing.match_id = garden_player.match_id AND
+                        ON (garden_pairing.match_id = garden_match.id AND
                             garden_pairing.member_id = garden_player.member_id)
               LEFT JOIN garden_opponent
-                        ON (garden_opponent.match_id = garden_player.match_id AND
+                        ON (garden_opponent.match_id = garden_match.id AND
                             garden_opponent.id = garden_pairing.opponent_id)
          WHERE garden_member.team_id = ?
            AND garden_member.deleted = false
@@ -87,7 +92,7 @@ function PairingRoute(db, redis, io, socket, teamId) {
           socket.emit('pairing:listed', null);
           return;
         }
-        db.query(`SELECT garden_opponent.*, garden_match.deleted
+        db.query(`SELECT garden_opponent.*
                   FROM garden_opponent
                        INNER JOIN garden_match
                                   ON (garden_opponent.match_id = garden_match.id
@@ -102,6 +107,9 @@ function PairingRoute(db, redis, io, socket, teamId) {
             return;
           }
 
+          const isHome = memberPlayerList.length
+            ? memberPlayerList[0].home
+            : null;
           const getUniquePlayers = memberPlayerList.reduce((gathered, item) => {
             if (!gathered.filter(gatheredItem => gatheredItem.id === item.id).length) {
               gathered.push({
@@ -143,6 +151,7 @@ function PairingRoute(db, redis, io, socket, teamId) {
                 lichessHandle: opponent.lichess_handle,
                 rating: opponent.rating
               },
+              orientation: isHome !== false ? matchUp[2] : matchUp[3],
               result: pairing.result !== null && pairing.result !== undefined ? pairing.result : null,
               gameId: pairing.gameId || null
             }

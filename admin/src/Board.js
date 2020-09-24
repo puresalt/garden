@@ -53,18 +53,19 @@ function Board(props) {
             {[1, 2, 3, 4].map((i, index) => <Button
               key={index}
               size="sm"
-              disabled={pairings[index].gameId === null}
-              variant={(currentPairing.gameId && currentPairing.gameId === pairings[index].gameId) || index === currentRound ? 'primary' : 'secondary'}
-              onChange={e => handleChangeBoard(pairings[index].gameId)}
+              variant={(currentPairing.gameId && currentPairing.gameId === pairings[index].gameId) ? 'success' : (index === currentRound ? 'primary' : 'secondary')}
+              onClick={e => handleChangeBoard(pairings[index].gameId)}
             >{i}</Button>)
             }
           </ButtonGroup>
         </InputGroup>
       </header>
       <Chessboard
+        key={'board:' + board + ':' + currentPairing.gameId}
         boardName={'board:' + board}
         size={size}
         gameId={currentPairing.gameId}
+        orientation={currentPairing.orientation}
         movable={{enabled: false}}
         draggable={{enabled: false}}
         selectable={{enabled: false}}

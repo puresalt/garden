@@ -23,7 +23,7 @@ function Members(props) {
     members.forEach((newMember) => {
       incomingMembers.forEach((member, i) => {
         if (newMember.id === member.id) {
-          newMembers[i] = {...member, ...newMember};
+          newMembers[i] = {...newMember, ...member};
         }
       });
     });

@@ -9,56 +9,74 @@ const updatePairing = require('../route/pairing').updatePairing;
 const individualMoveRegex = /([NBQRKOxa-h0-9=/+#-]+) { \[%clk ([0-9:]+)]/g;
 const noop = () => {
 };
-const nullSocket = {emit: noop, sockets: {emit: noop}};
+const nullSocket = {
+  sockets: {emit: noop},
+  emit: noop
+};
 
 const gameList = {};
 
 function CrawlerLoop(db, redis, teamId, matchId, config) {
 
-  axios.post(`/api/stream/games-by-users`, 'chessajedrezz2020,chessajedrezz2020,zanayer,AAAel', {
-    baseURL: 'https://lichess.org/',
-    headers: {'Accept': 'application/json', 'Content-Type': 'text/plain'},
-    responseType: 'stream'
-  }).then((response) => {
-      response.data
-        .on('data', data => {
-          const parsedData = stringDecoder.write(data);
-          if (!parsedData.players || !parsedData.id) {
-            return;
-          }
-          const homePlayer = parsedData.players.white.userId;
-          const awayPlayer = parsedData.players.black.userId;
-          db.query(
-              `SELECT garden_member.id as playerId,
-                   garden_opponent.id as opponentId
-               FROM garden_member
-                    LEFT JOIN garden_opponent
-                              ON (garden_opponent.match_id = ? AND
-                                  (garden_opponent.lichess_handle = ? OR garden_opponent.lichess_handle = ?))
-               WHERE garden_member.lichess_handle = ?
-                  OR garden_member.lichess_handle = ?;`, [matchId, homePlayer, awayPlayer, matchId, homePlayer, awayPlayer], (err, result) => {
-              if (err || !result.length) {
-                console.log('Error retrieving player and opponent:', err, result.length);
-                return;
-              }
-              const updatedData = {
-                matchId: matchId,
-                player: {id: result[0].playerId},
-                opponent: {id: result[0].opponentId},
-                gameId: parsedData.id,
-                result: null
-              };
-              updatePairing(db, nullSocket, nullSocket, teamId, updatedData, (err) => {
-                if (err) {
-                  console.log('Error updating pairing:', updatedData);
+  db.query(`SELECT garden_member.lichess_handle AS username
+            FROM garden_pairing
+                 INNER JOIN garden_member ON (garden_member.id = garden_pairing.member_id)
+            WHERE garden_pairing.match_id = ?
+            UNION ALL
+            SELECT garden_opponent.lichess_handle AS username
+            FROM garden_opponent
+            WHERE garden_opponent.match_id = ?;`, [matchId, matchId], (err, result) => {
+    if (err || !result.length) {
+      console.warn('Error getting the player list: ', err, result);
+      return;
+    }
+    const pairingPlayerList = result.map(item => item.username);
+    console.log('Listening for games between:', pairingPlayerList);
+    axios.post(`/api/stream/games-by-users`, pairingPlayerList, {
+      baseURL: 'https://lichess.org/',
+      headers: {'Accept': 'application/json', 'Content-Type': 'text/plain'},
+      responseType: 'stream'
+    }).then((response) => {
+        response.data
+          .on('data', data => {
+            const parsedData = stringDecoder.write(data);
+            if (!parsedData.players || !parsedData.id) {
+              return;
+            }
+            const homePlayer = parsedData.players.white.userId;
+            const awayPlayer = parsedData.players.black.userId;
+            db.query(
+                `SELECT garden_member.id as playerId,
+                     garden_opponent.id as opponentId
+                 FROM garden_member
+                      LEFT JOIN garden_opponent
+                                ON (garden_opponent.match_id = ? AND
+                                    (garden_opponent.lichess_handle = ? OR garden_opponent.lichess_handle = ?))
+                 WHERE garden_member.lichess_handle = ?
+                    OR garden_member.lichess_handle = ?;`, [matchId, homePlayer, awayPlayer, matchId, homePlayer, awayPlayer], (err, result) => {
+                if (err || !result.length) {
+                  console.log('Error retrieving player and opponent:', err, result.length);
+                  return;
                 }
-                storeGame(redis, teamId, parsedData.id);
+                const updatedData = {
+                  matchId: matchId,
+                  player: {id: result[0].playerId},
+                  opponent: {id: result[0].opponentId},
+                  gameId: parsedData.id,
+                  result: null
+                };
+                updatePairing(db, nullSocket, nullSocket, teamId, updatedData, (err) => {
+                  if (err) {
+                    console.log('Error updating pairing:', updatedData);
+                  }
+                  storeGame(redis, teamId, parsedData.id);
+                });
               });
-            });
-        });
-    },
-    err => console.error(err.message)
-  );
+          });
+      },
+      err => console.error(err.message)
+    );
+  });
 
   function checkPairingDataList() {
     const alreadyCrawledGameList = Object.keys(gameList).length
@@ -68,7 +86,7 @@ function CrawlerLoop(db, redis, teamId, matchId, config) {
               FROM garden_pairing
               WHERE match_id = ?
                 AND lichess_game_id IS NOT NULL
-                ${alreadyCrawledGameList}`, matchId, (err, result) => {
+                ${alreadyCrawledGameList};`, matchId, (err, result) => {
       if (err) {
         console.log('Error retrieving pairings:', err);
         return;
@@ -84,7 +102,43 @@ function CrawlerLoop(db, redis, teamId, matchId, config) {
               console.error('Error getting data for:', matchId, result, err);
               return;
             }
-            console.log('Completed:', item.lichess_game_id);
+            const updatedData = {
+              matchId: matchId,
+              player: {id: item.member_id},
+              opponent: {id: item.opponent_id},
+              gameId: item.lichess_game_id,
+              result: null
+            };
+            if (item.id) {
+              updatedData.id = item.id;
+            }
+            if (result.status === 'draw') {
+              updatedData.result = 0.5;
+              return updatePairing(db, nullSocket, nullSocket, teamId, updatedData, (err) => {
+                if (err) {
+                  return console.error('Error storing a draw for:', matchId, item, result, err);
+                }
+                console.log('Completed and set a draw for:', item, result);
+              });
+            }
+            if (!result.winner) {
+              console.log('Completed:', item, result);
+            }
+            const winnerUsername = result.players[result.winner].user.userId;
+            db.query(`SELECT COUNT(*) AS count
+                      FROM garden_member
+                      WHERE lichess_handle = ?;`, [winnerUsername], (err, winner) => {
+              if (err) {
+                return console.error('Error finding the username to store a result for:', matchId, item, result, err);
+              }
+              updatedData.result = winner.length && winner[0].count ? 1 : 0;
+              updatePairing(db, nullSocket, nullSocket, teamId, updatedData, (err) => {
+                if (err) {
+                  return console.error('Error storing a result for:', matchId, item, result, err);
+                }
+                console.log('Completed and set a result for:', item, result);
+              });
+            });
           });
         })(result[i]);
       }
@@ -107,7 +161,7 @@ function storeGame(redis, teamId, gameId, callback) {
 
   redis.lrange(gameHash, 0, 1, (err, data) => {
     if (err || data.length) {
-      return process.nextTick(() => callback(err, data));
+      return process.nextTick(() => callback(err || 'Already Imported', data));
     }
     getGame(gameId, (err, data) => {
       if (err) {
@@ -119,11 +173,11 @@ function storeGame(redis, teamId, gameId, callback) {
       };
 
       if (data.status === 'draw') {
-        redis.rpush(gameHash, JSON.stringify({type: 'result', data: '0.5-0.5'}), allDone);
+        redis.rpush(gameHash, JSON.stringify({type: 'result', data: 'draw'}), allDone);
       } else if (data.winner === 'white') {
-        redis.rpush(gameHash, JSON.stringify({type: 'result', data: '1-0'}), allDone);
+        redis.rpush(gameHash, JSON.stringify({type: 'result', data: 'win'}), allDone);
       } else if (data.winner === 'black') {
-        redis.rpush(gameHash, JSON.stringify({type: 'result', data: '0-1'}), allDone);
+        redis.rpush(gameHash, JSON.stringify({type: 'result', data: 'loss'}), allDone);
       }
     });
   });
@@ -192,7 +246,6 @@ function storeGame(redis, teamId, gameId, callback) {
           }
           let moveList = [];
           let firstRow = false;
-          console.log('lastPgn:', lastPgn);
           if (lastPgn === null) {
             clock = [
               response.data.clock.initial,
@@ -203,7 +256,7 @@ function storeGame(redis, teamId, gameId, callback) {
             lastPgn = response.data.pgn.trim();
             moveList = [...lastPgn.matchAll(individualMoveRegex)];
             firstRow = {
-              type: 'start',
+              type: 'goto',
               data: {
                 fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
                 clock: clock,
@@ -215,7 +268,7 @@ function storeGame(redis, teamId, gameId, callback) {
             moveList = [...response.data.pgn.substr(lastPgn.length).matchAll(individualMoveRegex)];
             lastPgn = response.data.pgn.trim();
             firstRow = {
-              type: 'start',
+              type: 'goto',
               data: {
                 fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
                 clock: clock,
@@ -228,7 +281,6 @@ function storeGame(redis, teamId, gameId, callback) {
 
           const makeNextMove = (moveId) => {
             if (firstRow) {
-              console.log('firstRow?', firstRow);
               const firstRowJson = JSON.stringify(firstRow);
               firstRow = false;
               const startMoves = (err) => {
@@ -245,7 +297,6 @@ function storeGame(redis, teamId, gameId, callback) {
               }
             }
             const nextMove = moveList[moveId];
-            console.log('nextMove:', nextMove);
             if (!nextMove) {
               return nextLoop(response.data, checkState, finished);
             }

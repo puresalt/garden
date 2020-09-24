@@ -30,8 +30,4 @@ apps:
       NODE_ENV: production
       PM2_SERVE_PATH: stream/build
       PM2_SERVE_PORT: 4004
-  - script: node_modules/.bin/serve
-    env:
-      NODE_ENV: production
-      PM2_SERVE_PATH: observer/build
-      PM2_SERVE_PORT: 4005
+

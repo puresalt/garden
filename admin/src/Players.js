@@ -36,8 +36,8 @@ function PlayerForm(props) {
 
   const processChanges = (event) => {
     event.preventDefault();
-    onSubmit(Object.keys(data).reduce((gathered, item) => {
-      gathered.push(data[item]);
+    onSubmit(Object.keys(data).reduce((gathered, key) => {
+      gathered.push(data[key]);
       return gathered;
     }, []));
     setHasChanges(false);

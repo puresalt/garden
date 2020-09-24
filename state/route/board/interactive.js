@@ -4,14 +4,45 @@ function BoardInteractiveRoute(db, redis, io, socket, teamId, boardId) {
   let currentGameId = null;
   let currentEventId = 0;
   let isPaused = false;
-  let gameHash = `game:${teamId}:${currentGameId}`;
+  let gameHash = null;
   let didJumpAround = false;
   const startGame = (gameId, finished) => {
     if (!gameId) {
-      return process.nextTick(() => finished(`no gameId: ${gameId} (${typeof gameId}`));
+      socket.emit(`board:${boardId}`, {
+        type: 'goto',
+        data: {
+          fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+          clock: [900, 900, 0, 2],
+          moveList: [],
+          moving: 'home'
+        }
+      });
+      redis.del(`game:${teamId}:${boardId}:current`, (err) => {
+        if (err) {
+          console.warn('Could not delete current gameId:', teamId, boardId, currentGameId, err);
+        }
+        finished(`no gameId: ${gameId} (${typeof gameId})`);
+        currentEventId = 0;
+        isPaused = false;
+        gameHash = null;
+        didJumpAround = false;
+        currentGameId = null;
+      });
+      return;
     }
+    currentEventId = 0;
+    isPaused = false;
+    gameHash = null;
+    didJumpAround = false;
     currentGameId = gameId;
     gameHash = `game:${teamId}:${currentGameId}`;
+    redis.set(`game:${teamId}:${boardId}:current`, currentGameId, (err) => {
+      if (err) {
+        console.warn('Could not set current gameId:', teamId, boardId, currentGameId, err);
+        return;
+      }
+      console.log(`Set game:${teamId}:${boardId}:current to`, currentGameId);
+    });
     let eventList = [];
     const getGameEvents = (lastEventId) => {
       redis.lrange(gameHash, lastEventId, -1, (err, result) => {
@@ -29,6 +60,7 @@ function BoardInteractiveRoute(db, redis, io, socket, teamId, boardId) {
 
         const makeNextEvent = (nextEventId) => {
           if (currentGameId !== gameId) {
+            lastEventId = 0;
             return process.nextTick(() => finished(`gameId changed: ${currentGameId} to ${gameId}`));
           }
           if (isPaused) {
@@ -42,6 +74,7 @@ function BoardInteractiveRoute(db, redis, io, socket, teamId, boardId) {
           }
           const currentEvent = eventList[nextEventId];
           if (currentEvent === null) {
+            lastEventId = 0;
             return process.nextTick(() => finished('Could not process:', currentEvent));
           }
 
@@ -62,13 +95,13 @@ function BoardInteractiveRoute(db, redis, io, socket, teamId, boardId) {
             if ((!currentEventId && !nextEventId) || (currentEventId === nextEventId - 1)) {
               console.log(`board:${boardId}`, currentEvent);
               socket.emit(`board:${boardId}`, currentEvent);
-              redis.rpush(`${gameHash}:viewer`, JSON.stringify(currentEvent));
+              redis.rpush(`viewer:${gameHash}`, JSON.stringify(currentEvent));
               currentEventId = nextEventId;
             } else {
               nextEventId = currentEventId;
             }
             process.nextTick(() => makeNextEvent(nextEventId + 1));
-          }, nextTimeout);
+          }, nextTimeout)
         };
         makeNextEvent(lastEventId);
       });
@@ -77,16 +110,29 @@ function BoardInteractiveRoute(db, redis, io, socket, teamId, boardId) {
     getGameEvents(0);
   };
 
-  function startSession(gameId) {
-    console.log(`board:${boardId}:start`, teamId, gameId);
-    redis.del(`game:${teamId}:${gameId}:viewer`, (err) => {
+  function startSession(data) {
+    console.log(`board:${boardId}:start`, teamId, data);
+    if (data === null) {
+      return startGame(null, (err) => {
+        console.log('Error starting session:', err);
+      })
+    }
+    redis.del(`viewer:game:${teamId}:${data.gameId}`, (err) => {
       if (err) {
         return console.log(err);
       }
-      console.log(`viewer:board:${boardId}:started`, gameId);
-      socket.broadcast.emit(`viewer:board:${boardId}:started`, gameId);
+      console.log(`viewer:board:${boardId}:started`, {
+        gameId: data.gameId,
+        orientation: data.orientation,
+        pairingIndex: data.pairingIndex
+      });
+      socket.broadcast.emit(`viewer:board:${boardId}:started`, {
+        gameId: data.gameId,
+        orientation: data.orientation,
+        pairingIndex: data.pairingIndex
+      });
       didJumpAround = false;
-      startGame(gameId, (err) => {
+      startGame(data.gameId, (err) => {
         if (err) {
           console.log(err);
         }
@@ -112,6 +158,9 @@ function BoardInteractiveRoute(db, redis, io, socket, teamId, boardId) {
 
   function gotoPosition(data) {
     console.log(`board:${boardId}:goto`, teamId, gameHash, data);
+    if (!gameHash) {
+      return;
+    }
     redis.lindex(gameHash, data.id + 1, (err, result) => {
       if (err || !result) {
         console.log('Error going to position:', err);
@@ -128,13 +177,16 @@ function BoardInteractiveRoute(db, redis, io, socket, teamId, boardId) {
       returnResult.type = 'goto';
       console.log(`board:${boardId}`, JSON.stringify(returnResult));
       socket.emit(`board:${boardId}`, returnResult);
-      redis.rpush(`${gameHash}:viewer`, JSON.stringify(returnResult));
+      redis.rpush(`viewer:${gameHash}`, JSON.stringify(returnResult));
     });
   }
 
   function drawShape(data) {
     console.log(`board:${boardId}:draw`, teamId, gameHash, data);
-    redis.rpush(`${gameHash}:viewer`, JSON.stringify({
+    if (!gameHash) {
+      return;
+    }
+    redis.rpush(`viewer:${gameHash}`, JSON.stringify({
       type: 'draw',
       data: data
     }));
@@ -142,6 +194,9 @@ function BoardInteractiveRoute(db, redis, io, socket, teamId, boardId) {
 
   function updatePlayback(state) {
     console.log(`board:${boardId}:pause`, teamId, gameHash, state);
+    if (!gameHash) {
+      return;
+    }
     isPaused = state;
   }
 
@@ -156,6 +211,8 @@ function BoardInteractiveRoute(db, redis, io, socket, teamId, boardId) {
     socket.off(`board:${boardId}:gameId`, updateGameId);
     socket.off(`board:${boardId}:goto`, gotoPosition);
     socket.off(`board:${boardId}:pause`, updatePlayback);
+    startGame(null, () => {
+    });
   };
 }
 

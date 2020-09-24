@@ -39,6 +39,11 @@ function Settings(props) {
     setHostTwitter(value);
     setHasChanges(true);
   };
+  const [isHome, setIsHome] = useState(false);
+  const handleIsHome = (event) => {
+    setIsHome(event.target.value);
+    setHasChanges(true);
+  };
 
   const [hasChanges, setHasChanges] = useState(false);
   const handleSubmit = (event) => {
@@ -48,7 +53,8 @@ function Settings(props) {
       hostName: hostName,
       hostInstagram: hostInstagram,
       hostTwitter: hostTwitter,
-      hostTwitch: hostTwitch
+      hostTwitch: hostTwitch,
+      isHome: isHome
     });
     updateCurrentOpponent(opponent);
     setHasChanges(false);
@@ -69,6 +75,7 @@ function Settings(props) {
       setHostInstagram(data.hostInstagram);
       setHostTwitch(data.hostTwitch);
       setHostTwitter(data.hostTwitter);
+      setIsHome(data.isHome);
     };
     socket.on('match:loaded', handleMatchLoad);
     return () => {
@@ -84,6 +91,33 @@ function Settings(props) {
             {currentMatchId ? `Updating: #${currentMatchId} ${stateLookup[opponent] || 'TBD'}` : 'Add New Match'}
           </Card.Header>
           <Card.Body>
+            <fieldset className="form-group">
+              <InputGroup className="host-toggle">
+                <ButtonGroup toggle>
+                  <ToggleButton
+                    type="radio"
+                    name="isHome"
+                    variant={isHome ? 'danger' : 'secondary'}
+                    checked={isHome}
+                    value={1}
+                    onClick={handleIsHome}
+                  >
+                    Home
+                  </ToggleButton>
+                  <ToggleButton
+                    type="radio"
+                    name="isHome"
+                    variant={!isHome ? 'danger' : 'secondary'}
+                    checked={!isHome}
+                    value={0}
+                    onClick={handleIsHome}
+                  >
+                    Away
+                  </ToggleButton>
+                </ButtonGroup>
+                <InputGroup.Append>Playing</InputGroup.Append>
+              </InputGroup>
+            </fieldset>
             <Form.Group controlId="opponent">
               <Form.Label>Opponent</Form.Label>
               <Form.Control as="select" custom onChange={handleOpponent} value={opponent}>

@@ -13,7 +13,7 @@
 
 .Board .pairings {
     float: right;
-    font-size: 1.15em;
+    font-size: 1.1em;
 }
 
 .Board .pairings tr td:nth-child(n+3):nth-child(-n+4) {
@@ -157,20 +157,23 @@
 
 .Board .eventData .moveList {
     background: #fff;
-    max-height: 198px;
+    max-height: 245px;
     padding: 0.25em;
+    overflow: hidden;
 }
 
-.Board .eventData .moveList a {
-    font-size: 0.75rem;
+.Board .eventData .moveList span {
+    font-size: 0.5rem;
     font-weight: normal;
     font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
     color: #006747;
-    display: inline;
+    margin-right: 0.5em;
+    line-height: 1.25;
     opacity: 0.8;
+    float: left;
 }
 
-.Board .eventData .moveList a:last-child {
+.Board .eventData .moveList span.active {
     font-weight: 700;
     opacity: 1;
 }
@@ -185,7 +188,10 @@
     counter-reset: section;
 }
 
-.Board .eventData .moveList a:nth-child(odd)::before {
+.Board .eventData .moveList span:nth-child(odd)::before {
+    opacity: 1;
     counter-increment: section;
     content: counters(section, ".") ". ";
+    color: #000;
+    font-weight: 700;
 }

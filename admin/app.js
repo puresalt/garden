@@ -14,7 +14,6 @@ mustache.escape = _ => _;
 const config = common.Config(process.env, require('../common/config/runtime.json'));
 
 const templateFileDirectory = path.join(__dirname, 'template');
-const stateLookup = common.Data.StateLookup;
 const STREAMER_PERMISSION = 0x00000100;
 
 const accessConfig = {
@@ -27,14 +26,14 @@ const accessConfig = {
 
 const runApp = () => {
   const app = express();
-  app.use(express.static(path.join(__dirname, 'public')));
   app.use(bodyParser.urlencoded({extended: true}));
   app.use(session({
     secret: config.session.secret,
     resave: false,
     saveUninitialized: true,
-    cookie: {secure: true}
+    cookie: {secure: false}
   }));
+  app.use('/admin', express.static(path.join(__dirname, 'build')));
 
   app.get('/', (req, res) => {
     if (req.session.isAdmin) {
@@ -42,6 +41,7 @@ const runApp = () => {
     }
     res.send(mustache.render(fs.readFileSync(path.join(templateFileDirectory, 'index.html.mustache'), 'utf8'), accessConfig));
   });
+  app.use(express.static(path.join(__dirname, 'public')));
 
   app.get('/callback', (req, res) => {
     if (req.query.code) {
@@ -64,6 +64,7 @@ const runApp = () => {
       })
         .then(discordRes => discordRes.json())
         .then(info => {
+          console.log(info);
           return info;
         })
         .then(info => {
@@ -92,43 +93,19 @@ const runApp = () => {
     }
   });
 
-  app.get('/admin', (req, res) => {
-    if (false && !req.session.isAdmin) {
-      return res.send(mustache.render(fs.readFileSync(path.join(templateFileDirectory, 'unauthorized.html.mustache'), 'utf8'), accessConfig));
-    }
-
-    const stateList = [];
-    for (const key in stateLookup) {
-      if (!stateLookup.hasOwnProperty(key)) {
-        continue;
-      }
-      stateList.push({
-        key: key,
-        name: stateLookup[key],
-        selected: key === 'PA'
-      });
-    }
-
-    res.send(mustache.render(fs.readFileSync(path.join(templateFileDirectory, 'admin.html.mustache'), 'utf8'), {
-      stateList: stateList
-    }));
-  });
-
-  app.post('/admin/save', (req, res) => {
-    console.log(req);
-    return res.json(req.body);
-
-    if (!req.session.isAdmin) {
-      return res.status(401).json({error: 'unauthorized'});
-    }
-
-    return res.status(200).json({});
-  });
-
   app.get('/quit', (req, res) => {
     req.session.isAdmin = false;
     res.redirect('/');
   });
+
+  app.get('*', (req, res) => {
+    if (!req.session.isAdmin) {
+      res.redirect('/');
+    } else {
+      res.sendFile(path.join(__dirname + '/build/admin.html'));
+    }
+  });
+
   return app;
 };
 

@@ -158,17 +158,18 @@
     overflow-y: auto;
 }
 
-.Board .eventData .moveList a {
+.Board .eventData .moveList span {
     font-size: 0.6rem;
     font-weight: normal;
     font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
     color: #006747;
-    margin-left: 0.5em;
-    line-height: 5px;
+    margin-right: 0.5em;
+    line-height: 1.5;
     opacity: 0.8;
+    float:left;
 }
 
-.Board .eventData .moveList a:last-child {
+.Board .eventData .moveList span.active {
     font-weight: 700;
     opacity: 1;
 }
@@ -183,9 +184,12 @@
     counter-reset: section;
 }
 
-.Board .eventData .moveList a:nth-child(odd)::before {
+.Board .eventData .moveList span:nth-child(odd)::before {
+    opacity: 1;
     counter-increment: section;
     content: counters(section, ".") ". ";
+    color: #000;
+    font-weight: 700;
 }
 
 .Board .game-form {

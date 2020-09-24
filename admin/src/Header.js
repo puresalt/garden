@@ -10,7 +10,7 @@ import LiveButton from './LiveButton';
 import './Header.css';
 
 function Header(props) {
-  const {currentMatchId, stateLookup, currentOpponent, socket} = props;
+  const {socket, currentMatchId, isLive, updateSetIsLive, stateLookup, currentOpponent} = props;
 
   const {pathname} = useLocation();
 
@@ -46,10 +46,12 @@ function Header(props) {
       currentMatchId
         ? <Navigation
           socket={socket}
+          isLive={isLive}
           pathname={pathname}
           stateLookup={stateLookup}
           currentMatchId={currentMatchId}
           currentOpponent={currentOpponent}
+          updateSetIsLive={updateSetIsLive}
         />
         : ''
     }
@@ -57,7 +59,7 @@ function Header(props) {
 }
 
 function Navigation(props) {
-  const {socket, pathname, currentMatchId, currentOpponent, stateLookup} = props;
+  const {socket, pathname, currentMatchId, currentOpponent, stateLookup, isLive, updateSetIsLive} = props;
 
   const routerLinks = [
     ['/dashboard', 'Settings'],
@@ -77,7 +79,7 @@ function Navigation(props) {
           return <Nav.Link key={i} href={tuple[0]}>{tuple[1]}</Nav.Link>;
         })}
       </Nav>
-      <LiveButton socket={socket} currentMatchId={currentMatchId}/>
+      <LiveButton socket={socket} currentMatchId={currentMatchId} updateSetIsLive={updateSetIsLive}/>
     </Container>
   </Navbar>;
 }

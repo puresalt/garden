@@ -1,4 +1,5 @@
-import React, {useEffect} from 'react';
+import {createBrowserHistory} from 'history';
+import React, {useEffect, useState} from 'react';
 import socketIoClient from 'socket.io-client';
 import {BrowserRouter as Router, Redirect, Route, Switch} from 'react-router-dom';
 import Container from 'react-bootstrap/Container';
@@ -11,6 +12,10 @@ import Members from './Members';
 import Header from './Header';
 import './App.css';
 
+export const history = createBrowserHistory({
+  basename: process.env.PUBLIC_URL
+});
+
 const CONFIG = Config(process.env);
 const STATE_LOOKUP = Data.StateLookup;
 const socket = socketIoClient(CONFIG.socketIo.url, {
@@ -18,7 +23,7 @@ const socket = socketIoClient(CONFIG.socketIo.url, {
 });
 
 function usePersistentState(key, defaultValue) {
-  const [state, setState] = React.useState(() => {
+  const [state, setState] = useState(() => {
     try {
       return JSON.parse(String(localStorage.getItem(key))) || defaultValue;
     } catch (e) {
@@ -32,6 +37,10 @@ function usePersistentState(key, defaultValue) {
 }
 
 function App() {
+  const [isLive, setIsLive] = useState(false);
+  const updateSetIsLive = (isLive) => {
+    setIsLive(isLive);
+  };
   const [currentMatchId, setCurrentMatchId] = usePersistentState('currentMatchId', 0);
   const updateCurrentMatchId = (newMatchId) => {
     setCurrentMatchId(newMatchId);
@@ -73,6 +82,8 @@ function App() {
         currentOpponent={currentOpponent}
         stateLookup={STATE_LOOKUP}
         socket={socket}
+        isLive={isLive}
+        updateSetIsLive={updateSetIsLive}
       />
       <div className="position-relative">
         <Container className="p-3">

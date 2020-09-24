@@ -24,7 +24,8 @@ function Boards(props) {
         opponentId: pairing.opponent.id,
         name: pairing.opponent.name,
         result: pairing.result,
-        gameId: pairing.gameId
+        gameId: pairing.gameId,
+        orientation: pairing.orientation
       });
       return gathered;
     }, []);
@@ -38,7 +39,12 @@ function Boards(props) {
     };
   }, []);
 
-  const requestPairingList = () => socket.emit('pairing:list', currentMatchId);
+  const requestPairingList = (data) => {
+    if (data.matchId !== currentMatchId) {
+      return;
+    }
+    socket.emit('pairing:list', currentMatchId);
+  };
   useEffect(() => {
     socket.on('member:updated', requestPairingList);
     socket.on('opponent:updated', requestPairingList);

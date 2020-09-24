@@ -1,3 +1,4 @@
+const BoardEventRoute = require('./board/event');
 const BoardInteractiveRoute = require('./board/interactive');
 const BoardViewerRoute = require('./board/viewer');
 
@@ -45,14 +46,19 @@ function StreamerRoute(db, redis, io, socket, teamId) {
   socket.on('streamer:update', updateStreamState);
   socket.on('streamer:load', loadStreamState);
   socket.on('streamer:list', listStreamState);
-  const boardInteractions = [1, 2, 3, 4].map(i => BoardInteractiveRoute(db, redis, io, socket, teamId, i));
-  const boardViewers = [1, 2, 3, 4].map(i => BoardViewerRoute(db, redis, io, socket, teamId, i));
+  const boardSubRoutes = [1, 2, 3, 4].reduce((gathered, i) => {
+    gathered.push(
+      BoardEventRoute(db, redis, io, socket, teamId, i),
+      BoardInteractiveRoute(db, redis, io, socket, teamId, i),
+      BoardViewerRoute(db, redis, io, socket, teamId, i)
+    );
+    return gathered;
+  }, []);
   return () => {
     socket.off('streamer:update', updateStreamState);
     socket.off('streamer:load', loadStreamState);
     socket.off('streamer:list', listStreamState);
-    boardInteractions.forEach(i => i());
-    boardViewers.forEach(i => i());
+    boardSubRoutes.forEach(i => i());
   };
 }
 

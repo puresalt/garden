@@ -1,4 +1,5 @@
 const path = require('path');
+const http = require('http');
 const common = require('gcss-common');
 const config = common.Config(process.env, require(path.join(__dirname, '../common/config/runtime.json')));
 const mysql = require('mysql');

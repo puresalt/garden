@@ -30,8 +30,4 @@ apps:
     env:
       NODE_ENV: development
       PORT: 4004
-  - script: npm
-      args: run start:obvserver
-      env:
-        NODE_ENV: development
-        PORT: 4005
+

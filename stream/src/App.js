@@ -53,7 +53,8 @@ function App() {
       gathered[0][boardIndex].pairings.push({
         name: pairing.opponent.name,
         rating: pairing.opponent.rating,
-        result: pairing.result
+        result: pairing.result,
+        orientation: pairing.orientation
       });
       if (pairing.result !== null) {
         gathered[1] += pairing.result;
@@ -73,7 +74,12 @@ function App() {
     };
   }, []);
 
-  const requestPairingList = () => socket.emit('pairing:list', currentMatchId);
+  const requestPairingList = (data) => {
+    if (data.matchId && data.matchId !== currentMatchId) {
+      return;
+    }
+    socket.emit('pairing:list', currentMatchId);
+  };
   useEffect(() => {
     socket.on('member:updated', requestPairingList);
     socket.on('opponent:updated', requestPairingList);

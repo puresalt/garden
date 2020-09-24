@@ -57,7 +57,9 @@ export default class Chessground extends React.PureComponent {
       pauseClocks: true,
       pausePosition: true,
       currentMove: 0,
-      gameId: null
+      gameId: this.props.gameId,
+      matchId: this.props.matchId,
+      orientation: this.props.orientation || 'white',
     };
     this.handleEvent = this.handleEvent.bind(this);
     this.sendEvent = this.sendEvent.bind(this);
@@ -80,59 +82,8 @@ export default class Chessground extends React.PureComponent {
     return config
   }
 
-  handleEvent(event) {
-    if (!this.cg) {
-      console.warn(`Board is not ready.`);
-      return;
-    }
-    if (typeof this[event.type] !== 'function') {
-      console.warn(`Unexpected board event: ${event.type}`);
-      return;
-    }
-    console.log('incoming:', event);
-    this[event.type](event.data);
-  }
-
-  sendEvent(id) {
-    this.setState({pausePosition: true, pauseClocks: true});
-    if (!this.socket) {
-      console.warn(`Socket is not ready.`);
-      return;
-    }
-    this.socket.emit(`${this.boardName}:goto`, {id: id, paused: id < this.state.moveList.length});
-  }
-
-  start(data) {
-    console.log('starting?', this.boardName, data);
-    this.cg.set({fen: data.fen});
-    this.cg.setShapes([]);
-    const homeClock = duration().add(data.clock[0], 's');
-    const awayClock = duration().add(data.clock[1], 's');
-    const moveList = data.moveList || [];
-    this.setState({
-      homeClock: homeClock,
-      homeMinutes: homeClock.minutes(),
-      homeSeconds: homeClock.seconds(),
-      awayClock: awayClock,
-      awayMinutes: awayClock.minutes(),
-      awaySeconds: awayClock.seconds(),
-      moving: data.moving || 'home',
-      moveList: moveList,
-      pauseClocks: true,
-      pausePosition: false,
-      currentMove: moveList.length - 1
-    });
-  }
-
-  result(data) {
-    this.setState({
-      pauseClocks: true,
-      pausePosition: true
-    });
-  }
-
   updateClocks() {
-    const x = setInterval(() => {
+    this.clockInterval = setInterval(() => {
       let {pauseClocks, pausePosition, homeClock, awayClock, moving} = this.state;
 
       if (pauseClocks || pausePosition) {
@@ -140,7 +91,7 @@ export default class Chessground extends React.PureComponent {
       }
 
       if (homeClock <= 0 || awayClock <= 0) {
-        return clearInterval(x);
+        return clearInterval(this.clockInterval);
       }
 
       switch (moving) {
@@ -163,6 +114,41 @@ export default class Chessground extends React.PureComponent {
         default:
       }
     }, 1000);
+  }
+
+  stopUpdatingClocks() {
+    clearInterval(this.clockInterval);
+  }
+
+  handleEvent(event) {
+    if (!this.cg) {
+      console.warn(`Board is not ready.`);
+      return;
+    }
+    if (typeof this[event.type] !== 'function') {
+      console.warn(`Unexpected board event: ${event.type}`);
+      return;
+    }
+    this[event.type](event.data);
+  }
+
+  sendEvent(id) {
+    this.setState({pausePosition: true, pauseClocks: true});
+    if (!this.socket) {
+      console.warn(`Socket is not ready.`);
+      return;
+    }
+    this.socket.emit(`${this.boardName}:goto`, {id: id, paused: id < this.state.moveList.length});
+  }
+
+  result(data) {
+    if (this.props.onResult) {
+      this.props.onResult(this.boardName, data);
+    }
+    this.setState({
+      pauseClocks: true,
+      pausePosition: true
+    });
   }
 
   move(data) {
@@ -198,10 +184,12 @@ export default class Chessground extends React.PureComponent {
   }
 
   goto(data) {
-    this.cg.set({fen: data.fen});
-    this.cg.setShapes(data.shapes || []);
+    const orientation = data.orientation || this.state.orientation;
+    this.cg.set({fen: data.fen, orientation: orientation});
+    this.cg.setShapes([]);
     const homeClock = duration().add(data.clock[0], 's');
     const awayClock = duration().add(data.clock[1], 's');
+    const moveList = data.moveList || this.state.moveList;
     this.setState({
       homeClock: homeClock,
       homeMinutes: homeClock.minutes(),
@@ -209,15 +197,21 @@ export default class Chessground extends React.PureComponent {
       awayClock: awayClock,
       awayMinutes: awayClock.minutes(),
       awaySeconds: awayClock.seconds(),
-      moving: data.moving,
+      moving: data.moving || 'home',
+      moveList: moveList,
       pauseClocks: true,
-      pausePosition: true,
-      currentMove: data.id
+      pausePosition: false,
+      currentMove: data.id || moveList.length,
+      orientation: orientation
     });
   }
 
   draw(data) {
     this.cg.setShapes(data.draw);
+  }
+
+  orientation(data) {
+    this.setState({orientation: data.orientation});
   }
 
   finished(data) {
@@ -226,6 +220,7 @@ export default class Chessground extends React.PureComponent {
       pausePosition: true,
       winner: data.winner
     })
+    this.socket.emit('pairing:list', this.state.matchId);
   }
 
   componentDidMount() {
@@ -233,21 +228,39 @@ export default class Chessground extends React.PureComponent {
     this.socket = this.props.socket;
     this.boardName = `${this.props.viewOnly ? 'viewer:' : ''}${this.props.boardName}`;
     this.socket.on(this.boardName, this.handleEvent);
-    if (this.props.gameId) {
-      this.socket.emit(`${this.boardName}:start`, this.props.gameId);
+    if (this.props.orientation) {
+      this.setState({orientation: this.props.orientation});
     }
-    this.updateClocks();
+    if (this.state.gameId) {
+      this.stopUpdatingClocks();
+      this.socket.emit(`${this.boardName}:start`, {
+        gameId: this.state.gameId,
+        orientation: this.state.orientation
+      });
+      this.updateClocks();
+    }
   }
 
   componentWillReceiveProps(nextProps) {
-    if (nextProps.gameId && this.state.gameId !== nextProps.gameId) {
-      this.setState({gameId: nextProps.gameId});
-      this.socket.emit(`${this.boardName}:start`, this.props.gameId);
+    if (this.state.gameId === nextProps.gameId) {
+      return;
+    }
+    this.setState({gameId: nextProps.gameId});
+    if (nextProps.orientation) {
+      this.setState({orientation: nextProps.orientation});
+    }
+    this.stopUpdatingClocks();
+    this.socket.emit(`${this.boardName}:start`, {
+      gameId: nextProps.gameId,
+      orientation: nextProps.orientation || this.state.orientation
+    });
+    if (nextProps.gameId) {
+      this.updateClocks();
     }
   }
 
   componentWillUnmount() {
-    this.updateClocks();
+    this.stopUpdatingClocks();
     this.cg.destroy();
     this.socket.off(this.boardName, this.handleEvent);
   }
@@ -275,17 +288,16 @@ export default class Chessground extends React.PureComponent {
         pausePosition: !latest,
         pauseClocks: !latest
       });
-      console.log('emit?', `${this.boardName}:goto`);
       this.socket.emit(`${this.boardName}:goto`, {
+        gameId: this.state.gameId,
         id: newCurrentMove,
         paused: !latest,
         stopJumping: !latest
       });
     };
     const changePlayState = (newPlayState) => {
-      console.log(`${this.boardName}:pause`)
       if (!newPlayState && !this.state.moveList.length) {
-        this.socket.emit(`${this.boardName}:start`, this.state.gameId);
+        this.socket.emit(`${this.boardName}:start`, {gameId: this.state.gameId, orientation: this.state.orientation});
         return;
       }
       this.setState({pausePosition: newPlayState});
@@ -301,15 +313,10 @@ export default class Chessground extends React.PureComponent {
         React.createElement('div', {className: `clock homeClock${awayActive}${awayFlagged}`}, awayClock),
         React.createElement('div', {className: 'moveList'},
           this.state.moveList.length
-            ? this.state.moveList.map((move, i) => {
-              return React.createElement('a',
-                {
-                  onClick: () => this.sendEvent(i)
-                },
-                i + 1 === this.state.currentMove
-                  ? React.createElement('strong', {}, move)
-                  : move)
-            })
+            ? this.state.moveList.map((move, i) => React.createElement('span', {
+              className: i + 1 === this.state.currentMove ? 'active' : '',
+              onClick: () => setCurrentMove(i, i + 1 === maxMove)
+            }, move))
             : React.createElement('div', {className: 'waiting'}, 'Waiting to begin...')
         ),
         React.createElement('div', {className: `clock homeClock${homeActive}${homeFlagged}`}, homeClock),
@@ -323,7 +330,7 @@ export default class Chessground extends React.PureComponent {
           ),
           React.createElement('button', {
               className: `btn btn-sm btn-${!this.state.currentMove ? 'secondary' : 'primary'}`,
-              onClick: () => setCurrentMove(this.state.currentMove - 1),
+              onClick: () => setCurrentMove(this.state.currentMove - 2),
               disabled: !this.state.currentMove
             },
             React.createElement('i', {className: 'fas fa-backward'})
@@ -337,7 +344,7 @@ export default class Chessground extends React.PureComponent {
           ),
           React.createElement('button', {
               className: `btn btn-sm btn-${this.state.currentMove === maxMove ? 'secondary' : 'primary'}`,
-              onClick: () => setCurrentMove(this.state.currentMove + 1),
+              onClick: () => setCurrentMove(this.state.currentMove),
               disabled: !this.state.currentMove === maxMove
             },
             React.createElement('i', {className: 'fas fa-forward'})

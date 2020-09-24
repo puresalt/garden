@@ -32,11 +32,20 @@ function Pairings(props) {
     setPairings(data.pairings);
     setIsLoading(false);
   };
+  const requestPairingList = (data) => {
+    if (data.matchId !== currentMatchId) {
+      return;
+    }
+    setIsLoading(true);
+    socket.emit('pairing:list', currentMatchId);
+  };
   useEffect(() => {
     socket.emit('pairing:list', currentMatchId);
     socket.on('pairing:listed', checkForPairingChanges);
+    socket.on('pairing:updated', requestPairingList);
     return () => {
       socket.off('pairing:listed', checkForPairingChanges);
+      socket.off('pairing:updated', requestPairingList);
     }
   }, [socket]);
 
@@ -111,7 +120,7 @@ function MatchUp(props) {
       <td>
         <GameIdForm
           pairingIndex={matchUpIndex}
-          gameId={pairing.gameId}
+          currentGameId={pairing.gameId}
           updateGameId={updateGameId}
           isNotReady={isNotReady}
         />
