@@ -13,82 +13,48 @@ function Settings(props) {
   const {socket, currentMatchId, stateLookup, onSubmit, updateCurrentOpponent} = props;
 
   const [isLoading, setIsLoading] = useState(true);
-  const [opponent, setOpponent] = useState('');
-  const handleOpponent = (event) => {
-    setOpponent(event.target.value);
-    setHasChanges(true);
-  };
-
-  const [hostName, setHostName] = useState('');
-  const handleHostName = (event) => {
-    setHostName(event.target.value);
-    setHasChanges(true);
-  };
-  const [hostInstagram, setHostInstagram] = useState(false);
-  const handleHostInstagram = (value) => {
-    setHostInstagram(value);
-    setHasChanges(true);
-  };
-  const [hostTwitch, setHostTwitch] = useState(false);
-  const handleHostTwitch = (value) => {
-    setHostTwitch(value);
-    setHasChanges(true);
-  };
-  const [hostTwitter, setHostTwitter] = useState(false);
-  const handleHostTwitter = (value) => {
-    setHostTwitter(value);
-    setHasChanges(true);
-  };
-  const [isHome, setIsHome] = useState(false);
-  const handleIsHome = (event) => {
-    setIsHome(event.target.value);
-    setHasChanges(true);
-  };
-
+  const [matchData, setMatchData] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
+  const updateMatchData = (key, value) => {
+    if (value === matchData[key]) {
+      return;
+    }
+    setMatchData({
+      ...matchData,
+      [key]: value
+    });
+    setHasChanges(true);
+  };
   const handleSubmit = (event) => {
     event.preventDefault();
-    onSubmit({
-      opponent: opponent,
-      hostName: hostName,
-      hostInstagram: hostInstagram,
-      hostTwitter: hostTwitter,
-      hostTwitch: hostTwitch,
-      isHome: isHome
-    });
-    updateCurrentOpponent(opponent);
+    onSubmit(matchData);
     setHasChanges(false);
   };
 
   useEffect(() => {
     if (!currentMatchId) {
-      setIsLoading(false);
-      return;
+      return setIsLoading(false);
     }
     const handleMatchLoad = (data) => {
+      console.log('hi:', data);
       if (!data.id) {
         return;
       }
       setIsLoading(false);
-      setOpponent(data.opponent);
-      setHostName(data.hostName);
-      setHostInstagram(data.hostInstagram);
-      setHostTwitch(data.hostTwitch);
-      setHostTwitter(data.hostTwitter);
-      setIsHome(data.isHome);
+      setMatchData(data);
     };
     socket.on('match:loaded', handleMatchLoad);
     return () => {
       socket.off('match:loaded', handleMatchLoad);
     };
-  }, []);
+  }, [currentMatchId]);
 
   return <div className="Settings">
     <LoadingOverlay active={isLoading} spinner={false} text={<LoadingOverlayText/>}>
       <Form onSubmit={handleSubmit}>
         <Card>
           <Card.Header>
-            {currentMatchId ? `Updating: #${currentMatchId} ${stateLookup[opponent] || 'TBD'}` : 'Add New Match'}
+            {currentMatchId ? `Updating: #${currentMatchId} ${stateLookup[matchData.opponent] || 'TBD'}` : 'Add New Match'}
           </Card.Header>
           <Card.Body>
             <fieldset className="form-group">
@@ -97,20 +63,20 @@ function Settings(props) {
                   <ToggleButton
                     type="radio"
                     name="isHome"
-                    variant={isHome ? 'danger' : 'secondary'}
-                    checked={isHome}
+                    variant={matchData.isHome ? 'danger' : 'secondary'}
+                    checked={matchData.isHome}
                     value={1}
-                    onClick={handleIsHome}
+                    onClick={() => updateMatchData('isHome', true)}
                   >
                     Home
                   </ToggleButton>
                   <ToggleButton
                     type="radio"
                     name="isHome"
-                    variant={!isHome ? 'danger' : 'secondary'}
-                    checked={!isHome}
+                    variant={!matchData.isHome ? 'danger' : 'secondary'}
+                    checked={!matchData.isHome}
                     value={0}
-                    onClick={handleIsHome}
+                    onClick={() => updateMatchData('isHome', false)}
                   >
                     Away
                   </ToggleButton>
@@ -120,7 +86,14 @@ function Settings(props) {
             </fieldset>
             <Form.Group controlId="opponent">
               <Form.Label>Opponent</Form.Label>
-              <Form.Control as="select" custom onChange={handleOpponent} value={opponent}>
+              <Form.Control
+                as="select"
+                custom
+                onChange={(value) => {
+                  updateMatchData('opponent', value);
+                  updateCurrentOpponent(value);
+                }}
+                value={matchData.opponent}>
                 {Object.keys(stateLookup).map((key, i) => <option
                   key={i}
                   value={key}>{stateLookup[key]}</option>)}
@@ -128,24 +101,51 @@ function Settings(props) {
             </Form.Group>
             <Form.Group controlId="host">
               <Form.Label>Host</Form.Label>
-              <Form.Control name="host" onChange={handleHostName} placeholder="Name" value={hostName}/>
+              <Form.Control name="host" onChange={(value) => updateMatchData('host', value)} placeholder="Name"
+                            value={matchData.hostName}/>
             </Form.Group>
             <fieldset className="form-group">
               <legend className="form-label">Social Media Icons</legend>
-              <Icon
-                name="instagram"
-                checked={hostInstagram}
-                onChange={handleHostInstagram}
+              <ToggleOption
+                icon="instagram"
+                name="Instagram"
+                checked={matchData.hostInstagram}
+                onChange={(value) => updateMatchData('hostInstagram', value)}
               />
-              <Icon
-                name="twitch"
-                checked={hostTwitch}
-                onChange={handleHostTwitch}
+              <ToggleOption
+                icon="twitch"
+                name="Twitch"
+                checked={matchData.hostTwitch}
+                onChange={(value) => updateMatchData('hostTwitch', value)}
               />
-              <Icon
-                name="twitter"
-                checked={hostTwitter}
-                onChange={handleHostTwitter}
+              <ToggleOption
+                icon="twitter"
+                name="Twitter"
+                checked={matchData.hostTwitter}
+                onChange={(value) => updateMatchData('hostTwitter', value)}
+              />
+            </fieldset>
+            <fieldset className="form-group">
+              <legend className="form-label">Display On Stream</legend>
+              <ToggleOption
+                name="Webcam Holder"
+                checked={matchData.showWebcam}
+                onChange={(value) => updateMatchData('showWebcam', value)}
+              />
+              <ToggleOption
+                name="Ad Block Unit"
+                checked={matchData.showAdUnit}
+                onChange={(value) => updateMatchData('showAdUnit', value)}
+              />
+              <ToggleOption
+                name="Auto Boards"
+                checked={matchData.showProgrammaticBoards}
+                onChange={(value) => updateMatchData('showProgrammaticBoards', value)}
+              />
+              <ToggleOption
+                name="Debug Info"
+                checked={matchData.showDebugInformation}
+                onChange={(value) => updateMatchData('showDebugInformation', value)}
               />
             </fieldset>
           </Card.Body>
@@ -162,8 +162,8 @@ function Settings(props) {
   </div>
 }
 
-function Icon(props) {
-  const {name, checked, onChange} = props;
+function ToggleOption(props) {
+  const {icon, name, checked, onChange} = props;
 
   const [isChecked, setIsChecked] = useState(false);
 
@@ -181,7 +181,7 @@ function Icon(props) {
     <ButtonGroup toggle>
       <ToggleButton
         type="radio"
-        name={`hostIcon-${name}`}
+        name={`toggle-${name}`}
         variant={isChecked ? 'danger' : 'secondary'}
         checked={isChecked}
         value={1}
@@ -191,7 +191,7 @@ function Icon(props) {
       </ToggleButton>
       <ToggleButton
         type="radio"
-        name={`hostIcon-${name}`}
+        name={`toggle-${name}`}
         variant={!isChecked ? 'danger' : 'secondary'}
         checked={!isChecked}
         value={0}
@@ -200,7 +200,7 @@ function Icon(props) {
         Hide
       </ToggleButton>
     </ButtonGroup>
-    <InputGroup.Append><i className={`fab fa-${name}`}/> {name}</InputGroup.Append>
+    <InputGroup.Append>{icon ? <><i className={`fab fa-${name}`}/> </> : ''}{name}</InputGroup.Append>
   </InputGroup>;
 }
 

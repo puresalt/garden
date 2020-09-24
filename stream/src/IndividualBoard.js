@@ -3,24 +3,28 @@ import Board from './Board';
 import {useParams} from 'react-router-dom';
 
 function IndividualBoard(props) {
-  const {socket, players} = props;
+  const {socket, showProgrammaticBoards, debugMode, pairings} = props;
 
   const {boardNumber} = useParams();
 
-  const player = players[boardNumber - 1];
+  const pairing = pairings[boardNumber - 1];
 
-  if (!player) {
+  if (!pairing) {
     return (
-      <div className="NoPlayer">TBD</div>
+      <div className="NoPlayer"/>
     )
   }
   return (
     <Board
       board={boardNumber}
-      name={player.name}
-      rating={player.rating}
-      pairings={player.pairings}
+      debugMode={debugMode}
+      showProgrammaticBoards={showProgrammaticBoards}
+      name={pairing.name}
+      rating={pairing.rating}
+      pairings={pairing.pairings}
       socket={socket}
+      boardDimensions={{left: 7, top: 7}}
+      boardInfoDimensions={{left: 0, top: 121, height: 600, width: 446}}
       large={true}
     />
   );

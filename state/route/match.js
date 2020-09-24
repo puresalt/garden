@@ -6,7 +6,21 @@ const matchKeys = [
   ['host_instagram', 'hostInstagram'],
   ['host_twitch', 'hostTwitch'],
   ['host_twitter', 'hostTwitter'],
-  ['home', 'isHome']
+  ['home', 'isHome'],
+  ['show_webcam', 'showWebcam'],
+  ['show_ad_unit', 'showAdUnit'],
+  ['show_programmatic_boards', 'showProgrammaticBoards'],
+  ['show_debug_information', 'showDebugInformation']
+];
+const booleanKeys = [
+  'host_instagram',
+  'host_twitch',
+  'host_twitter',
+  'home',
+  'show_webcam',
+  'show_ad_unit',
+  'show_programmatic_boards',
+  'show_debug_information'
 ];
 
 function matchRoute(db, redis, io, socket, teamId) {
@@ -158,7 +172,10 @@ function matchRoute(db, redis, io, socket, teamId) {
         return;
       }
       const returnData = matchKeys.reduce((gathered, keys) => {
-        gathered[keys[1]] = result[0][keys[0]] || null;
+        gathered[keys[1]] = result[0][keys[0]];
+        if (gathered[keys[1]] !== null && booleanKeys.indexOf(keys[0]) > -1) {
+          gathered[keys[1]] = gathered[keys[1]] === 1;
+        }
         return gathered;
       }, {id: result[0].id});
       console.log('match:loaded', teamId, returnData);

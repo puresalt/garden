@@ -128,7 +128,8 @@
     width: 100%;
 }
 
-.Board.Large .board {
+.Board.Large .board,
+.Board.Large .board-placeholder {
     top: 87px;
 }
 
@@ -194,4 +195,36 @@
     content: counters(section, ".") ". ";
     color: #000;
     font-weight: 700;
+}
+
+.Board.debug .board,
+.Board.debug .board-placeholder,
+.Board.debug .board-placeholder-info {
+    background: rgba(255, 0, 0, 0.5);
+}
+
+.board-placeholder {
+    position: absolute;
+    left: 0;
+    top: 43px;
+    height: 464px;
+    width: 464px;
+}
+
+.board-placeholder-info {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    height: 300px;
+    width: 223px;
+}
+
+.Board.Large .board-placeholder {
+    height: 936px;
+    width: 936px;
+}
+
+.Board.Large .board-placeholder-info {
+    height: 650px;
+    width: 446px;
 }

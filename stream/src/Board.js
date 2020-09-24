@@ -2,9 +2,10 @@ import React, {useEffect} from 'react';
 import OrDefault from 'gscc-common/react/OrDefault';
 import Chessboard from 'gscc-common/react/Chessboard';
 import './Board.css';
+import DebugInfo from './DebugInfo';
 
 function Board(props) {
-  const {board, name, rating, pairings, large, socket} = props;
+  const {board, showProgrammaticBoards, debugMode, name, rating, pairings, large, socket, boardDimensions, boardInfoDimensions} = props;
   const round = pairings.filter(item => item.result !== null).length + 1;
   const done = round > pairings.length;
   const tally = round > 1
@@ -31,16 +32,27 @@ function Board(props) {
     };
   }, []);
   return (
-    <div className={"Board" + (large ? ' Large' : (done ? ' Faded' : ''))} key={board} id={'board-' + board}>
+    <div className={"Board" + (large ? ' Large' : (done ? ' Faded' : '')) + (debugMode ? ' debug' : '')} key={board}
+         id={'board-' + board}>
       <header><span>BOARD {board}:</span> <OrDefault value={name}/> <em>{rating}</em></header>
-      <Chessboard
-        boardName={'board:' + board}
-        size={size}
-        viewOnly={true}
-        coordinates={false}
-        orientation={pairings[round - 1].orientation}
-        socket={socket}
-      />
+      {showProgrammaticBoards
+        ? <Chessboard
+          boardName={'board:' + board}
+          size={size}
+          viewOnly={true}
+          coordinates={false}
+          orientation={pairings[round - 1].orientation}
+          socket={socket}
+        />
+        : <>
+          <div className="board-placeholder">
+            <DebugInfo left={boardDimensions.left} top={boardDimensions.top} height={size} width={size}/>
+          </div>
+          <div className="board-placeholder-info">
+            <DebugInfo left={boardInfoDimensions.left} top={boardInfoDimensions.top} height={boardInfoDimensions.height} width={boardInfoDimensions.width}/>
+          </div>
+        </>
+      }
       <div className="pairings">
         <table>
           <tbody>

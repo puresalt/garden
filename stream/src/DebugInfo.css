@@ -1,0 +1,38 @@
+.debug-info {
+    display: none;
+}
+
+.debug .debug-info {
+    border: solid 1px rgba(0, 0, 0, 0.9);
+    display: block;
+    height: calc(100% - 2px);
+    padding: 0 1em;
+}
+
+.debug .debug-info table {
+    margin-top: 1em;
+    width: 100%;
+}
+
+.debug .debug-info td,
+.debug .debug-info th {
+    color: #fff;
+    font-size: 18px;
+    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+    font-weight: 400;
+}
+
+.debug .debug-info td {
+    padding-top: 5px;
+}
+
+.debug .debug-info tr td:first-child {
+    width: 150px;
+}
+
+.debug .debug-info th {
+    border-bottom: solid 1px rgba(255, 255, 255, 0.5);
+    font-weight: 700;
+    padding-bottom: 5px;
+    text-align: left;
+}

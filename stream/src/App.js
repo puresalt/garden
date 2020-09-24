@@ -6,6 +6,8 @@ import Board from './Board';
 import Score from './Score';
 import TitleBar from './TitleBar';
 import IndividualBoard from './IndividualBoard';
+import AdUnit from './AdUnit';
+import Webcam from './Webcam';
 import './App.css';
 
 const CONFIG = Config(process.env);
@@ -16,6 +18,19 @@ const socket = socketIoClient(CONFIG.socketIo.url, {
 const teamName = 'New Jersey';
 const currentMatchId = 1;
 const totalBoardNumber = 4;
+
+const boardDimensions = [
+  {left: 7, top: 50},
+  {left: 700, top: 7},
+  {left: 7, top: 566},
+  {left: 700, top: 566}
+];
+const boardInfoDimensions = [
+  {left: 477, top: 214, height: 600, width: 223},
+  {left: 1166, top: 730, height: 600, width: 223},
+  {left: 477, top: 214, height: 600, width: 223},
+  {left: 1166, top: 7340, height: 600, width: 223}
+];
 
 function App() {
   const [match, setMatch] = useState({});
@@ -108,16 +123,25 @@ function App() {
       <div className="App">
         <Switch>
           <Route path="/board/:boardNumber">
-            <IndividualBoard pairings={pairings} socket={socket}/>
+            <IndividualBoard
+              showProgrammaticBoards={match.showProgrammaticBoards}
+              debugMode={match.showDebugInformation}
+              pairings={pairings}
+              socket={socket}
+            />
           </Route>
           <Route path="/">
             {pairings.map((item, i) => {
               return <Board
                 key={i + 1}
+                showProgrammaticBoards={match.showProgrammaticBoards}
                 board={i + 1}
+                debugMode={match.showDebugInformation}
                 name={item.name}
                 rating={item.rating}
                 pairings={item.pairings}
+                boardDimensions={boardDimensions[i]}
+                boardInfoDimensions={boardInfoDimensions[i]}
                 socket={socket}
               />;
             })}
@@ -130,6 +154,8 @@ function App() {
           awayTeamScore={awayTeamScore}
         />
         <TitleBar homeTeamName={teamName} awayTeamName={opponentName} name={match.hostName} icons={hostIcons}/>
+        <AdUnit showAdUnit={match.showAdUnit} debugMode={match.showDebugInformation}/>
+        <Webcam showWebcam={match.showWebcam} debugMode={match.showDebugInformation}/>
       </div>
     </Router>
   );

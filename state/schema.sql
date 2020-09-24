@@ -36,6 +36,10 @@ CREATE TABLE `garden_match` (
     host_twitter BOOLEAN DEFAULT FALSE,
     host_twitch BOOLEAN DEFAULT FALSE,
     home BOOLEAN DEFAULT FALSE,
+    show_webcam BOOLEAN DEFAULT FALSE,
+    show_ad_unit BOOLEAN DEFAULT FALSE,
+    show_programmatic_boards BOOLEAN DEFAULT FALSE,
+    show_debug_information BOOLEAN DEFAULT FALSE,
     deleted BOOLEAN DEFAULT FALSE,
     INDEX (team_id)
 );
