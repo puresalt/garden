@@ -17,7 +17,9 @@ function Dashboard(props) {
     socket.emit('match:update', {id: currentMatchId, ...data});
   };
 
-  const [opponents, setOpponents] = useState([]);
+  const [opponents, setOpponents] = useState([
+    
+  ]);
   const updateOpponents = (newOpponents) => {
     if (newOpponents.matchId === currentMatchId) {
       setOpponents(newOpponents.opponents);

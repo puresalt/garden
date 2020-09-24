@@ -13,14 +13,11 @@ function AdUnit(props) {
     const allImagesContext = require.context('./ad/', false, /\.(png|jpe?g|svg)$/);
 
     setImages(allImagesContext.keys().map(allImagesContext));
-    console.log(allImagesContext.keys().map(allImagesContext));
   }, []);
 
   if (!showAdUnit || !images.length) {
     return <></>;
   }
-
-  console.log(images.length);
 
   return (
     <div className={`ImageCarousel${debugMode ? ' debug' : ''}`}>

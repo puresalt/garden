@@ -36,7 +36,6 @@ function Settings(props) {
       return setIsLoading(false);
     }
     const handleMatchLoad = (data) => {
-      console.log('hi:', data);
       if (!data.id) {
         return;
       }
@@ -89,11 +88,12 @@ function Settings(props) {
               <Form.Control
                 as="select"
                 custom
-                onChange={(value) => {
+                onChange={(event) => {
+                  const value = event.target.value;
                   updateMatchData('opponent', value);
                   updateCurrentOpponent(value);
                 }}
-                value={matchData.opponent}>
+                defaultValue={matchData.opponent}>
                 {Object.keys(stateLookup).map((key, i) => <option
                   key={i}
                   value={key}>{stateLookup[key]}</option>)}
@@ -101,7 +101,7 @@ function Settings(props) {
             </Form.Group>
             <Form.Group controlId="host">
               <Form.Label>Host</Form.Label>
-              <Form.Control name="host" onChange={(value) => updateMatchData('host', value)} placeholder="Name"
+              <Form.Control name="host" onChange={(event) => updateMatchData('host', event.target.value)} placeholder="Name"
                             value={matchData.hostName}/>
             </Form.Group>
             <fieldset className="form-group">

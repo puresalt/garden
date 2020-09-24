@@ -1,5 +1,8 @@
 {
+  "discord": {
+    "redirectUrl": "https://garden.ps.vg/callback"
+  },
   "socketIo": {
-    "url": "https://state.garden.ps.vg/callback"
+    "url": "https://state.garden.ps.vg"
   }
 }

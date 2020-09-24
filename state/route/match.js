@@ -38,6 +38,7 @@ function matchRoute(db, redis, io, socket, teamId) {
   }
 
   function createNewMatch(data) {
+    console.log('match:create', data);
     const insertData = matchKeys.reduce((gathered, keys) => {
       gathered[keys[0]] = data[keys[1]] || null;
       return gathered;
