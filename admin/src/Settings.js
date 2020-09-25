@@ -93,15 +93,15 @@ function Settings(props) {
                   updateMatchData('opponent', value);
                   updateCurrentOpponent(value);
                 }}
-                defaultValue={matchData.opponent}>
+                value={matchData.opponent}>
                 {Object.keys(stateLookup).map((key, i) => <option
                   key={i}
                   value={key}>{stateLookup[key]}</option>)}
               </Form.Control>
             </Form.Group>
-            <Form.Group controlId="host">
+            <Form.Group controlId="hostName">
               <Form.Label>Host</Form.Label>
-              <Form.Control name="host" onChange={(event) => updateMatchData('host', event.target.value)} placeholder="Name"
+              <Form.Control name="hostName" onChange={(event) => updateMatchData('hostName', event.target.value)} placeholder="Name"
                             value={matchData.hostName}/>
             </Form.Group>
             <fieldset className="form-group">
