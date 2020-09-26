@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
 import OrDefault from 'gscc-common/react/OrDefault';
@@ -8,7 +8,7 @@ import Table from 'react-bootstrap/Table';
 import Modal from 'react-bootstrap/Modal';
 
 function Players(props) {
-  const {players, teamName, onSubmit, onDelete} = props;
+  const {players, showAverage, teamName, onSubmit, onDelete} = props;
 
   return <div className="Players">
     <h4><OrDefault value={teamName}/></h4>
@@ -16,13 +16,15 @@ function Players(props) {
       players={players}
       onSubmit={onSubmit}
       onDelete={onDelete}
+      showAverage={showAverage}
     />
   </div>;
 }
 
 function PlayerForm(props) {
-  const {isLoading, players, onSubmit, onDelete} = props;
+  const {isLoading, showAverage, players, onSubmit, onDelete} = props;
 
+  const [average, setAverage] = useState(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [data, setData] = useState({});
   const handleInput = (i, key, event) => {
@@ -51,6 +53,13 @@ function PlayerForm(props) {
   const handleClose = () => {
     setPotentialDeletedPlayer(null);
   };
+
+  useEffect(() => {
+    if (players.length) {
+      const ratingSum = players.reduce((gathered, item) => gathered + item.rating, 0);
+      setAverage(Math.round(ratingSum / players.length * 100) / 100);
+    }
+  }, [players]);
 
   const hasPlayers = players.length;
   return <LoadingOverlay active={isLoading} text={<LoadingOverlayText/>} spinner={false}>
@@ -114,6 +123,15 @@ function PlayerForm(props) {
             </tr>
         }
         </tbody>
+        {showAverage
+          ? <tfoot>
+          <tr>
+            <th colspan={onDelete ? 3 : 2} scope="row">Team Average:</th>
+            <td>{average}</td>
+          </tr>
+          </tfoot>
+          : ''
+        }
       </Table>
       {hasPlayers ? <Button type="submit" disabled={!hasChanges}>Save</Button> : ''}
     </Form>

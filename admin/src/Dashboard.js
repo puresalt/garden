@@ -17,9 +17,7 @@ function Dashboard(props) {
     socket.emit('match:update', {id: currentMatchId, ...data});
   };
 
-  const [opponents, setOpponents] = useState([
-    
-  ]);
+  const [opponents, setOpponents] = useState([]);
   const updateOpponents = (newOpponents) => {
     if (newOpponents.matchId === currentMatchId) {
       setOpponents(newOpponents.opponents);
@@ -62,6 +60,7 @@ function Dashboard(props) {
       <Col>
         <Players
           players={opponents}
+          showAverage={true}
           onSubmit={handleOpponentSubmit}
           teamName={currentOpponent ? stateLookup[currentOpponent] : ''}
         />
@@ -79,13 +78,24 @@ function PlayerSelectionForm(props) {
   const {socket, currentMatchId} = props;
 
   const [hasChanges, setHasChanges] = useState(false);
+  const [average, setAverage] = useState(null);
+  const [remaining, setRemaining] = useState(8799);
+  const setAggregateData = (players) => {
+    if (!players.length) {
+      return;
+    }
+    const ratingSum = players.reduce((gathered, item) => gathered + item.rating, 0);
+    setAverage((Math.round(ratingSum / players.length) * 100) / 100);
+    setRemaining(8799 - ratingSum);
+  };
   const [selectedPlayers, setSelectedPlayers] = useState([]);
   const updateSelectedPlayers = (newSelectedPlayers) => {
     if (newSelectedPlayers === null) {
       return;
     }
+    setAggregateData(newSelectedPlayers);
     setSelectedPlayers(newSelectedPlayers);
-  }
+  };
   const [players, setPlayers] = useState([]);
   const updatePlayers = (newPlayers) => {
     setPlayers(newPlayers.players);
@@ -95,9 +105,11 @@ function PlayerSelectionForm(props) {
       }
       return gathered;
     }, []));
+    setAggregateData(newPlayers);
     setHasChanges(false);
   };
   useEffect(() => {
+    setAggregateData(players);
     socket.emit('player:list', currentMatchId);
     socket.on('player:listed', updatePlayers);
     socket.on('player:selected', updateSelectedPlayers);
@@ -109,13 +121,19 @@ function PlayerSelectionForm(props) {
 
   const handleSelection = (playerId, selected) => {
     const inSelectedPlayers = selectedPlayers.indexOf(playerId) > -1;
+    let newPlayerList = null;
     if (selected && !inSelectedPlayers) {
       setHasChanges(true);
-      setSelectedPlayers(selectedPlayers.concat(playerId).slice(-4));
+      newPlayerList = selectedPlayers.concat(playerId).slice(-4);
     } else if (!selected && inSelectedPlayers) {
       setHasChanges(true);
-      setSelectedPlayers(selectedPlayers.filter(item => item !== playerId));
+      newPlayerList = selectedPlayers.filter(item => item !== playerId);
     }
+    if (newPlayerList === null) {
+      return;
+    }
+    setAggregateData(players.filter(player => newPlayerList.indexOf(player.id) > -1));
+    setSelectedPlayers(newPlayerList);
   };
 
   const processChanges = (event) => {
@@ -164,8 +182,18 @@ function PlayerSelectionForm(props) {
           </tr>
         })}
         </tbody>
-        <Button type="submit" disabled={!hasChanges}>Save</Button>
+        <tfoot>
+        <tr className={average >= 2200 ? 'table-danger' : ''}>
+          <th colSpan={3} scope="row">Team Average:</th>
+          <td>{average === null ? <em>N/A</em> : average}</td>
+        </tr>
+        <tr>
+          <th colSpan={3} scope="row">Points Remaining:</th>
+          <td>{remaining}</td>
+        </tr>
+        </tfoot>
       </Table>
+      <Button type="submit" disabled={!hasChanges || average >= 2200}>Save</Button>
     </Form>
   </div>;
 }

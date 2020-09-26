@@ -4,3 +4,11 @@
     font-family: Monaco, Monospaced, monospace;
     vertical-align: middle;
 }
+
+tfoot {
+    text-align: right;
+}
+
+tfoot td {
+    font-style: italic;
+}
