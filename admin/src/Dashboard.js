@@ -85,7 +85,7 @@ function PlayerSelectionForm(props) {
       return;
     }
     const ratingSum = players.reduce((gathered, item) => gathered + item.rating, 0);
-    setAverage((Math.round(ratingSum / players.length) * 100) / 100);
+    setAverage(Math.round((ratingSum / players.length) * 100) / 100);
     setRemaining(8799 - ratingSum);
   };
   const [selectedPlayers, setSelectedPlayers] = useState([]);
