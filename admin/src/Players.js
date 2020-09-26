@@ -126,8 +126,8 @@ function PlayerForm(props) {
         {showAverage
           ? <tfoot>
           <tr>
-            <th colspan={onDelete ? 3 : 2} scope="row">Team Average:</th>
-            <td>{average}</td>
+            <th colSpan={onDelete ? 3 : 2} scope="row">Team Average:</th>
+            <td>{players.length > 1 ? average : <em>N/A</em>}</td>
           </tr>
           </tfoot>
           : ''
