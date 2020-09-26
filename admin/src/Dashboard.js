@@ -99,17 +99,17 @@ function PlayerSelectionForm(props) {
   const [players, setPlayers] = useState([]);
   const updatePlayers = (newPlayers) => {
     setPlayers(newPlayers.players);
-    setSelectedPlayers(newPlayers.players.reduce((gathered, player) => {
+    const selectedPlayers = newPlayers.players.reduce((gathered, player) => {
       if (player.selected) {
         gathered.push(player.id);
       }
       return gathered;
-    }, []));
-    setAggregateData(newPlayers);
+    }, []);
+    setSelectedPlayers(selectedPlayers);
+    setAggregateData(newPlayers.players.filter(player => selectedPlayers.indexOf(player.id) > -1));
     setHasChanges(false);
   };
   useEffect(() => {
-    setAggregateData(players);
     socket.emit('player:list', currentMatchId);
     socket.on('player:listed', updatePlayers);
     socket.on('player:selected', updateSelectedPlayers);
