@@ -102,7 +102,7 @@ const runApp = () => {
     if (!req.session.isAdmin) {
       res.redirect('/');
     } else {
-      res.sendFile(path.join(__dirname + '/build/admin.html'));
+      res.sendFile(path.join(__dirname + '/build/index.html'));
     }
   });
 
