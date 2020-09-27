@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
-import ratingSort from 'gscc-common/src/ratingSort';
+import ratingSort from 'garden-common/src/ratingSort';
 import Players from './Players';
 import Settings from './Settings';
 import Table from 'react-bootstrap/Table';
@@ -97,16 +97,16 @@ function PlayerSelectionForm(props) {
     setSelectedPlayers(newSelectedPlayers);
   };
   const [players, setPlayers] = useState([]);
-  const updatePlayers = (newPlayers) => {
-    setPlayers(newPlayers.players);
-    const selectedPlayers = newPlayers.players.reduce((gathered, player) => {
+  const updatePlayers = (incomingPlayerData) => {
+    setPlayers(incomingPlayerData.players);
+    const selectedPlayers = incomingPlayerData.players.reduce((gathered, player) => {
       if (player.selected) {
         gathered.push(player.id);
       }
       return gathered;
     }, []);
     setSelectedPlayers(selectedPlayers);
-    setAggregateData(newPlayers.players.filter(player => selectedPlayers.indexOf(player.id) > -1));
+    setAggregateData(incomingPlayerData.players.filter(player => selectedPlayers.indexOf(player.id) > -1));
     setHasChanges(false);
   };
   useEffect(() => {

@@ -15,9 +15,8 @@ const sanitizePlayerList = (gathered, item) => {
   return gathered;
 };
 
-function playerRoute(db, redis, io, socket, teamId) {
+function playerRoute(db, redis, socketWrapper, teamId) {
   function updateMemberList(data) {
-    console.log('member:update', teamId, data);
     const members = data.map(sanitize);
     const values = members.reduce(sanitizePlayerList, []);
     const countToSave = values.length / 4;
@@ -26,19 +25,16 @@ function playerRoute(db, redis, io, socket, teamId) {
       .join(';');
     db.query(query, values, (err) => {
       if (err) {
-        console.error('Could not clear previous member data:', teamId, data.matchId, err);
-        socket.emit('opponent:updated', []);
+        console.error('Could not clear previous member data:', teamId, err);
+        socketWrapper.emit('member:updated', []);
         return;
       }
-      const returnData = {teamId: teamId, members: members};
-      console.log('member:updated', returnData);
-      socket.broadcast.emit('member:updated', returnData);
+      socketWrapper.broadcast('member:updated', {teamId: teamId, members: members});
       getMemberList();
     });
   }
 
   function getPlayerList(matchId) {
-    console.log('player:list', matchId);
     db.query(
         `SELECT garden_member.*, garden_player.id AS selected
          FROM garden_member
@@ -50,44 +46,39 @@ function playerRoute(db, redis, io, socket, teamId) {
          ORDER BY garden_member.rating DESC;
       `, [matchId, teamId], (err, result) => {
         if (err) {
-          console.log('Error retrieving player list:', err);
-          console.log('player:listed', null);
-          socket.emit('player:listed', null);
+          console.error('Error retrieving player list:', teamId, err);
+          socketWrapper.emit('player:listed', null);
           return;
         }
         const cleanedPlayerList = result.map((item) => {
           return {
-            id: item.id,
+            id: item.id ? parseInt(item.id) : null,
             name: item.name || '',
             lichessHandle: item.lichess_handle || '',
-            rating: item.rating,
+            rating: parseInt(item.rating) || null,
             selected: item.selected !== null && item.selected > 0
           };
         });
         const returnData = {teamId: teamId, matchId: matchId, players: cleanedPlayerList};
-        console.log('player:listed', returnData);
-        socket.emit('player:listed', returnData);
+        socketWrapper.emit('player:listed', returnData);
       });
   }
 
   function updateOpponentList(data) {
-    console.log('opponent:update', teamId, data);
     data.opponents = data.opponents.map(sanitize);
     const values = data.opponents.reduce(sanitizePlayerList, []);
     const countToSave = values.length / 4;
     const query = (new Array(countToSave))
-      .fill('UPDATE garden_opponent SET name = ?, lichess_handle = ?, rating = ? WHERE id = ?', 0, countToSave)
+      .fill('UPDATE garden_opponent SET name = ?, lichess_handle = ?, rating = ? WHERE id = ?;', 0, countToSave)
       .join(';');
     db.query(query, values, (err, result) => {
       if (err) {
         console.error('Could not clear previous opponent data:', teamId, data.matchId, err);
-        socket.emit('opponent:updated', []);
+        socketWrapper.emit('opponent:updated', []);
         return;
       }
-      const returnData = {teamId: teamId, ...data};
-      console.log('opponent:updated', returnData);
-      socket.broadcast.emit('opponent:updated', returnData);
-      state.updatePlayerList(db, redis, teamId, data.matchId, (err) => err && console.log('Error updating state.updatePlayerList:', err));
+      socketWrapper.broadcast('opponent:updated', {teamId: teamId, ...data});
+      state.updatePlayerList(db, redis, teamId, data.matchId, (err) => err && console.warn('Error updating state.updatePlayerList:', err));
     });
   }
 
@@ -101,34 +92,29 @@ function playerRoute(db, redis, io, socket, teamId) {
               WHERE garden_opponent.match_id = ?
               ORDER BY garden_opponent.rating DESC;`, [teamId, matchId], (err, result) => {
       if (err) {
-        console.log('Error retrieving opponent list:', err);
-        console.log('opponent:listed', null);
-        socket.emit('opponent:listed', null);
+        console.error('Error retrieving opponent list:', teamId, err);
+        socketWrapper.emit('opponent:listed', null);
         return;
       }
       const cleanedPlayerList = result.map((item) => {
         return {
-          id: item.id,
+          id: item.id ? parseInt(item.id) : null,
           name: item.name || '',
           lichessHandle: item.lichess_handle || '',
-          rating: item.rating
+          rating: item.rating ? parseInt(item.rating) : null
         };
       });
       const returnData = {teamId: teamId, matchId: matchId, opponents: cleanedPlayerList};
-      console.log('opponent:listed', returnData);
-      socket.emit('opponent:listed', returnData);
+      socketWrapper.emit('opponent:listed', returnData);
     });
   }
 
   function createNewMember(data) {
-    console.log('member:create', teamId, data);
     const saveData = [teamId, data.name || '', data.lichessHandle || '', data.rating !== null ? Number(data.rating) : null];
     db.query('INSERT INTO garden_member (team_id, name, lichess_handle, rating) VALUES (?, ?, ?, ?);', saveData, (err, result) => {
-      console.log(err, result, saveData);
       if (err || !result.insertId) {
-        console.log('Error creating member:', teamId, (result || {}).insertId, err);
-        console.log('member:created', {teamId: teamId, id: 0});
-        socket.emit('member:created', {teamId: teamId, id: 0});
+        console.error('Error creating member:', teamId, (result || {}).insertId, err);
+        socketWrapper.emit('member:created', {teamId: teamId, id: 0});
         return;
       }
       const cleanedMember = {
@@ -138,29 +124,24 @@ function playerRoute(db, redis, io, socket, teamId) {
         rating: data.rating !== null ? Number(data.rating) : null
       };
       const returnData = {teamId: teamId, ...cleanedMember};
-      console.log('member:created', returnData);
-      socket.emit('member:created', returnData);
+      socketWrapper.emit('member:created', returnData);
       getMemberList();
     });
   }
 
   function deleteMember(memberId) {
-    console.log('member:delete');
     db.query(`UPDATE garden_member
               SET deleted = true
               WHERE id = ?`, [memberId], (err, result) => {
       if (err) {
-        console.log('Error deleting member:', teamId, memberId, err);
-        return;
+        return console.error('Error deleting member:', teamId, memberId, err);
       }
-      console.log('member:deleted', {teamId: teamId, id: memberId});
-      socket.emit('member:deleted', {teamId: teamId, id: memberId});
+      socketWrapper.emit('member:deleted', {teamId: teamId, id: memberId});
       getMemberList();
     });
   }
 
   function getMemberList() {
-    console.log('member:list', teamId);
     db.query(
         `SELECT *
          FROM garden_member
@@ -169,40 +150,35 @@ function playerRoute(db, redis, io, socket, teamId) {
          ORDER BY rating DESC;
       `, [teamId], (err, result) => {
         if (err) {
-          console.log('Error retrieving member list:', err);
-          console.log('member:listed', null);
-          socket.emit('member:listed', null);
+          console.error('Error retrieving member list:', teamId, err);
+          socketWrapper.emit('member:listed', null);
           return;
         }
         const cleanedPlayerList = result.map((item) => {
           return {
-            id: item.id,
+            id: item.id ? parseInt(item.id) : null,
             name: item.name || '',
             lichessHandle: item.lichess_handle || '',
-            rating: item.rating
+            rating: item.rating ? parseInt(item.rating) : null
           };
         });
         const returnData = {teamId: teamId, members: cleanedPlayerList};
-        console.log('member:listed', returnData);
-        socket.emit('member:listed', returnData);
+        socketWrapper.emit('member:listed', returnData);
       });
   }
 
   function selectMember(data) {
-    console.log('player:select', teamId, data);
     db.beginTransaction((err) => {
       if (err) {
         console.error('Error beginning player select transaction:', teamId, data, err);
-        console.log('player:selected', teamId, null);
-        socket.emit('player:selected', null);
+        socketWrapper.emit('player:selected', null);
         return;
       }
       db.query('DELETE FROM garden_player WHERE match_id = ?;', [data.matchId], (err) => {
         if (err) {
           return db.rollback(() => {
             console.error('Error removing player selected data:', teamId, data, err);
-            console.log('player:selected', teamId, null);
-            socket.emit('player:selected', null);
+            socketWrapper.emit('player:selected', null);
           });
         }
         const countToSave = data.players.length;
@@ -217,44 +193,40 @@ function playerRoute(db, redis, io, socket, teamId) {
           if (err || !(result || {}).insertId) {
             return db.rollback(() => {
               console.error('Error inserting player selected data:', teamId, !(result || {}).insertId, data, err);
-              console.log('player:selected', teamId, null);
-              socket.emit('player:selected', null);
+              socketWrapper.emit('player:selected', null);
             });
           }
           db.commit((err) => {
             if (err) {
               return db.rollback(() => {
                 console.error('Error creating error committing:', teamId, data, err);
-                console.log('match:created', teamId, null);
-                socket.emit('match:created', null);
+                socketWrapper.emit('match:created', null);
               });
             }
-            console.log('player:selected', data);
-            socket.broadcast.emit('player:selected', data);
+            socketWrapper.broadcast('player:selected', {teamId: teamId, ...data});
           });
         });
       });
     });
   }
 
-  socket.on('member:create', createNewMember);
-  socket.on('member:delete', deleteMember);
-  socket.on('member:update', updateMemberList);
-  socket.on('member:list', getMemberList);
-  socket.on('player:select', selectMember);
-  socket.on('player:list', getPlayerList);
-  socket.on('opponent:update', updateOpponentList);
-  socket.on('opponent:list', getOpponentList);
-
+  socketWrapper.on('member:create', createNewMember);
+  socketWrapper.on('member:delete', deleteMember);
+  socketWrapper.on('member:update', updateMemberList);
+  socketWrapper.on('member:list', getMemberList);
+  socketWrapper.on('player:select', selectMember);
+  socketWrapper.on('player:list', getPlayerList);
+  socketWrapper.on('opponent:update', updateOpponentList);
+  socketWrapper.on('opponent:list', getOpponentList);
   return () => {
-    socket.off('member:create', createNewMember);
-    socket.off('member:delete', deleteMember);
-    socket.off('member:update', updateMemberList);
-    socket.off('member:list', getMemberList);
-    socket.off('player:select', selectMember);
-    socket.off('player:list', getPlayerList);
-    socket.off('opponent:update', updateOpponentList);
-    socket.off('opponent:list', getPlayerList);
+    socketWrapper.off('member:create', createNewMember);
+    socketWrapper.off('member:delete', deleteMember);
+    socketWrapper.off('member:update', updateMemberList);
+    socketWrapper.off('member:list', getMemberList);
+    socketWrapper.off('player:select', selectMember);
+    socketWrapper.off('player:list', getPlayerList);
+    socketWrapper.off('opponent:update', updateOpponentList);
+    socketWrapper.off('opponent:list', getOpponentList);
   };
 }
 

@@ -3,11 +3,7 @@ import Board from './Board';
 import {useParams} from 'react-router-dom';
 
 function IndividualBoard(props) {
-  const {socket, showProgrammaticBoards, debugMode, pairings} = props;
-
-  const {boardNumber} = useParams();
-
-  const pairing = pairings[boardNumber - 1];
+  const {socket, boardNumber, pairing, showProgrammaticBoards, debugMode} = props;
 
   if (!pairing) {
     return (

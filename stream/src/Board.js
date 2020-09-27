@@ -1,6 +1,6 @@
 import React, {useEffect} from 'react';
-import OrDefault from 'gscc-common/react/OrDefault';
-import Chessboard from 'gscc-common/react/Chessboard';
+import OrDefault from 'garden-common/react/OrDefault';
+import Chessboard from 'garden-common/react/Chessboard';
 import './Board.css';
 import DebugInfo from './DebugInfo';
 
@@ -16,7 +16,11 @@ function Board(props) {
   const size = large
     ? 936
     : 464;
+
   useEffect(() => {
+    if (!showProgrammaticBoards) {
+      return;
+    }
     const requestGameState = (gameId) => {
       socket.emit(`viewer:board:${board}:start`, gameId);
     };
@@ -30,9 +34,10 @@ function Board(props) {
       socket.off(`viewer:board:${board}:started`, requestGameState);
       socket.off(`viewer:board:${board}:stopped`, stopGameState);
     };
-  }, []);
+  }, [showProgrammaticBoards]);
+
   return (
-    <div className={"Board" + (large ? ' Large' : (done ? ' Faded' : '')) + (debugMode ? ' debug' : '')} key={board}
+    <div className={'Board' + (large ? ' Large' : (done ? ' Faded' : '')) + (debugMode ? ' debug' : '')} key={board}
          id={'board-' + board}>
       <header><span>BOARD {board}:</span> <OrDefault value={name}/> <em>{rating}</em></header>
       {showProgrammaticBoards
@@ -49,7 +54,8 @@ function Board(props) {
             <DebugInfo left={boardDimensions.left} top={boardDimensions.top} height={size} width={size}/>
           </div>
           <div className="board-placeholder-info">
-            <DebugInfo left={boardInfoDimensions.left} top={boardInfoDimensions.top} height={boardInfoDimensions.height} width={boardInfoDimensions.width}/>
+            <DebugInfo left={boardInfoDimensions.left} top={boardInfoDimensions.top} height={boardInfoDimensions.height}
+                       width={boardInfoDimensions.width}/>
           </div>
         </>
       }

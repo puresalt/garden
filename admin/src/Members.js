@@ -4,7 +4,7 @@ import Col from 'react-bootstrap/Col';
 import Card from 'react-bootstrap/Card';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
-import ratingSort from 'gscc-common/src/ratingSort';
+import ratingSort from 'garden-common/src/ratingSort';
 import LoadingOverlay from 'react-loading-overlay';
 import LoadingOverlayText from './LoadingOverlayText';
 import Players from './Players';

@@ -1,6 +1,6 @@
 import React from 'react';
 import './TitleBar.css';
-import OrDefault from 'gscc-common/react/OrDefault';
+import OrDefault from 'garden-common/react/OrDefault';
 
 function TitleBar(props) {
   const {homeTeam} = props;

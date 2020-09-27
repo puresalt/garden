@@ -3,7 +3,7 @@ import React, {useEffect, useState} from 'react';
 import socketIoClient from 'socket.io-client';
 import {BrowserRouter as Router, Redirect, Route, Switch} from 'react-router-dom';
 import Container from 'react-bootstrap/Container';
-import {Config, Data} from 'gscc-common';
+import {Config, Data} from 'garden-common';
 import Matches from './Matches';
 import Dashboard from './Dashboard';
 import Board from './Boards';

@@ -1,164 +1,75 @@
 import React, {useEffect, useState} from 'react';
-import {BrowserRouter as Router, Route, Switch} from 'react-router-dom';
+import {BrowserRouter as Router, Route, Switch, useParams} from 'react-router-dom';
 import socketIoClient from 'socket.io-client';
-import {Config, Data} from 'gscc-common';
-import Board from './Board';
-import Score from './Score';
-import TitleBar from './TitleBar';
-import IndividualBoard from './IndividualBoard';
-import AdUnit from './AdUnit';
-import Webcam from './Webcam';
-import './App.css';
+import {Config, Data} from 'garden-common';
+import Match from './Match';
 
 const CONFIG = Config(process.env);
 const STATE_LOOKUP = Data.StateLookup;
 const socket = socketIoClient(CONFIG.socketIo.url, {
   path: '/admin'
 });
-const teamName = 'New Jersey';
-const currentMatchId = 1;
-const totalBoardNumber = 4;
-
-const boardDimensions = [
-  {left: 7, top: 50},
-  {left: 700, top: 7},
-  {left: 7, top: 566},
-  {left: 700, top: 566}
-];
-const boardInfoDimensions = [
-  {left: 477, top: 214, height: 600, width: 223},
-  {left: 1166, top: 730, height: 600, width: 223},
-  {left: 477, top: 214, height: 600, width: 223},
-  {left: 1166, top: 7340, height: 600, width: 223}
-];
 
 function App() {
-  const [match, setMatch] = useState({});
+  return (
+    <Router>
+      <Switch>
+        <Route path={['/match/:matchId/board/:boardNumber', '/board/:boardNumber', '/match/:matchId', '/']}>
+          <ParseRoute/>
+        </Route>
+      </Switch>
+    </Router>
+  );
+}
+
+function ParseRoute(props) {
+  const {matchId, boardNumber} = useParams();
+  const requestedMatchId = matchId ? parseInt(matchId) : null;
+
+  const [match, setMatch] = useState({id: requestedMatchId});
   const loadMatch = (incomingMatch) => {
-    if (incomingMatch.id === currentMatchId) {
+    if ((!match.id && requestedMatchId === null) || incomingMatch.id === match.id) {
       setMatch(incomingMatch);
     }
   };
+
+  const requestedBoardNumber = boardNumber ? parseInt(boardNumber) : null;
+  const [currentBoardNumber, setCurrentBoardNumber] = useState(requestedBoardNumber);
+  const updateStreamState = (incomingStreamState) => {
+    console.log('hi', requestedBoardNumber || incomingStreamState.matchId !== match.id, requestedBoardNumber, incomingStreamState.matchId, match.id);
+    if (requestedBoardNumber || incomingStreamState.matchId !== match.id) {
+      return;
+    }
+    setCurrentBoardNumber(incomingStreamState.boardNumber);
+  };
+
   useEffect(() => {
-    socket.emit('match:load', currentMatchId);
+    socket.emit('match:load', match.id || null);
     socket.on('match:loaded', loadMatch);
     socket.on('match:updated', loadMatch);
     return () => {
       socket.off('match:loaded', loadMatch);
-      socket.on('match:updated', loadMatch);
+      socket.off('match:updated', loadMatch);
     };
   }, []);
 
-  const [awayTeamScore, setAwayTeamScore] = useState(0);
-  const [homeTeamScore, setHomeTeamScore] = useState(0);
-  const [pairings, setPairings] = useState([]);
-  const loadPairings = (incomingPairings) => {
-    if (incomingPairings.matchId !== currentMatchId) {
+  useEffect(() => {
+    if (!match.id) {
       return;
     }
-    const [parsedPairings, homeTeamScore, awayTeamScore] = incomingPairings.pairings.reduce((gathered, pairing, i) => {
-      const boardIndex = i % totalBoardNumber;
-      if (!gathered[0][boardIndex]) {
-        gathered[0][boardIndex] = {
-          name: pairing.player.name,
-          rating: pairing.player.rating,
-          pairings: []
-        };
-      }
-      gathered[0][boardIndex].pairings.push({
-        name: pairing.opponent.name,
-        rating: pairing.opponent.rating,
-        result: pairing.result,
-        orientation: pairing.orientation
-      });
-      if (pairing.result !== null) {
-        gathered[1] += pairing.result;
-        gathered[2] += 1 - pairing.result;
-      }
-      return gathered;
-    }, [[], 0, 0]);
-    setAwayTeamScore(awayTeamScore);
-    setHomeTeamScore(homeTeamScore);
-    setPairings(parsedPairings);
-  };
-  useEffect(() => {
-    socket.emit('pairing:list', currentMatchId);
-    socket.on('pairing:listed', loadPairings);
+    socket.emit('stream:load', match.id);
+    socket.on('stream:loaded', updateStreamState);
     return () => {
-      socket.off('pairing:listed', loadPairings);
+      socket.off('stream:loaded', updateStreamState);
     };
-  }, []);
+  }, [match.id]);
 
-  const requestPairingList = (data) => {
-    if (data.matchId && data.matchId !== currentMatchId) {
-      return;
-    }
-    socket.emit('pairing:list', currentMatchId);
-  };
-  useEffect(() => {
-    socket.on('member:updated', requestPairingList);
-    socket.on('opponent:updated', requestPairingList);
-    socket.on('pairing:updated', requestPairingList);
-    socket.on('player:selected', requestPairingList);
-    return () => {
-      socket.off('member:updated', requestPairingList);
-      socket.off('opponent:updated', requestPairingList);
-      socket.off('pairing:updated', requestPairingList);
-      socket.off('player:selected', requestPairingList);
-    };
-  });
-
-  const hostIcons = [
-    match.hostInstagram ? 'instagram' : false,
-    match.hostTwitter ? 'twitter' : false,
-    match.hostTwitch ? 'twitch' : false
-  ].filter(item => item);
-
-  const opponentName = match.opponent
-    ? STATE_LOOKUP[match.opponent]
-    : false;
-
-  return (
-    <Router>
-      <div className="App">
-        <Switch>
-          <Route path="/board/:boardNumber">
-            <IndividualBoard
-              showProgrammaticBoards={match.showProgrammaticBoards}
-              debugMode={match.showDebugInformation}
-              pairings={pairings}
-              socket={socket}
-            />
-          </Route>
-          <Route path="/">
-            {pairings.map((item, i) => {
-              return <Board
-                key={i + 1}
-                showProgrammaticBoards={match.showProgrammaticBoards}
-                board={i + 1}
-                debugMode={match.showDebugInformation}
-                name={item.name}
-                rating={item.rating}
-                pairings={item.pairings}
-                boardDimensions={boardDimensions[i]}
-                boardInfoDimensions={boardInfoDimensions[i]}
-                socket={socket}
-              />;
-            })}
-          </Route>
-        </Switch>
-        <Score
-          homeTeamName={teamName}
-          homeTeamScore={homeTeamScore}
-          awayTeamName={opponentName}
-          awayTeamScore={awayTeamScore}
-        />
-        <TitleBar homeTeamName={teamName} awayTeamName={opponentName} name={match.hostName} icons={hostIcons}/>
-        <AdUnit showAdUnit={match.showAdUnit} debugMode={match.showDebugInformation}/>
-        <Webcam showWebcam={match.showWebcam} debugMode={match.showDebugInformation}/>
-      </div>
-    </Router>
-  );
+  return <Match
+    stateLookup={STATE_LOOKUP}
+    currentBoardNumber={currentBoardNumber}
+    currentMatch={match}
+    socket={socket}
+  />;
 }
 
 export default App;

@@ -6,7 +6,7 @@
     "stream": 4005
   },
   "session": {
-    "secret": "gcss"
+    "secret": "garden"
   },
   "socketIo": {
     "url": "http://127.0.0.1:4003"

@@ -2,8 +2,8 @@ import React, {useEffect, useState} from 'react';
 import Row from 'react-bootstrap/Row';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import Button from 'react-bootstrap/Button';
-import OrDefault from 'gscc-common/react/OrDefault';
-import Chessboard from 'gscc-common/react/Chessboard';
+import OrDefault from 'garden-common/react/OrDefault';
+import Chessboard from 'garden-common/react/Chessboard';
 import InputGroup from 'react-bootstrap/InputGroup';
 import GameIdForm from './Pairings/GameIdForm';
 

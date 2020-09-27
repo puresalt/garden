@@ -219,7 +219,7 @@ export default class Chessground extends React.PureComponent {
       pauseClock: true,
       pausePosition: true,
       winner: data.winner
-    })
+    });
     this.socket.emit('pairing:list', this.state.matchId);
   }
 

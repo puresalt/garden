@@ -1,5 +1,5 @@
 import React from 'react';
-import OrDefault from 'gscc-common/react/OrDefault';
+import OrDefault from 'garden-common/react/OrDefault';
 
 class Score extends React.Component {
   render() {

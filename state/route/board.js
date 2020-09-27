@@ -2,62 +2,81 @@ const BoardEventRoute = require('./board/event');
 const BoardInteractiveRoute = require('./board/interactive');
 const BoardViewerRoute = require('./board/viewer');
 
-function StreamerRoute(db, redis, io, socket, teamId) {
+function StreamerRoute(db, redis, socketWrapper, teamId) {
+  let streamStateId = null;
+
   function updateStreamState(data) {
-    console.log('stream:update', teamId, data);
     redis.hset(`stream:${teamId}`, data.matchId, data.isLive ? '1' : '0', (err) => {
       if (err) {
-        console.log('Failed updating stream state:', teamId, data, err);
-        return;
+        return console.warn('Failed updating stream state:', teamId, data, err);
       }
-      console.log('stream:updated', teamId, data);
-      socket.broadcast.emit('stream:updated', data);
+      socketWrapper.broadcast('stream:updated', {teamId: teamId, ...data});
     });
   }
 
   function loadStreamState(matchId) {
-    console.log('stream:load', teamId, matchId);
-    redis.hget(`stream:${teamId}`, matchId, (err, isLive) => {
-      if (err) {
-        console.log('Failed getting stream state:', teamId, matchId, err);
-        return;
-      }
-      console.log('stream:loaded', teamId, isLive, {matchId: matchId, isLive: isLive === '1'});
-      socket.emit('stream:loaded', {matchId: matchId, isLive: isLive === '1'});
-    });
+    if (!matchId || streamStateId === matchId) {
+      return;
+    }
+    streamStateId = matchId;
+    let lastState = {
+      teamId: teamId,
+      matchId: matchId,
+      isLive: undefined,
+      boardNumber: undefined
+    };
+    const loopForStateChanges = () => {
+      redis.hgetall(`stream:${teamId}:${matchId}`, (err, data) => {
+        if (err) {
+          return console.warn('Failed getting stream state:', teamId, matchId, err);
+        }
+        if (matchId !== streamStateId) {
+          return;
+        }
+        if (!data) {
+          return setTimeout(loopForStateChanges, 250);
+        }
+        const isLive = data.isLive === '1';
+        const boardNumber = data.boardNumber ? parseInt(data.boardNumber) : null;
+        if (lastState.isLive === undefined || lastState.boardNumber === undefined || lastState.isLive !== isLive || lastState.boardNumber !== boardNumber) {
+          lastState.isLive = isLive;
+          lastState.boardNumber = boardNumber;
+          socketWrapper.emit('stream:loaded', lastState);
+        }
+        setTimeout(loopForStateChanges, 250);
+      });
+    };
+    loopForStateChanges();
   }
 
   function listStreamState() {
-    console.log('stream:list', teamId);
     redis.hgetall(`stream:${teamId}`, (err, data) => {
       if (err) {
-        console.log('Failed getting stream list:', teamId, data, err);
-        return;
+        return console.warn('Failed getting stream list:', teamId, data, err);
       }
       const returnData = Object.keys(data).reduce((gathered, item) => {
         gathered[item] = data[item] === '1';
         return gathered;
-      }, {});
-      console.log('stream:listed', teamId, returnData);
-      socket.emit('stream:listed', returnData);
+      }, {teamId: teamId});
+      socketWrapper.emit('stream:listed', returnData);
     });
   }
 
-  socket.on('streamer:update', updateStreamState);
-  socket.on('streamer:load', loadStreamState);
-  socket.on('streamer:list', listStreamState);
+  socketWrapper.on('stream:update', updateStreamState);
+  socketWrapper.on('stream:load', loadStreamState);
+  socketWrapper.on('stream:list', listStreamState);
   const boardSubRoutes = [1, 2, 3, 4].reduce((gathered, i) => {
     gathered.push(
-      BoardEventRoute(db, redis, io, socket, teamId, i),
-      BoardInteractiveRoute(db, redis, io, socket, teamId, i),
-      BoardViewerRoute(db, redis, io, socket, teamId, i)
+      BoardEventRoute(db, redis, socketWrapper, teamId, i),
+      BoardInteractiveRoute(db, redis, socketWrapper, teamId, i),
+      BoardViewerRoute(db, redis, socketWrapper, teamId, i)
     );
     return gathered;
   }, []);
   return () => {
-    socket.off('streamer:update', updateStreamState);
-    socket.off('streamer:load', loadStreamState);
-    socket.off('streamer:list', listStreamState);
+    socketWrapper.off('stream:update', updateStreamState);
+    socketWrapper.off('stream:load', loadStreamState);
+    socketWrapper.off('stream:list', listStreamState);
     boardSubRoutes.forEach(i => i());
   };
 }

@@ -1,6 +1,6 @@
 const updatePairing = require('../pairing').updatePairing;
 
-function BoardInteractiveRoute(db, redis, io, socket, teamId, boardId) {
+function BoardInteractiveRoute(db, redis, socketWrapper, teamId, boardId) {
   let currentGameId = null;
   let currentEventId = 0;
   let isPaused = false;
@@ -8,7 +8,7 @@ function BoardInteractiveRoute(db, redis, io, socket, teamId, boardId) {
   let didJumpAround = false;
   const startGame = (gameId, finished) => {
     if (!gameId) {
-      socket.emit(`board:${boardId}`, {
+      socketWrapper.emit(`board:${boardId}`, {
         type: 'goto',
         data: {
           fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
@@ -38,17 +38,15 @@ function BoardInteractiveRoute(db, redis, io, socket, teamId, boardId) {
     gameHash = `game:${teamId}:${currentGameId}`;
     redis.set(`game:${teamId}:${boardId}:current`, currentGameId, (err) => {
       if (err) {
-        console.warn('Could not set current gameId:', teamId, boardId, currentGameId, err);
-        return;
+        return console.warn('Could not set current gameId:', teamId, boardId, currentGameId, err);
       }
-      console.log(`Set game:${teamId}:${boardId}:current to`, currentGameId);
+      console.info(`Updated game:${teamId}:${boardId}:current to`, currentGameId);
     });
     let eventList = [];
     const getGameEvents = (lastEventId) => {
       redis.lrange(gameHash, lastEventId, -1, (err, result) => {
         if (err) {
-          console.log('Error getting events:', gameId);
-          return;
+          return console.warn('Error getting events:', gameId);
         }
         eventList = eventList.concat(result.map(JSON.parse));
 
@@ -93,8 +91,7 @@ function BoardInteractiveRoute(db, redis, io, socket, teamId, boardId) {
               return setTimeout(() => makeNextEvent(nextEventId), 200);
             }
             if ((!currentEventId && !nextEventId) || (currentEventId === nextEventId - 1)) {
-              console.log(`board:${boardId}`, currentEvent);
-              socket.emit(`board:${boardId}`, currentEvent);
+              socketWrapper.emit(`board:${boardId}`, currentEvent);
               redis.rpush(`viewer:${gameHash}`, JSON.stringify(currentEvent));
               currentEventId = nextEventId;
             } else {
@@ -111,22 +108,19 @@ function BoardInteractiveRoute(db, redis, io, socket, teamId, boardId) {
   };
 
   function startSession(data) {
-    console.log(`board:${boardId}:start`, teamId, data);
     if (data === null) {
       return startGame(null, (err) => {
-        console.log('Error starting session:', err);
+        if (err) {
+          console.warn('Error clearing session:', err);
+        }
       })
     }
     redis.del(`viewer:game:${teamId}:${data.gameId}`, (err) => {
       if (err) {
-        return console.log(err);
+        return console.warn('Error deleting previous game events:', data.gameId, err);
       }
-      console.log(`viewer:board:${boardId}:started`, {
-        gameId: data.gameId,
-        orientation: data.orientation,
-        pairingIndex: data.pairingIndex
-      });
-      socket.broadcast.emit(`viewer:board:${boardId}:started`, {
+      socketWrapper.broadcast(`viewer:board:${boardId}:started`, {
+        teamId: teamId,
         gameId: data.gameId,
         orientation: data.orientation,
         pairingIndex: data.pairingIndex
@@ -134,55 +128,49 @@ function BoardInteractiveRoute(db, redis, io, socket, teamId, boardId) {
       didJumpAround = false;
       startGame(data.gameId, (err) => {
         if (err) {
-          console.log(err);
+          console.warn('Error starting a game:', data.gameId, err);
         }
       })
     });
   }
 
   function updateGameId(data) {
-    console.log(`board:${boardId}:update`, teamId, gameHash, data);
-    updatePairing(db, io, socket, teamId, data, (err) => {
+    updatePairing(db, socketWrapper, teamId, data, (err) => {
       if (err) {
-        return;
+        return console.warn('Error updating pairings:', teamId, data, err);
       }
-      socket.broadcast.emit(`viewer:board:${boardId}:change`, data.gameId);
+      socketWrapper.broadcast(`viewer:board:${boardId}:change`, {teamId: teamId, gameId: data.gameId});
       didJumpAround = false;
       startGame(data.gameId, (err) => {
         if (err) {
-          console.log(err);
+          console.warn('Error starting game after an update:', data.gameId, err);
         }
       });
     });
   }
 
   function gotoPosition(data) {
-    console.log(`board:${boardId}:goto`, teamId, gameHash, data);
     if (!gameHash) {
       return;
     }
     redis.lindex(gameHash, data.id + 1, (err, result) => {
       if (err || !result) {
-        console.log('Error going to position:', err);
-        return;
+        return console.warn('Error going to position:', err);
       }
       if (err || !result) {
-        console.log('Error adding goto:', err);
-        return;
+        return console.warn('Error adding goto:', err);
       }
       didJumpAround = !data.stopJumping;
       isPaused = data.paused;
       currentEventId = data.id;
       const returnResult = JSON.parse(result);
       returnResult.type = 'goto';
-      console.log(`board:${boardId}`, JSON.stringify(returnResult));
-      socket.emit(`board:${boardId}`, returnResult);
+      socketWrapper.emit(`board:${boardId}`, returnResult);
       redis.rpush(`viewer:${gameHash}`, JSON.stringify(returnResult));
     });
   }
 
   function drawShape(data) {
-    console.log(`board:${boardId}:draw`, teamId, gameHash, data);
     if (!gameHash) {
       return;
     }
@@ -193,24 +181,23 @@ function BoardInteractiveRoute(db, redis, io, socket, teamId, boardId) {
   }
 
   function updatePlayback(state) {
-    console.log(`board:${boardId}:pause`, teamId, gameHash, state);
     if (!gameHash) {
       return;
     }
     isPaused = state;
   }
 
-  socket.on(`board:${boardId}:start`, startSession);
-  socket.on(`board:${boardId}:draw`, drawShape);
-  socket.on(`board:${boardId}:update`, updateGameId);
-  socket.on(`board:${boardId}:goto`, gotoPosition);
-  socket.on(`board:${boardId}:pause`, updatePlayback);
+  socketWrapper.on(`board:${boardId}:start`, startSession);
+  socketWrapper.on(`board:${boardId}:draw`, drawShape);
+  socketWrapper.on(`board:${boardId}:update`, updateGameId);
+  socketWrapper.on(`board:${boardId}:goto`, gotoPosition);
+  socketWrapper.on(`board:${boardId}:pause`, updatePlayback);
   return () => {
-    socket.off(`board:${boardId}:start`, startSession);
-    socket.off(`board:${boardId}:draw`, drawShape);
-    socket.off(`board:${boardId}:gameId`, updateGameId);
-    socket.off(`board:${boardId}:goto`, gotoPosition);
-    socket.off(`board:${boardId}:pause`, updatePlayback);
+    socketWrapper.off(`board:${boardId}:start`, startSession);
+    socketWrapper.off(`board:${boardId}:draw`, drawShape);
+    socketWrapper.off(`board:${boardId}:update`, updateGameId);
+    socketWrapper.off(`board:${boardId}:goto`, gotoPosition);
+    socketWrapper.off(`board:${boardId}:pause`, updatePlayback);
     startGame(null, () => {
     });
   };

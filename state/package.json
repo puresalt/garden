@@ -1,5 +1,5 @@
 {
-  "name": "gcss-state",
+  "name": "garden-state",
   "version": "0.2.0",
   "private": true,
   "dependencies": {
@@ -9,7 +9,7 @@
     "chess.js": "^0.11.0",
     "dataobject-parser": "^1.2.1",
     "express": "^4.17.1",
-    "gcss-common": "file:../common",
+    "garden-common": "file:../common",
     "lodash": "^4.17.20",
     "mongodb": "^3.6.2",
     "mysql": "^2.18.1",

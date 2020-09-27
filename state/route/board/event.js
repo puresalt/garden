@@ -1,12 +1,12 @@
-function BoardEventRoute(db, redis, io, socket, teamId, boardId) {
- 
+function BoardEventRoute(db, redis, socketWrapper, teamId, boardId) {
+
   function readySession() {
-    console.log(`board:event:${boardId}:ready`);
+    // @TODO(JM): Add looping for new board updates via Redis. Similar to `stream:load(matchId)`.
   }
-  
-  socket.on(`board:event:${boardId}:ready`, readySession);
+
+  socketWrapper.on(`board:event:${boardId}:ready`, readySession);
   return () => {
-    socket.on(`viewer:event:${boardId}:ready`, readySession);
+    socketWrapper.off(`board:event:${boardId}:ready`, readySession);
   };
 }
 

@@ -14,15 +14,17 @@
 
 apps:
   - script: node ./admin/app.js
+    name: 'garden:admin'
     env:
       NODE_ENV: production
       PORT: 4002
   - script: node ./state/app.js
+    name: 'garden:state'
     env:
       NODE_ENV: production
       PORT: 4003
-  - script: ./node_modules/.bin/serve stream/build
+  - script: ./node_modules/.bin/serve -s stream/build
+    name: 'garden:stream'
     env:
       NODE_ENV: production
       PORT: 4004
-

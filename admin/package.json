@@ -1,5 +1,5 @@
 {
-  "name": "gscc-admin",
+  "name": "garden-admin",
   "version": "0.1.0",
   "private": true,
   "homepage": "/admin",
@@ -14,7 +14,7 @@
     "debug": "~2.6.9",
     "express": "^4.17.1",
     "express-session": "^1.17.1",
-    "gscc-common": "file:../common",
+    "garden-common": "file:../common",
     "history": "^5.0.0",
     "lodash": "^4.17.20",
     "mustache": "^4.0.1",
@@ -29,11 +29,12 @@
     "socket.io-client": "^2.3.0"
   },
   "scripts": {
+    "build": "react-scripts build",
+    "eject": "react-scripts eject",
+    "install": "npm run build",
     "start": "PORT=4002 react-scripts start",
     "start:server": "node app.js",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "test": "react-scripts test"
   },
   "eslintConfig": {
     "extends": "react-app"

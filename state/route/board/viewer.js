@@ -1,6 +1,6 @@
 const ChessBoard = require('chess.js');
 
-function BoardViewerRoute(db, redis, io, socket, teamId, boardId) {
+function BoardViewerRoute(db, redis, socketWrapper, teamId, boardId) {
   let currentGameId = null;
   let lastEventId = 0;
   const startGame = (gameId, newLastEventId, finished) => {
@@ -17,8 +17,7 @@ function BoardViewerRoute(db, redis, io, socket, teamId, boardId) {
     const getGameEvents = () => {
       redis.lrange(gameHash, lastEventId, -1, (err, result) => {
         if (err) {
-          console.log('Error getting events:', gameId);
-          return;
+          return console.error('Error getting events:', teamId, gameId);
         }
 
         const eventList = result.map(JSON.parse);
@@ -35,8 +34,7 @@ function BoardViewerRoute(db, redis, io, socket, teamId, boardId) {
           if (!currentEvent) {
             return setTimeout(() => getGameEvents(), 250);
           }
-          console.log(`viewer:board:${boardId}`, currentEvent);
-          socket.emit(`viewer:board:${boardId}`, currentEvent);
+          socketWrapper.emit(`viewer:board:${boardId}`, currentEvent);
           ++lastEventId;
           setTimeout(() => makeNextEvent(nextEventId + 1), 250);
         };
@@ -47,33 +45,28 @@ function BoardViewerRoute(db, redis, io, socket, teamId, boardId) {
   };
 
   function startSession(data) {
-    console.log(`viewer:board:${boardId}:start`, teamId, data);
     startGame(data.gameId, 0, (err) => {
       if (err) {
-        console.log(err);
+        console.warn('Error trying to start a new viewer session:', teamId, boardId, err);
       }
     })
   }
 
   function stopSession() {
-    console.log(`viewer:board:${boardId}:stop`, teamId);
     currentGameId = null;
   }
 
   function readySession() {
-    console.log(`viewer:board:${boardId}:ready`, teamId);
     if (currentGameId !== null) {
       return;
     }
     redis.get(`game:${teamId}:${boardId}:current`, (err, data) => {
       if (err || !data) {
-        console.log('Error catching up or nothing to catch up to:', `game:${teamId}:${boardId}:current`, data, err);
-        return;
+        return console.warn('Error catching up or nothing to catch up to:', teamId, boardId, data, err);
       }
       redis.lrange(data, 0, -1, (err, eventList) => {
         if (err || !data) {
-          console.log('Error catching up or nothing in the list to catch up to:', `game:${teamId}:${boardId}:current`, eventList, err);
-          return;
+          return console.warn('Error catching up or nothing in the list to catch up to:', teamId, boardId, eventList, err);
         }
 
         const lastEventId = eventList.length;
@@ -95,8 +88,7 @@ function BoardViewerRoute(db, redis, io, socket, teamId, boardId) {
         }
 
         if (!currentEvent || !currentEvent.data || !currentEvent.data.fen) {
-          console.log('No events present, we are done', `game:${teamId}:${boardId}:current`);
-          return;
+          return console.info('No events present, we are done', teamId, boardId);
         }
 
         const moveList = currentEvent.data.moveList;
@@ -112,7 +104,7 @@ function BoardViewerRoute(db, redis, io, socket, teamId, boardId) {
           lastClock = parsedEventList.data.clock;
         }
 
-        socket.emit(`viewer:board:${boardId}`, {
+        socketWrapper.emit(`viewer:board:${boardId}`, {
           type: 'goto',
           data: {
             fen: chessBoard.fen(),
@@ -123,19 +115,22 @@ function BoardViewerRoute(db, redis, io, socket, teamId, boardId) {
         });
 
         startGame(currentGameId, lastEventId, (err) => {
-          console.log(err);
+          if (err) {
+            console.warn('Error starting viewer game:', teamId, boardId, err);
+          }
+          console.info('Finished viewing game:', teamId, boardId);
         });
       });
     });
   }
 
-  socket.on(`viewer:board:${boardId}:ready`, readySession);
-  socket.on(`viewer:board:${boardId}:start`, startSession);
-  socket.on(`viewer:board:${boardId}:stop`, stopSession);
+  socketWrapper.on(`viewer:board:${boardId}:ready`, readySession);
+  socketWrapper.on(`viewer:board:${boardId}:start`, startSession);
+  socketWrapper.on(`viewer:board:${boardId}:stop`, stopSession);
   return () => {
-    socket.off(`viewer:board:${boardId}:ready`, readySession);
-    socket.off(`viewer:board:${boardId}:start`, startSession);
-    socket.off(`viewer:board:${boardId}:stop`, stopSession);
+    socketWrapper.off(`viewer:board:${boardId}:ready`, readySession);
+    socketWrapper.off(`viewer:board:${boardId}:start`, startSession);
+    socketWrapper.off(`viewer:board:${boardId}:stop`, stopSession);
     startGame(null, 0, () => {
     });
   };

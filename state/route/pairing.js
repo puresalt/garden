@@ -1,4 +1,4 @@
-const ratingSort = require('gcss-common/src/ratingSort');
+const ratingSort = require('garden-common/src/ratingSort');
 
 const CHESS_BLACK = 'black';
 const CHESS_WHITE = 'white';
@@ -34,8 +34,7 @@ const MATCH_UPS = [
 ];
 Object.freeze(MATCH_UPS);
 
-function updatePairing(db, io, socket, teamId, data, callback) {
-  console.log('pairing:update', teamId, data);
+function updatePairing(db, socketWrapper, teamId, data, callback) {
   const values = [data.matchId, data.player.id, data.opponent.id, data.result, data.gameId, data.result, data.gameId];
   db.query(
       `INSERT INTO garden_pairing (match_id, member_id, opponent_id, result, lichess_game_id)
@@ -43,27 +42,24 @@ function updatePairing(db, io, socket, teamId, data, callback) {
        ON DUPLICATE KEY UPDATE result = ?,
                             lichess_game_id = ?;`, values, (err, result) => {
       if (err) {
-        console.log('Error updating pairin:', err);
-        console.log('pairing:updated', null);
-        socket.emit('pairing:updated', null);
+        console.warn('Error updating pairin:', teamId, err);
+        socketWrapper.emit('pairing:updated', null);
         return callback && callback(err);
       }
       if (result.insertId) {
         data.id = result.insertId;
       }
-      console.log('pairing:updated', teamId, data);
-      io.sockets.emit('pairing:updated', data);
+      socketWrapper.broadcastAll('pairing:updated', {teamId: teamId, ...data});
       callback && callback(null);
     });
 }
 
-function PairingRoute(db, redis, io, socket, teamId) {
+function PairingRoute(db, redis, socketWrapper, teamId) {
   const _updatePairing = (data) => {
-    updatePairing(db, io, socket, teamId, data);
+    updatePairing(db, socketWrapper, teamId, data);
   };
 
   function getPairingList(matchId) {
-    console.log('pairing:list', matchId);
     db.query(
         `SELECT garden_member.*,
              garden_player.id AS player_id,
@@ -87,9 +83,8 @@ function PairingRoute(db, redis, io, socket, teamId) {
          ORDER BY garden_pairing.id DESC, garden_member.rating DESC;
       `, [matchId, teamId], (err, memberPlayerList) => {
         if (err) {
-          console.log('Error retrieving player pairing list:', err);
-          console.log('pairing:listed', null);
-          socket.emit('pairing:listed', null);
+          console.warn('Error retrieving player pairing list:', teamId, err);
+          socketWrapper.emit('pairing:listed', null);
           return;
         }
         db.query(`SELECT garden_opponent.*
@@ -101,9 +96,8 @@ function PairingRoute(db, redis, io, socket, teamId) {
                   WHERE garden_opponent.match_id = ?
                   ORDER BY garden_opponent.rating DESC;`, [teamId, matchId], (err, opponentPlayerList) => {
           if (err) {
-            console.log('Error retrieving opponent pairing list:', err);
-            console.log('pairing:listed', null);
-            socket.emit('pairing:listed', null);
+            console.warn('Error retrieving opponent pairing list:', teamId, err);
+            socketWrapper.emit('pairing:listed', null);
             return;
           }
 
@@ -113,10 +107,10 @@ function PairingRoute(db, redis, io, socket, teamId) {
           const getUniquePlayers = memberPlayerList.reduce((gathered, item) => {
             if (!gathered.filter(gatheredItem => gatheredItem.id === item.id).length) {
               gathered.push({
-                id: item.id,
+                id: parseInt(item.id),
                 name: item.name,
                 lichess_handle: item.lichess_handle,
-                rating: item.rating
+                rating: item.rating ? parseInt(item.rating) : null
               });
             }
             return gathered;
@@ -124,8 +118,8 @@ function PairingRoute(db, redis, io, socket, teamId) {
           const pairingLookUp = memberPlayerList.reduce((gathered, item) => {
             if (item.pairing_id) {
               gathered[`${item.id}:${item.opponent_id}`] = {
-                id: item.pairing_id,
-                result: item.result,
+                id: parseInt(item.pairing_id),
+                result: item.result !== null ? parseFloat(item.result) : null,
                 gameId: item.lichess_game_id
               }
             }
@@ -137,37 +131,35 @@ function PairingRoute(db, redis, io, socket, teamId) {
             const opponent = opponentPlayerList[matchUp[1]] || emptyPlayer();
             const pairing = pairingLookUp[`${player.id}:${opponent.id}`] || {};
             return {
-              id: pairing.id || null,
+              id: pairing.id ? parseInt(pairing.id) : null,
               matchId: matchId,
               player: {
-                id: player.id,
+                id: parseInt(player.id),
                 name: player.name,
                 lichessHandle: player.lichess_handle,
-                rating: player.rating
+                rating: player.rating ? parseInt(player.rating) : null
               },
               opponent: {
-                id: opponent.id,
+                id: parseInt(opponent.id),
                 name: opponent.name,
                 lichessHandle: opponent.lichess_handle,
-                rating: opponent.rating
+                rating: opponent.rating ? parseInt(opponent.rating) : null
               },
               orientation: isHome !== false ? matchUp[2] : matchUp[3],
               result: pairing.result !== null && pairing.result !== undefined ? pairing.result : null,
               gameId: pairing.gameId || null
             }
           });
-          console.log('pairing:listed', teamId, JSON.stringify({matchId: matchId, pairings: matchUps}, null, 2));
-          socket.emit('pairing:listed', {matchId: matchId, pairings: matchUps});
+          socketWrapper.emit('pairing:listed', {matchId: matchId, pairings: matchUps});
         });
       });
   }
 
-  socket.on('pairing:list', getPairingList);
-  socket.on('pairing:update', _updatePairing);
-
+  socketWrapper.on('pairing:list', getPairingList);
+  socketWrapper.on('pairing:update', _updatePairing);
   return () => {
-    socket.off('pairing:list', getPairingList);
-    socket.off('pairing:update', _updatePairing);
+    socketWrapper.off('pairing:list', getPairingList);
+    socketWrapper.off('pairing:update', _updatePairing);
   };
 }
 

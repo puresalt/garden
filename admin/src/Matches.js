@@ -7,7 +7,7 @@ import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 import LoadingOverlay from 'react-loading-overlay';
 import LoadingOverlayText from './LoadingOverlayText';
-import OrDefault from 'gscc-common/react/OrDefault';
+import OrDefault from 'garden-common/react/OrDefault';
 import {useHistory} from 'react-router-dom';
 import Settings from './Settings';
 

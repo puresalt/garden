@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
-import OrDefault from 'gscc-common/react/OrDefault';
+import OrDefault from 'garden-common/react/OrDefault';
 import LoadingOverlay from 'react-loading-overlay';
 import LoadingOverlayText from './LoadingOverlayText';
 import Table from 'react-bootstrap/Table';
