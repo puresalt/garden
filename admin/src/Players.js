@@ -33,6 +33,12 @@ function PlayerForm(props) {
       data[i] = {id: i};
     }
     data[i][key] = event.target.value;
+    if (key === 'rating') {
+      const ratingSum = players.reduce((gathered, item) => {
+        return gathered + (data[item.id] && data[item.id].rating ? parseInt(data[item.id].rating) : item.rating);
+      }, 0);
+      setAverage(Math.round(ratingSum / players.length * 100) / 100);
+    }
     setData(data);
   };
 
