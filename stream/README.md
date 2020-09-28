@@ -1,5 +1,7 @@
 # Garden > Stream
 
+![Garden State Chess Club's full overlay](../README/stream.png)
+
 This is the actual overlay that we include inside of OBS. All it does is consume data from [`State`](../state/README.md)
 and present it in a nice fashion. All the assets in the repo as for Garden State Chess Club, so please make sure to
 update that accordingly when developing an overlay for different teams. If I had planned on sharing the source code from

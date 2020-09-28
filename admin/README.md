@@ -14,7 +14,7 @@ are [Pairings](#pairings) and [Boards](#boards) available.
 
 #### List
 
-![](./README/matches-link.png)
+![](../README/matches-link.png)
 
 By clicking on `MATCHES` in the top level you will get a list of all saved matches as well as a way to create a new
 match. From the list of `Saved Matches` if you click on `Manage` you will change the second level links to reflect on
@@ -23,7 +23,7 @@ that match. E.g. in the image about if you were to click on `Manage` for `#1 New
 
 #### Create Match
 
-![](./README/matches-create.png)
+![](../README/matches-create.png)
 
 Creating a match is straightforward. Red on all toggle options means `Yes`, `On`, or `True` while the gray option is in
 an off state. Going down the line here are the fields and what they do:
@@ -53,14 +53,14 @@ database so no information is lost, it just won't serve the match or any auxilia
 
 ### Members
 
-![](./README/members.png)
+![](../README/members.png)
 
 Members are team members. There is no limit to how many members can exist for a team so feel free to add everybody that
 might play for a given match. This list will populate the Settings page with the players that can be selected.
 
 #### Create Member
 
-![](./README/members-create.png)
+![](../README/members-create.png)
 
 All of these fields should hopefully be obvious. Just in case here's the breakdown.
 
@@ -78,7 +78,7 @@ deleting the row.
 
 ### Settings
 
-![](./README/settings.png)
+![](../README/settings.png)
 
 This section is for configuring the specific match. The original settings from [Create Match](#create-match) are
 editable here if need be and everything has the same meaning as before.
@@ -96,7 +96,7 @@ below 2200. If both of those requirements are met you will then be able to save 
 
 ### Pairings
 
-![](./README/pairings.png)
+![](../README/pairings.png)
 
 This will be generated from [Opponents](#opponents) and [Selected Players](#selected-players) depending on if the team
 is Home or Away. In the middle are the Result options, clicking on a Result will update the `Stream` accordingly with
@@ -107,7 +107,7 @@ there is an issue or it grabs the wrong game this can be updated here.
 
 ### Boards
 
-![](./README/boards.png)
+![](../README/boards.png)
 
 **Experimental Feature**
 

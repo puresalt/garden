@@ -1,5 +1,7 @@
 # Garden
 
+![Garden State Chess Club's full overlay](./README/stream.png)
+
 Welcome to our stream overlay for team Garden State Chess Club. Currently we are using this as a `Browser Source` in OBS
 to handle all of the match data such as scores, opponents, rounds, and host information.
 
@@ -110,7 +112,7 @@ Please send bugs and feature requests via:
 * **[States Chess Cup](https://stateschesscup.wordpress.com/)** for creating the league where this overlay is used and
     giving me a reason to finally test out `React.js`
 * **[Lichess.org](https://lichess.org)** for open sourcing a bunch of easy to use components.
-* **[https://github.com/grantmiiller](grantmiiller)** for some `React.js` insights in real-time when I looked for some
+* **[Grant Miiller](https://github.com/grantmiiller)** for some `React.js` insights in real-time when I looked for some
     help or direction.
 
 ---
