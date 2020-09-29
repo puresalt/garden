@@ -60,7 +60,7 @@ function Members(props) {
         </Col>
         <Col><Players
           players={members}
-          teamName="Garden State Chess Club"
+          teamName="Garden State Passers"
           onSubmit={handleMemberUpdate}
           onDelete={handleMemberDelete}
         />

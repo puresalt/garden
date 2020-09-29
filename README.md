@@ -1,8 +1,8 @@
 # Garden
 
-![Garden State Chess Club's full overlay](./README/stream.png)
+![Garden State Passers' full overlay](./README/stream.png)
 
-Welcome to our stream overlay for team Garden State Chess Club. Currently we are using this as a `Browser Source` in OBS
+Welcome to our stream overlay for team Garden State Passers. Currently we are using this as a `Browser Source` in OBS
 to handle all of the match data such as scores, opponents, rounds, and host information.
 
 There is a lot of ground work to utilize the [Lichess.org API](https://lichess.org/api) to stream boards in real-time so

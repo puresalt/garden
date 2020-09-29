@@ -26,7 +26,7 @@ function ParseRoute(props) {
   const {matchId, boardNumber} = useParams();
   const requestedMatchId = matchId ? parseInt(matchId) : null;
 
-  const [match, setMatch] = useState({id: requestedMatchId});
+  const [match, setMatch] = useState(() => ({id: requestedMatchId}));
   const loadMatch = (incomingMatch) => {
     if ((!match.id && requestedMatchId === null) || incomingMatch.id === match.id) {
       setMatch(incomingMatch);
@@ -36,7 +36,6 @@ function ParseRoute(props) {
   const requestedBoardNumber = boardNumber ? parseInt(boardNumber) : null;
   const [currentBoardNumber, setCurrentBoardNumber] = useState(requestedBoardNumber);
   const updateStreamState = (incomingStreamState) => {
-    console.log('hi', requestedBoardNumber || incomingStreamState.matchId !== match.id, requestedBoardNumber, incomingStreamState.matchId, match.id);
     if (requestedBoardNumber || incomingStreamState.matchId !== match.id) {
       return;
     }

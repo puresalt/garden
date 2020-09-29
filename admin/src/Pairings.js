@@ -75,7 +75,7 @@ function Pairings(props) {
         <thead>
         <tr>
           <th scope="col">Board</th>
-          <th scope="col">Garden State Chess Club</th>
+          <th scope="col">Garden State Passers</th>
           <th/>
           <th scope="col" className="text-center">Result</th>
           <th/>

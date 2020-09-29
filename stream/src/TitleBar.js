@@ -6,7 +6,7 @@ function TitleBar(props) {
   const {homeTeam} = props;
 
   return <div className="TitleBar">
-    <div className="TeamName"><span>Garden State</span> Chess Club</div>
+    <div className="TeamName"><span>Garden State</span> Passers</div>
     <div className="MatchName">States Chess Cup: <span><OrDefault
       value={props.homeTeamName}/></span> vs <span><OrDefault
       value={props.awayTeamName}/></span></div>

@@ -1,9 +1,9 @@
 # Garden > Stream
 
-![Garden State Chess Club's full overlay](../README/stream.png)
+![Garden State Passers' full overlay](../README/stream.png)
 
-This is the actual overlay that we include inside of OBS. All it does is consume data from [`State`](../state/README.md)
-and present it in a nice fashion. All the assets in the repo as for Garden State Chess Club, so please make sure to
+This is the actual overlay that we include inside of OBS. All it does is consume data from [State](../state/README.md)
+and present it in a nice fashion. All the assets in the repo as for Garden State Passers, so please make sure to
 update that accordingly when developing an overlay for different teams. If I had planned on sharing the source code from
 the get go I would have tried to be better in making it easier to skin.
 
@@ -18,7 +18,7 @@ There are two main endpoints, each with an alias to a shorthand for the most rec
 ### Full Match `/match/:matchId`, `/`
 
 Going to just `/` will return the latest non deleted match. Both will return the main overlay which shows all four
-boards along with any other settings. All display information is handled via [`Admin`](../admin/README.md).
+boards along with any other settings. All display information is handled via [Admin](../admin/README.md).
 
 ### Board Highlight `/match/:matchId/board/:boardNumber`, `/board/:boardNumber`
 
