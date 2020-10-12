@@ -16,11 +16,14 @@ function updatePlayerList(db, redis, teamId, matchId, callback) {
           .map(item => item.lichess_handle)
           .filter(item => item))
       );
+      if (!usernameList.length) {
+        return redis.del(`stream:${teamId}:${matchId}:username`, callback);
+      }
       redis
         .multi()
         .del(`stream:${teamId}:${matchId}:username`)
-        .rpush(`stream:${teamId}:${matchId}:username`, usernameList)
-        .exec((err) => callback(err));
+        .rpush(`stream:${teamId}:${matchId}:username`, ...usernameList)
+        .exec(callback);
     });
   });
 }

@@ -69,7 +69,7 @@ function playerRoute(db, redis, socketWrapper, teamId) {
     const values = data.opponents.reduce(sanitizePlayerList, []);
     const countToSave = values.length / 4;
     const query = (new Array(countToSave))
-      .fill('UPDATE garden_opponent SET name = ?, lichess_handle = ?, rating = ? WHERE id = ?;', 0, countToSave)
+      .fill('UPDATE garden_opponent SET name = ?, lichess_handle = ?, rating = ? WHERE id = ?', 0, countToSave)
       .join(';');
     db.query(query, values, (err, result) => {
       if (err) {

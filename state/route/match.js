@@ -94,7 +94,7 @@ function matchRoute(db, redis, socketWrapper, teamId) {
               socketWrapper.broadcastAll('opponent:listed', {
                 teamId: teamId,
                 matchId: result.insertId,
-                players: filledOpponentData
+                opponents: filledOpponentData
               });
               const filledPlayerData = fillPlayerData(playerInsertResult.insertId);
               socketWrapper.broadcastAll('player:listed', {teamId: teamId, players: filledPlayerData});
