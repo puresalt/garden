@@ -1,9 +1,8 @@
 import React from 'react';
 import Board from './Board';
-import {useParams} from 'react-router-dom';
 
 function IndividualBoard(props) {
-  const {socket, boardNumber, pairing, showProgrammaticBoards, debugMode} = props;
+  const {socket, board, pairing, showProgrammaticBoards, debugMode} = props;
 
   if (!pairing) {
     return (
@@ -12,7 +11,7 @@ function IndividualBoard(props) {
   }
   return (
     <Board
-      board={boardNumber}
+      board={board}
       debugMode={debugMode}
       showProgrammaticBoards={showProgrammaticBoards}
       name={pairing.name}

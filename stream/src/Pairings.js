@@ -2,9 +2,6 @@ import React from 'react';
 import Board from './Board';
 import IndividualBoard from './IndividualBoard';
 
-const teamName = 'New Jersey';
-const totalBoardNumber = 4;
-
 const boardDimensions = [
   {left: 7, top: 50},
   {left: 700, top: 7},
@@ -26,6 +23,7 @@ function Match(props) {
       {currentBoardNumber
         ? <IndividualBoard
           currentPairingId={currentBoardNumber}
+          board={currentBoardNumber}
           showProgrammaticBoards={showProgrammaticBoards}
           debugMode={showDebugInformation}
           pairing={pairings[currentBoardNumber - 1]}
