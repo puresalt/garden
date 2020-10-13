@@ -124,7 +124,7 @@ function MatchUp(props) {
 
   let homeColor;
   let awayColor;
-  if (BOARD_COLORS[matchUpIndex] === 'white' && isHome) {
+  if ((isHome && BOARD_COLORS[matchUpIndex] === 'white') || (!isHome && BOARD_COLORS[matchUpIndex] === 'black')) {
     homeColor = <td className="white">W</td>;
     awayColor = <td className="black">B</td>;
   } else {
