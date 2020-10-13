@@ -49,20 +49,27 @@ function App() {
   const updateCurrentOpponent = (newOpponent) => {
     setCurrentOpponent(newOpponent);
   };
+  const [isHome, setIsHome] = usePersistentState('isHome', false);
+  const updateIsHome = (isHome) => {
+    setIsHome(isHome);
+  };
 
   const handleMatchLoad = (match) => {
     if (match && match.id) {
       setCurrentMatchId(match.id);
       setCurrentOpponent(match.opponent);
+      setIsHome(match.isHome);
     } else {
       setCurrentMatchId(0);
       setCurrentOpponent('');
+      setIsHome(false);
     }
   };
   const handleMatchExistenceCheck = (data) => {
     if (data.id === currentMatchId && !data.exists) {
       setCurrentMatchId(0);
       setCurrentOpponent('');
+      updateIsHome(false);
     }
   };
   useEffect(() => {
@@ -106,6 +113,7 @@ function App() {
                     currentOpponent={currentOpponent}
                     stateLookup={STATE_LOOKUP}
                     socket={socket}
+                    isHome={isHome}
                   />
                   : <Redirect to="/"/>
               }

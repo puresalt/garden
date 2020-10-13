@@ -27,7 +27,7 @@ const BOARD_COLORS = [
 ];
 
 function Pairings(props) {
-  const {socket, stateLookup, currentMatchId, currentOpponent} = props;
+  const {socket, stateLookup, currentMatchId, currentOpponent, isHome} = props;
 
   const [isLoading, setIsLoading] = useState(true);
   const [pairings, setPairings] = useState([]);
@@ -93,6 +93,7 @@ function Pairings(props) {
                 pairing={pairing}
                 updateGameId={updateGameId}
                 updateResult={updateResult}
+                isHome={isHome}
               />;
             })
             : <tr className="table-warning">
@@ -106,7 +107,7 @@ function Pairings(props) {
 }
 
 function MatchUp(props) {
-  const {matchUpIndex, pairing, updateGameId, updateResult} = props;
+  const {matchUpIndex, pairing, updateGameId, updateResult, isHome} = props;
 
   const hasPlayer = pairing.player.id;
   const hasOpponent = pairing.opponent.id;
@@ -123,7 +124,7 @@ function MatchUp(props) {
 
   let homeColor;
   let awayColor;
-  if (BOARD_COLORS[matchUpIndex] === 'white') {
+  if (BOARD_COLORS[matchUpIndex] === 'white' && isHome) {
     homeColor = <td className="white">W</td>;
     awayColor = <td className="black">B</td>;
   } else {
