@@ -1,0 +1,45 @@
+.navbar-brand {
+    padding-bottom: 0.5rem !important;
+    padding-top: 0.5rem !important;
+    margin-left: 1rem;
+}
+
+.navbar-brand:after {
+    content: "»";
+    padding: 0.5rem;
+    margin-right: -1em;
+}
+
+.TopBar {
+    background: #000;
+    color: #fff;
+    padding: 0.5em 0;
+}
+
+.TopBar a {
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.TopBar a {
+    color: #ffca66;
+    opacity: 0.75;
+}
+
+.TopBar a:active,
+.TopBar a:hover,
+.TopBar a:focus {
+    opacity: 1;
+    text-decoration: none;
+}
+
+.TopBar .nav a {
+    margin-left: 0;
+    padding-left: 0;
+}
+
+.TopBar a.active{
+    opacity: 1;
+    color: #fff;
+    cursor: pointer;
+}

@@ -7,7 +7,7 @@ function updatePlayerList(db, redis, teamId, matchId, callback) {
     if (err) {
       return callback(err);
     }
-    db.query('SELECT lichess_handle FROM garden_opponent WHERE match_id = ?', matchId, (err, opponentList) => {
+    db.query('SELECT lichess_handle FROM garden_opponent WHERE match_id = ?;', matchId, (err, opponentList) => {
       if (err) {
         return callback(err);
       }

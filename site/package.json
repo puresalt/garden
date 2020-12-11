@@ -1,0 +1,21 @@
+{
+  "name": "garden-site",
+  "version": "0.1.0",
+  "private": true,
+  "homepage": "/site",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "bootstrap": "^4.5.3",
+    "express": "^4.17.1",
+    "garden-common": "file:../common",
+    "lodash": "^4.17.20",
+    "markdown-it": "^12.0.0",
+    "markdown-it-highlightjs": "^3.3.0",
+    "mustache": "^4.0.1",
+    "mysql": "^2.18.1",
+    "redis": "^3.0.2"
+  },
+  "scripts": {
+    "start": "PORT=4006 node app.js"
+  }
+}
