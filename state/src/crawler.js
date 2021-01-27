@@ -1,4 +1,3 @@
-const redis = require('redis');
 const axios = require('axios');
 const ChessBoard = require('chess.js').Chess;
 const duration = require('moment').duration;
