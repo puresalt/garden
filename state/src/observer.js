@@ -1,7 +1,14 @@
 const ChessBoard = require('chess.js').Chess;
 const duration = require('moment').duration;
-const StringDecoder = require('string_decoder').StringDecoder;
-const stringDecoder = new StringDecoder('utf8');
+const net = require('net');
+const generateGameHash = require('garden-common/src/state').generateGameHash;
+const parseLiveBoard = require('./parse/liveBoard');
+
+const loginPromptRegex = /login: $/;
+const passwordPromptRegex = /password: /;
+const observeResponseRegex = /Game ([0-9]+) \(([a-zA-Z0-9_-]+) vs\. ([a-zA-Z0-9_-]+)\)/;
+const pgnResponseRegex = /\n\[Site "Internet Chess Club"]\n/;
+const resultsResponseRegex = /^{Game ([0-9]+) (([a-zA-Z0-9_-]+) vs. ([a-zA-Z0-9_-]+)) ([a-zA-Z0-9_-]+) ([a-zA-Z0-9]+)} (0|0.5|1)-(0|0.5|1)/;
 
 const individualMoveRegex = /([NBQRKOxa-h0-9=/+#-]+) { \[%clk ([0-9:]+)]/g;
 const noop = () => {
@@ -11,12 +18,105 @@ const nullSocket = {
   emit: noop
 };
 
-const gameList = {};
+function ObserverLoop(boardId, redis, config) {
+  let loggedIn = false;
+  const connection = net.createConnection(config.port, config.host);
 
-function CrawlerLoop(telnet, redis) {
-  redis.hgetall('usate:');
+  let observing = null;
+  let home = null;
+  let away = null;
+  let gameId = null;
+  let moves = null;
+  let queueMoves = null;
+  const loopForUsernameChanges = () => {
+    redis.get(`usate:stream:board:${boardId}`, (err, usernames) => {
+      if (err) {
+        console.warn('Error finding players, will try again in a bit:', err);
+      }
+      if (!usernames || observing === usernames) {
+        return;
+      }
+      observing = usernames;
+      [home, away] = usernames.split(',');
+      connection.write(`unobs\n`);
+      connection.write(`obs ${home}\n`);
+      gameId = null;
+    });
+  }
 
+  const parseLiveGameData = (liveGameData, data) => {
+    const boardData = parseLiveBoard(data);
+    if (gameId === null) {
+      if (queueMoves === null) {
+        queueMoves = [];
+        if (
+          (liveGameData[2] === home && liveGameData[3] === away)
+          || (liveGameData[3] === home && liveGameData[2] === away)
+        ) {
+          moves = (new Array(boardData.id)).fill(null);
+          connection.write(`pgn ${liveGameData[1]}\n`);
+        }
+      } else {
+        queueMoves.push(boardData);
+      }
+    }
+    console.log('liveGameData', liveGameData);
+  };
 
+  const parseStaleGameData = (staleGameData, data) => {
+    console.log('parseStaleGameData', data);
+  };
+
+  const parseResultsData = (resultsData, data) => {
+    console.log('parseResultsData', data);
+  };
+
+  const clientOn = (buffer) => {
+    const data = buffer.toString();
+    const liveGameData = data.match(observeResponseRegex);
+    if (liveGameData !== null) {
+      return parseLiveGameData(liveGameData, data);
+    }
+
+    const staleGameData = data.match(pgnResponseRegex);
+    if (staleGameData !== null) {
+      return parseStaleGameData(staleGameData, data);
+    }
+
+    const resultsData = data.match(resultsResponseRegex);
+    if (resultsData !== null) {
+      return parseResultsData(resultsData, data);
+    }
+
+    console.log(data);
+  };
+
+  const logOn = (buffer) => {
+    const data = buffer.toString();
+    if (loggedIn) {
+      return;
+    }
+    if (loginPromptRegex.test(data)) {
+      connection.write(`${config.username}\n`);
+    } else if (passwordPromptRegex.test(data)) {
+      connection.write(`${config.password}\n`);
+      connection.on('data', clientOn);
+      connection.off('data', logOn);
+      loggedIn = true;
+      setInterval(loopForUsernameChanges, 1000);
+    }
+  };
+  connection.on('data', logOn);
+  connection.on('timeout', () => {
+    console.log('Connection timed out');
+    process.exit();
+  });
+  connection.on('end', () => {
+    console.log('Connection ended');
+    process.exit();
+  });
+
+  return;
 
   function checkPairingDataList() {
     const alreadyCrawledGameList = Object.keys(gameList).length
@@ -37,7 +137,7 @@ function CrawlerLoop(telnet, redis) {
       for (let i = 0, count = result.length; i < count; ++i) {
         ((item) => {
           console.log('Found:', item.lichess_game_id);
-          storeGame(redis, item.lichess_game_id, (err, result) => {
+          storeGame(redis, telnet, (err, result) => {
             if (err) {
               console.error('Error getting data for:', matchId, result, err);
               return;
@@ -85,7 +185,7 @@ function CrawlerLoop(telnet, redis) {
     });
   }
 
-  setInterval(checkPairingDataList, 1000);
+  setInterval(checkPairingDataList, 100);
 }
 
 function storeGame(redis, teamId, gameId, callback) {
@@ -149,7 +249,6 @@ function storeGame(redis, teamId, gameId, callback) {
       }
     }), next);
   }
-
 
 
   function getGame(currentGameId, finished) {
@@ -243,4 +342,4 @@ function storeGame(redis, teamId, gameId, callback) {
   }
 }
 
-module.exports = CrawlerLoop;
+module.exports = ObserverLoop;
