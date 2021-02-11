@@ -8,7 +8,7 @@
 }
 
 .Board header {
-    padding-left: 8px;
+    padding: 0 8px;
 }
 
 .Board .pairings {
@@ -23,25 +23,14 @@
 .Board.Large {
     font-size: 2em;
     height: 1023px;
-    width: 1382px;
+    width: 1242px;
 }
 
 .Board.Large header {
-    font-size: 2.4em;
-    height: 0.9em;
-    padding: 18px 16px 0 16px;
-}
-
-.Board.Large .pairings {
-    padding: 8px 16px;
-}
-
-.Board .pairings td {
-    padding-right: 4px;
-}
-
-.Board.Large .pairings td {
-    padding-right: 8px;
+    height: 39px;
+    line-height: 33px;
+    font-size: 36px;
+    padding: 8px 16px 6px 8px;
 }
 
 .Board.Faded {
@@ -124,20 +113,24 @@
 .Board .board {
     position: absolute;
     left: 0;
-    top: 43px;
+    top: 27px;
     width: 100%;
 }
 
 .Board.Large .board,
 .Board.Large .board-placeholder {
-    top: 87px;
+    top: 53px;
 }
 
 .Board .eventData {
     position: absolute;
     bottom: 0;
     right: 0;
-    width: 223px;
+    width: 207px;
+}
+
+.Board.Large .eventData {
+    width: 272px;
 }
 
 .Board .eventData .clock {
@@ -158,13 +151,17 @@
 
 .Board .eventData .moveList {
     background: #fff;
-    max-height: 245px;
+    max-height: 394px;
     padding: 0.25em;
     overflow: hidden;
 }
 
+.Board.Large .eventData .moveList {
+    max-height: 832px;
+}
+
 .Board .eventData .moveList span {
-    font-size: 0.5rem;
+    font-size: 12px;
     font-weight: normal;
     font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
     color: #006747;
@@ -172,6 +169,11 @@
     line-height: 1.25;
     opacity: 0.8;
     float: left;
+}
+
+
+.Board.Large .eventData .moveList span {
+    font-size: 16px;
 }
 
 .Board .eventData .moveList span.active {
@@ -197,34 +199,120 @@
     font-weight: 700;
 }
 
-.Board.debug .board,
-.Board.debug .board-placeholder,
-.Board.debug .board-placeholder-info {
-    background: rgba(255, 0, 0, 0.5);
+.Board header {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: flex-start;
+    justify-content: left;
+}
+
+.board-header-home {
+    margin-left: 6px;
+}
+
+.board-header-away {
+    margin-left: 10px;
 }
 
 .board-placeholder {
     position: absolute;
     left: 0;
-    top: 43px;
-    height: 464px;
-    width: 464px;
+    top: 33px;
+    height: 474px;
+    width: 474px;
 }
 
 .board-placeholder-info {
     position: absolute;
     right: 0;
     bottom: 0;
-    height: 300px;
-    width: 223px;
+    height: 310px;
+    width: 213px;
 }
 
 .Board.Large .board-placeholder {
-    height: 936px;
-    width: 936px;
+    height: 946px;
+    width: 946px;
 }
 
 .Board.Large .board-placeholder-info {
-    height: 650px;
+    height: 660px;
     width: 446px;
+}
+
+.Board .black-square,
+.Board .white-square {
+    background: #000;
+    width: 10px;
+    height: 21px;
+    display: block;
+    float: left;
+    position: relative;
+    top: 3px;
+    left: -4px;
+    margin-right: 0;
+    margin-left: 10px;
+}
+
+.Board .white-square {
+    background: #fff;
+}
+
+.Board.Large .black-square,
+.Board.Large .white-square {
+    height: 37px;
+    width: 22px;
+    left: 10px;
+    margin-right: 16px;
+    margin-left: 0px;
+    top: 0;
+}
+
+.Board.Small.not-automatic {
+    display: none !important;
+}
+
+.Board.Small {
+    opacity: 0.8;
+    border-radius: 0.5em;
+    height: 240px;
+    width: 240px;
+    border: solid 4px #006747;
+}
+
+.Board.Small .board {
+    top: 0;
+}
+
+.Board.Small header {
+    border-radius: 0 0 0.5em 0;
+    padding: 0.25em;
+    line-height: 14px;
+    height: 24px;
+    position: absolute;
+    opacity: 0.5;
+    z-index: 100;
+}
+
+.Board.Small .eventData {
+    display: none;
+}
+
+.Board.Small .board-header-home,
+.Board.Small .board-header-away,
+.Board.Small span span {
+    display: none;
+}
+
+#board-2.Small {
+    left: 7px; top: 262px;
+}
+
+#board-3.Small {
+    left: 7px; top: 517px;
+}
+
+
+#board-4.Small {
+    left: 7px; top: 771px;
 }

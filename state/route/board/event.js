@@ -1,4 +1,4 @@
-function BoardEventRoute(db, redis, socketWrapper, teamId, boardId) {
+function BoardEventRoute(db, redis, socketWrapper, boardId) {
 
   function readySession() {
     // @TODO(JM): Add looping for new board updates via Redis. Similar to `stream:load(matchId)`.

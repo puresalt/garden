@@ -1,100 +1,70 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import Score from './Score';
 import Webcam from './Webcam';
 import TitleBar from './TitleBar';
 import AdUnit from './AdUnit';
 import Pairings from './Pairings';
 import './Match.css';
-
-const teamName = 'New Jersey';
-const totalBoardNumber = 4;
+import ScratchBoard from './ScratchBoard';
 
 function Match(props) {
-  const {stateLookup, currentBoardNumber, currentMatch, socket} = props;
+  const {currentBoardNumber, currentMatchId, small, socket} = props;
 
-  const [awayTeamScore, setAwayTeamScore] = useState(0);
-  const [homeTeamScore, setHomeTeamScore] = useState(0);
-  const [pairings, setPairings] = useState([]);
-  const loadPairings = (incomingPairings) => {
-    if (incomingPairings.matchId !== currentMatch.id) {
-      return;
-    }
-    const [parsedPairings, homeTeamScore, awayTeamScore] = incomingPairings.pairings.reduce((gathered, pairing, i) => {
-      const boardIndex = i % totalBoardNumber;
-      if (!gathered[0][boardIndex]) {
-        gathered[0][boardIndex] = {
-          name: pairing.player.name,
-          rating: pairing.player.rating,
-          pairings: []
-        };
-      }
-      gathered[0][boardIndex].pairings.push({
-        name: pairing.opponent.name,
-        rating: pairing.opponent.rating,
-        result: pairing.result,
-        orientation: pairing.orientation
-      });
-      if (pairing.result !== null) {
-        gathered[1] += pairing.result;
-        gathered[2] += 1 - pairing.result;
-      }
-      return gathered;
-    }, [[], 0, 0]);
-    setAwayTeamScore(awayTeamScore);
-    setHomeTeamScore(homeTeamScore);
-    setPairings(parsedPairings);
+  const [awayTeamName, setAwayTeamName] = useState('');
+  const [homeTeamName, setHomeTeamName] = useState('');
+
+  const [pairingList, setPairingList] = useState([]);
+
+  const [configurationData, setConfigurationData] = useState({});
+  const loadConfiguration = (incomingConfiguration) => {
+    setConfigurationData(incomingConfiguration);
+  };
+
+  const loadStream = (incomingStreamData) => {
+    setAwayTeamName(incomingStreamData.away);
+    setHomeTeamName(incomingStreamData.home);
+    socket.emit('stream:board:list');
+  };
+  const loadBoardList = (incomingBoardList) => {
+    setPairingList(incomingBoardList);
   };
   useEffect(() => {
-    const requestPairingList = (data) => {
-      if (data.matchId !== currentMatch.id) {
-        return () => {
-        };
-      }
-      socket.emit('pairing:list', currentMatch.id);
-    };
-    socket.emit('pairing:list', currentMatch.id);
-    socket.on('pairing:listed', loadPairings);
-    socket.on('member:updated', requestPairingList);
-    socket.on('opponent:updated', requestPairingList);
-    socket.on('pairing:updated', requestPairingList);
-    socket.on('player:selected', requestPairingList);
+    socket.emit('configuration:load');
+    socket.emit('stream:load');
+    socket.emit('stream:board:list');
+    socket.on('configuration:loaded', loadConfiguration);
+    socket.on('stream:loaded', loadStream);
+    socket.on('stream:board:listed', loadBoardList);
     return () => {
-      socket.off('pairing:listed', loadPairings);
-      socket.off('member:updated', requestPairingList);
-      socket.off('opponent:updated', requestPairingList);
-      socket.off('pairing:updated', requestPairingList);
-      socket.off('player:selected', requestPairingList);
+      socket.off('configuration:loaded', loadConfiguration);
+      socket.off('stream:loaded', loadStream);
+      socket.off('pairing:listed', loadBoardList);
     };
-  }, [currentMatch.id]);
+  }, [currentMatchId, currentBoardNumber]);
 
-  const hostIcons = [
-    currentMatch.hostInstagram ? 'instagram' : false,
-    currentMatch.hostTwitter ? 'twitter' : false,
-    currentMatch.hostTwitch ? 'twitch' : false
-  ].filter(item => item);
-
-  const opponentName = currentMatch.opponent
-    ? stateLookup[currentMatch.opponent]
-    : false;
+  const large = !!currentBoardNumber;
 
   return (
-    <div className="Match">
+    <div className={`Match${small ? ' Small' : ''}`}>
       <Pairings
-        pairings={pairings}
+        pairings={pairingList}
+        showProgrammaticBoards={configurationData.showProgrammaticBoards}
         currentBoardNumber={currentBoardNumber}
-        showProgrammaticBoards={currentMatch.showProgrammaticBoards}
-        showDebugInformation={currentMatch.showDebugInformation}
+        small={small}
         socket={socket}
       />
-      <Score
-        homeTeamName={teamName}
-        homeTeamScore={homeTeamScore}
-        awayTeamName={opponentName}
-        awayTeamScore={awayTeamScore}
+      {configurationData.showMatchScore ? <Score
+        homeTeamName={homeTeamName}
+        awayTeamName={awayTeamName}
+      /> : <></>}
+      <TitleBar
+        bottomLeftText={configurationData.bottomLeftText}
+        bottomMiddleText={configurationData.bottomMiddleText}
+        bottomRightText={configurationData.bottomRightText}
       />
-      <TitleBar homeTeamName={teamName} awayTeamName={opponentName} name={currentMatch.hostName} icons={hostIcons}/>
-      <AdUnit showAdUnit={currentMatch.showAdUnit} debugMode={currentMatch.showDebugInformation}/>
-      <Webcam showWebcam={currentMatch.showWebcam} debugMode={currentMatch.showDebugInformation}/>
+      <AdUnit showAdUnit={configurationData.showAdUnit} small={small}/>
+      <ScratchBoard showScratchBoard={configurationData.showScratchBoard} large={large}/>
+      <Webcam showWebcam={configurationData.showWebcam} large={large}/>
     </div>
   );
 }

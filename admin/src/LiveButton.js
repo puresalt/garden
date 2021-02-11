@@ -1,35 +1,14 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import ToggleButton from 'react-bootstrap/ToggleButton';
 import './LiveButton.css';
 import InputGroup from 'react-bootstrap/InputGroup';
 
 function LiveButton(props) {
-  const {socket, currentMatchId, isLive, updateSetIsLive} = props;
-
-  const [currentIsLive, setIsLive] = useState(isLive);
-  const streamUpdated = (data) => {
-    if (data.matchId !== currentMatchId) {
-      return;
-    }
-    setIsLive(data.isLive);
-    updateSetIsLive(data.isLive);
-  };
-  useEffect(() => {
-    socket.emit('stream:load', currentMatchId);
-    socket.on('stream:loaded', streamUpdated);
-    socket.on('stream:updated', streamUpdated);
-    return () => {
-      socket.off('stream:loaded', streamUpdated);
-      socket.off('stream:updated', streamUpdated);
-    };
-  }, []);
+  const {isLive, updateSetIsLive} = props;
 
   const handleLiveClick = (event) => {
-    const newIsLive = event.target.value === '1';
-    setIsLive(newIsLive);
-    updateSetIsLive(newIsLive);
-    socket.emit('stream:update', {matchId: currentMatchId, isLive: newIsLive});
+    updateSetIsLive(event.target.value === '1');
   };
 
   return <div className="LiveButton clearfix">
@@ -41,15 +20,15 @@ function LiveButton(props) {
           checked={isLive}
           type="radio"
           value={1}
-          variant={currentIsLive ? 'danger' : 'secondary'}
+          variant={isLive ? 'danger' : 'secondary'}
           onChange={handleLiveClick}
         >On</ToggleButton>
         <ToggleButton
           name="live"
           type="radio"
-          checked={!currentIsLive}
+          checked={!isLive}
           value={0}
-          variant={!currentIsLive ? 'danger' : 'secondary'}
+          variant={!isLive ? 'danger' : 'secondary'}
           onChange={handleLiveClick}
         >Off</ToggleButton>
       </ButtonGroup>

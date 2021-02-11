@@ -1,15 +1,15 @@
 {
   "port": {
-    "admin": 4002,
-    "state": 4003,
-    "observer": 4004,
-    "stream": 4005
+    "admin": 5002,
+    "state": 5003,
+    "observer": 5004,
+    "stream": 5005
   },
   "session": {
-    "secret": "garden"
+    "secret": "usate"
   },
   "socketIo": {
-    "url": "https://state.garden.ps.vg"
+    "url": "https://state.usate.passers.gg"
   },
   "state": {
     "mysql": {
@@ -24,7 +24,7 @@
     "client": {
       "id": "",
       "secret": "",
-      "redirectUrl": "http://127.0.0.1:4002/callback",
+      "redirectUrl": "http://127.0.0.1:5002/callback",
       "authorizeUrl": "https://discord.com/api/oauth2/authorize",
       "responseType": "code",
       "scope": "guilds identify"

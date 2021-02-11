@@ -1,15 +1,15 @@
 import React from 'react';
 import './Webcam.css';
-import DebugInfo from './DebugInfo';
 
 function Webcam(props) {
-  const {showWebcam, debugMode} = props;
+  const {showWebcam, large} = props;
   return (
-    showWebcam ? <div className={`Webcam${debugMode ? ' debug' : ''}`}>
-      <div className="webcam-placeholder">
-        <DebugInfo left={1440} top={743} height={242} width={430}/>
+    showWebcam
+      ? <div className={`Webcam${large ? ' Large' : ''}`}>
+        <div className="webcam-placeholder"/>
+        <div className="webcam-placeholder"/>
       </div>
-    </div> : <></>
+      : <></>
   );
 }
 

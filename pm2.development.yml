@@ -14,23 +14,22 @@
 
 apps:
   - script: admin/app.js
-    name: 'garden:admin'
+    name: 'usate:admin'
     instances: 2
     exec_mode: cluster
     env:
       NODE_ENV: development
-      PORT: 4002
+      PORT: 5002
   - script: state/app.js
-    name: 'garden:state'
+    name: 'usate:state'
     instances: 2
     exec_mode: cluster
     env:
       NODE_ENV: development
-      PORT: 4003
+      PORT: 5003
   - script: npm
-    name: 'garden:stream'
+    name: 'usate:stream'
     args: run start:stream
     env:
       NODE_ENV: development
-      PORT: 4004
-
+      PORT: 5004

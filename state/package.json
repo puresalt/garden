@@ -21,6 +21,9 @@
     "socket.io": "^2.3.0"
   },
   "scripts": {
+    "observer:restart": "../node_modules/.bin/pm2 restart pm2.observer.yml",
+    "observer:start": "../node_modules/.bin/pm2 startOrRestart pm2.observer.yml",
+    "observer:stop": "../node_modules/.bin/pm2 stop pm2.observer.yml",
     "start": "node app.js"
   }
 }
