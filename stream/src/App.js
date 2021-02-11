@@ -9,23 +9,11 @@ const socket = socketIoClient(CONFIG.socketIo.url, {
   path: '/admin'
 });
 
-const emptyTeam = () => {
-  return {
-    name: null,
-    players: [
-      {id: null, handle: null, rating: null},
-      {id: null, handle: null, rating: null},
-      {id: null, handle: null, rating: null},
-      {id: null, handle: null, rating: null}
-    ]
-  };
-};
-
 function App() {
   return (
     <Router>
       <Switch>
-        <Route path={['/match/:matchId/board/:boardNumber', '/match/:matchId', '/']}>
+        <Route path={['/board/:boardNumber', '/']}>
           <ParseRoute/>
         </Route>
       </Switch>
@@ -34,16 +22,12 @@ function App() {
 }
 
 function ParseRoute() {
-  const {matchId, boardNumber} = useParams();
-  const requestedMatchId = matchId
-    ? parseInt(matchId)
-    : 1;
+  const {boardNumber} = useParams();
   const requestedBoardNumber = boardNumber
     ? parseInt(boardNumber)
     : null;
   return <Match
     currentBoardNumber={requestedBoardNumber}
-    currentMatchId={requestedMatchId - 1}
     socket={socket}
   />;
 }

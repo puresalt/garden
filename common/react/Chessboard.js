@@ -1,11 +1,18 @@
 import React from 'react'
-import {duration} from 'moment';
+import { duration } from 'moment';
 import PropTypes from 'prop-types'
-import {Chessground as NativeChessground} from 'chessground'
+import { Chessground as NativeChessground } from 'chessground'
 import './Chessboard/css/chessground.css';
 
-const parseClock = (minutes, seconds) => {
-  return (minutes ? String(minutes) + ':' + String(seconds).padStart(2, '0') : String(seconds));
+const padded = num => String(num).padStart(2, '0');
+const parseClock = (hours, minutes, seconds) => {
+  if (hours) {
+    return `${hours}:${padded(minutes)}:${padded(seconds)}`;
+  } else if (minutes) {
+    return `${padded(minutes)}:${padded(seconds)}`;
+  } else {
+    return String(seconds);
+  }
 };
 
 const propTypes = {
@@ -43,23 +50,25 @@ const propTypes = {
 export default class Chessground extends React.PureComponent {
   constructor(props) {
     super(props);
-    const homeClock = duration().add(this.props.timeLimt || 900, 's');
-    const awayClock = duration().add(this.props.timeLimt || 900, 's');
+    const homeClock = duration().add(this.props.timeLimt || 3600, 's');
+    const awayClock = duration().add(this.props.timeLimt || 3600, 's');
     this.state = {
       moveList: [],
       homeClock: homeClock,
+      homeHours: homeClock.hours(),
       homeMinutes: homeClock.minutes(),
       homeSeconds: homeClock.seconds(),
       awayClock: awayClock,
+      awayHours: awayClock.hours(),
       awayMinutes: awayClock.minutes(),
       awaySeconds: awayClock.seconds(),
       moving: 'home',
       pauseClocks: true,
       pausePosition: true,
       currentMove: 0,
-      gameId: this.props.gameId,
+      viewer: this.props.viewer,
       matchId: this.props.matchId,
-      orientation: this.props.orientation || 'white',
+      orientation: this.props.orientation || 'white'
     };
     this.handleEvent = this.handleEvent.bind(this);
     this.sendEvent = this.sendEvent.bind(this);
@@ -99,6 +108,7 @@ export default class Chessground extends React.PureComponent {
           homeClock = homeClock.subtract(1, 's');
           this.setState({
             homeClock: homeClock,
+            homeHours: homeClock.hours(),
             homeMinutes: homeClock.minutes(),
             homeSeconds: homeClock.seconds()
           });
@@ -107,6 +117,7 @@ export default class Chessground extends React.PureComponent {
           awayClock = awayClock.subtract(1, 's');
           this.setState({
             awayClock: awayClock,
+            awayHours: awayClock.hours(),
             awayMinutes: awayClock.minutes(),
             awaySeconds: awayClock.seconds()
           });
@@ -172,9 +183,11 @@ export default class Chessground extends React.PureComponent {
     }
     this.setState({
       homeClock: homeClock,
+      homeHours: homeClock.hours(),
       homeMinutes: homeClock.minutes(),
       homeSeconds: homeClock.seconds(),
       awayClock: awayClock,
+      awayHours: awayClock.hours(),
       awayMinutes: awayClock.minutes(),
       awaySeconds: awayClock.seconds(),
       moving: data.moving,
@@ -192,9 +205,11 @@ export default class Chessground extends React.PureComponent {
     const moveList = data.moveList || this.state.moveList;
     this.setState({
       homeClock: homeClock,
+      homeHours: homeClock.hours(),
       homeMinutes: homeClock.minutes(),
       homeSeconds: homeClock.seconds(),
       awayClock: awayClock,
+      awayHours: awayClock.hours(),
       awayMinutes: awayClock.minutes(),
       awaySeconds: awayClock.seconds(),
       moving: data.moving || 'home',
@@ -231,10 +246,9 @@ export default class Chessground extends React.PureComponent {
     if (this.props.orientation) {
       this.setState({orientation: this.props.orientation});
     }
-    if (this.state.gameId) {
+    if (this.state.viewer) {
       this.stopUpdatingClocks();
       this.socket.emit(`${this.boardName}:start`, {
-        gameId: this.state.gameId,
         orientation: this.state.orientation
       });
       this.updateClocks();
@@ -242,19 +256,15 @@ export default class Chessground extends React.PureComponent {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (this.state.gameId === nextProps.gameId) {
-      return;
-    }
-    this.setState({gameId: nextProps.gameId});
+    this.setState({viewer: nextProps.viewer});
     if (nextProps.orientation) {
       this.setState({orientation: nextProps.orientation});
     }
     this.stopUpdatingClocks();
     this.socket.emit(`${this.boardName}:start`, {
-      gameId: nextProps.gameId,
       orientation: nextProps.orientation || this.state.orientation
     });
-    if (nextProps.gameId) {
+    if (nextProps.viewer) {
       this.updateClocks();
     }
   }
@@ -276,11 +286,11 @@ export default class Chessground extends React.PureComponent {
 
     const awayActive = this.state.moving === 'away' ? ' active' : '';
     const awayFlagged = !this.state.awayClock ? ' flagged' : '';
-    const awayClock = parseClock(this.state.awayMinutes, this.state.awaySeconds);
+    const awayClock = parseClock(this.state.awayHours, this.state.awayMinutes, this.state.awaySeconds);
 
     const homeActive = this.state.moving === 'home' ? ' active' : '';
     const homeFlagged = !this.state.homeClock ? ' flagged' : '';
-    const homeClock = parseClock(this.state.homeMinutes, this.state.homeSeconds);
+    const homeClock = parseClock(this.state.homeHours, this.state.homeMinutes, this.state.homeSeconds);
     const maxMove = this.state.moveList.length - 1;
     const setCurrentMove = (newCurrentMove, latest) => {
       this.setState({
@@ -289,7 +299,6 @@ export default class Chessground extends React.PureComponent {
         pauseClocks: !latest
       });
       this.socket.emit(`${this.boardName}:goto`, {
-        gameId: this.state.gameId,
         id: newCurrentMove,
         paused: !latest,
         stopJumping: !latest
@@ -297,7 +306,7 @@ export default class Chessground extends React.PureComponent {
     };
     const changePlayState = (newPlayState) => {
       if (!newPlayState && !this.state.moveList.length) {
-        this.socket.emit(`${this.boardName}:start`, {gameId: this.state.gameId, orientation: this.state.orientation});
+        this.socket.emit(`${this.boardName}:start`, {orientation: this.state.orientation});
         return;
       }
       this.setState({pausePosition: newPlayState});
@@ -337,7 +346,6 @@ export default class Chessground extends React.PureComponent {
           ),
           React.createElement('button', {
               className: `btn btn-sm btn-${this.state.pausePosition ? 'success' : 'danger'}`,
-              disabled: this.state.gameId === null,
               onClick: () => changePlayState(!this.state.pausePosition)
             },
             React.createElement('i', {className: `fas fa-${this.state.pausePosition ? 'play' : 'pause'}`})

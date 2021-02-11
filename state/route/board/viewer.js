@@ -1,23 +1,18 @@
 const ChessBoard = require('chess.js');
 
 function BoardViewerRoute(db, redis, socketWrapper, boardId) {
-  let currentGameId = null;
+  let viewing = false;
   let lastEventId = 0;
-  const startGame = (gameId, newLastEventId, finished) => {
-    if (!gameId) {
-      lastEventId = 0;
-      return process.nextTick(() => finished(`no gameId: ${gameId} (${typeof gameId})`));
-    }
+  const startGame = (newLastEventId, finished) => {
     if (newLastEventId) {
       lastEventId = newLastEventId;
     }
-    currentGameId = gameId;
-    const gameHash = `usate:viewer:game:${currentGameId}`;
-
+    viewing = true;
+    const gameHash = `usate:viewer:game:${boardId}`;
     const getGameEvents = () => {
       redis.lrange(gameHash, lastEventId, -1, (err, result) => {
         if (err) {
-          return console.error('Error getting events:',gameId);
+          return console.error('Error getting events:', boardId);
         }
 
         const eventList = result.map(JSON.parse);
@@ -26,10 +21,6 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
         }
 
         const makeNextEvent = (nextEventId) => {
-          if (currentGameId !== gameId) {
-            lastEventId = 0;
-            return process.nextTick(() => finished(`gameId changed: ${currentGameId} to ${gameId}`));
-          }
           const currentEvent = eventList[nextEventId];
           if (!currentEvent) {
             return setTimeout(() => getGameEvents(), 250);
@@ -44,8 +35,8 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
     getGameEvents();
   };
 
-  function startSession(data) {
-    startGame(data.gameId, 0, (err) => {
+  function startSession() {
+    startGame(0, (err) => {
       if (err) {
         console.warn('Error trying to start a new viewer session:', boardId, err);
       }
@@ -53,11 +44,11 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
   }
 
   function stopSession() {
-    currentGameId = null;
+    viewing = false;
   }
 
   function readySession() {
-    if (currentGameId !== null) {
+    if (viewing) {
       return;
     }
     redis.get(`usate:game:${boardId}:current`, (err, data) => {
@@ -114,9 +105,9 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
           }
         });
 
-        startGame(currentGameId, lastEventId, (err) => {
+        startGame(lastEventId, (err) => {
           if (err) {
-            console.warn('Error starting viewer game:',  boardId, err);
+            console.warn('Error starting viewer game:', boardId, err);
           }
           console.info('Finished viewing game:', boardId);
         });

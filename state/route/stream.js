@@ -65,16 +65,16 @@ function StreamerRoute(db, redis, socketWrapper) {
         return console.warn('Failed getting live stream board status:', data, err);
       }
 
-      console.log(data);
       const parsePairing = (board) => {
         const parsePlayer = (team) => {
           return {
             name: data[`${board}:${team}:name`],
             handle: data[`${board}:${team}:handle`],
-            rating: data[`${board}:${team}:rating`]
+            rating: data[`${board}:${team}:rating`] ? parseInt(data[`${board}:${team}:rating`]) : null
           }
         };
         return {
+          board: board,
           home: parsePlayer('home'),
           away: parsePlayer('away')
         };

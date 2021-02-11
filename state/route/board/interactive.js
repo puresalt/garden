@@ -1,52 +1,27 @@
 const updatePairing = require('../pairing').updatePairing;
 
 function BoardInteractiveRoute(db, redis, socketWrapper, boardId) {
-  let currentGameId = null;
   let currentEventId = 0;
   let isPaused = false;
-  let gameHash = null;
   let didJumpAround = false;
-  const startGame = (gameId, finished) => {
-    if (!gameId) {
-      socketWrapper.emit(`usate:board:${boardId}`, {
-        type: 'goto',
-        data: {
-          fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-          clock: [900, 900, 0, 2],
-          moveList: [],
-          moving: 'home'
-        }
-      });
-      redis.del(`usate:game:${boardId}:current`, (err) => {
-        if (err) {
-          console.warn('Could not delete current gameId:',boardId, currentGameId, err);
-        }
-        finished(`no gameId: ${gameId} (${typeof gameId})`);
-        currentEventId = 0;
-        isPaused = false;
-        gameHash = null;
-        didJumpAround = false;
-        currentGameId = null;
-      });
-      return;
-    }
+  const startGame = (finished) => {
+    socketWrapper.emit(`board:${boardId}`, {
+      type: 'goto',
+      data: {
+        fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+        clock: [3600, 3600, 0, 10],
+        moveList: [],
+        moving: 'home'
+      }
+    });
     currentEventId = 0;
     isPaused = false;
-    gameHash = null;
     didJumpAround = false;
-    currentGameId = gameId;
-    gameHash = `game:${currentGameId}`;
-    redis.set(`usate:game:${boardId}:current`, currentGameId, (err) => {
-      if (err) {
-        return console.warn('Could not set current gameId:', boardId, currentGameId, err);
-      }
-      console.info(`Updated usate:game:${boardId}:current to`, currentGameId);
-    });
     let eventList = [];
     const getGameEvents = (lastEventId) => {
-      redis.lrange(gameHash, lastEventId, -1, (err, result) => {
+      redis.lrange(`usate:game:${boardId}`, lastEventId, -1, (err, result) => {
         if (err) {
-          return console.warn('Error getting events:', gameId);
+          return console.warn('Error getting events:', boardId);
         }
         eventList = eventList.concat(result.map(JSON.parse));
 
@@ -57,10 +32,6 @@ function BoardInteractiveRoute(db, redis, socketWrapper, boardId) {
         }
 
         const makeNextEvent = (nextEventId) => {
-          if (currentGameId !== gameId) {
-            lastEventId = 0;
-            return process.nextTick(() => finished(`gameId changed: ${currentGameId} to ${gameId}`));
-          }
           if (isPaused) {
             if (currentEventId > nextEventId) {
               nextEventId = currentEventId + 1;
@@ -81,9 +52,6 @@ function BoardInteractiveRoute(db, redis, socketWrapper, boardId) {
             nextTimeout = 500;
           }
           setTimeout(() => {
-            if (currentGameId !== gameId) {
-              return finished(`gameId changed: ${currentGameId} to ${gameId}`);
-            }
             if (isPaused) {
               if (currentEventId > nextEventId) {
                 nextEventId = currentEventId + 1;
@@ -91,8 +59,8 @@ function BoardInteractiveRoute(db, redis, socketWrapper, boardId) {
               return setTimeout(() => makeNextEvent(nextEventId), 200);
             }
             if ((!currentEventId && !nextEventId) || (currentEventId === nextEventId - 1)) {
-              socketWrapper.emit(`usate:board:${boardId}`, currentEvent);
-              redis.rpush(`usate:viewer:${gameHash}`, JSON.stringify(currentEvent));
+              socketWrapper.emit(`board:${boardId}`, currentEvent);
+              redis.rpush(`usate:viewer:game:${boardId}`, JSON.stringify(currentEvent));
               currentEventId = nextEventId;
             } else {
               nextEventId = currentEventId;
@@ -108,50 +76,24 @@ function BoardInteractiveRoute(db, redis, socketWrapper, boardId) {
   };
 
   function startSession(data) {
-    if (data === null) {
-      return startGame(null, (err) => {
-        if (err) {
-          console.warn('Error clearing session:', err);
-        }
-      })
-    }
-    redis.del(`usate:viewer:game:${data.gameId}`, (err) => {
+    redis.del(`usate:viewer:game:${boardId}`, (err) => {
       if (err) {
-        return console.warn('Error deleting previous game events:', data.gameId, err);
+        return console.warn('Error deleting previous game events:', boardId, err);
       }
       socketWrapper.broadcast(`viewer:board:${boardId}:started`, {
-        gameId: data.gameId,
         orientation: data.orientation
       });
       didJumpAround = false;
-      startGame(data.gameId, (err) => {
+      startGame((err) => {
         if (err) {
-          console.warn('Error starting a game:', data.gameId, err);
+          console.warn('Error starting a game:', err);
         }
       })
-    });
-  }
-
-  function updateGameId(data) {
-    updatePairing(db, socketWrapper, data, (err) => {
-      if (err) {
-        return console.warn('Error updating pairings:', data, err);
-      }
-      socketWrapper.broadcast(`viewer:board:${boardId}:change`, {gameId: data.gameId});
-      didJumpAround = false;
-      startGame(data.gameId, (err) => {
-        if (err) {
-          console.warn('Error starting game after an update:', data.gameId, err);
-        }
-      });
     });
   }
 
   function gotoPosition(data) {
-    if (!gameHash) {
-      return;
-    }
-    redis.lindex(gameHash, data.id + 1, (err, result) => {
+    redis.lindex(`usate:game:${boardId}`, data.id + 1, (err, result) => {
       if (err || !result) {
         return console.warn('Error going to position:', err);
       }
@@ -163,37 +105,29 @@ function BoardInteractiveRoute(db, redis, socketWrapper, boardId) {
       currentEventId = data.id;
       const returnResult = JSON.parse(result);
       returnResult.type = 'goto';
-      socketWrapper.emit(`usate:board:${boardId}`, returnResult);
-      redis.rpush(`usate:viewer:${gameHash}`, JSON.stringify(returnResult));
+      socketWrapper.emit(`board:${boardId}`, returnResult);
+      redis.rpush(`usate:viewer:game:${boardId}`, JSON.stringify(returnResult));
     });
   }
 
   function drawShape(data) {
-    if (!gameHash) {
-      return;
-    }
-    redis.rpush(`usate:viewer:${gameHash}`, JSON.stringify({
+    redis.rpush(`usate:viewer:game:${boardId}`, JSON.stringify({
       type: 'draw',
       data: data
     }));
   }
 
   function updatePlayback(state) {
-    if (!gameHash) {
-      return;
-    }
     isPaused = state;
   }
 
   socketWrapper.on(`board:${boardId}:start`, startSession);
   socketWrapper.on(`board:${boardId}:draw`, drawShape);
-  socketWrapper.on(`board:${boardId}:update`, updateGameId);
   socketWrapper.on(`board:${boardId}:goto`, gotoPosition);
   socketWrapper.on(`board:${boardId}:pause`, updatePlayback);
   return () => {
     socketWrapper.off(`board:${boardId}:start`, startSession);
     socketWrapper.off(`board:${boardId}:draw`, drawShape);
-    socketWrapper.off(`board:${boardId}:update`, updateGameId);
     socketWrapper.off(`board:${boardId}:goto`, gotoPosition);
     socketWrapper.off(`board:${boardId}:pause`, updatePlayback);
     startGame(null, () => {

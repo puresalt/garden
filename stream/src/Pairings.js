@@ -3,7 +3,7 @@ import Board from './Board';
 import IndividualBoard from './IndividualBoard';
 
 function Match(props) {
-  const {pairings, currentBoardNumber} = props;
+  const {socket, pairings, currentBoardNumber, showProgrammaticBoards} = props;
 
   return (
     <>
@@ -11,13 +11,16 @@ function Match(props) {
         ? <IndividualBoard
           currentPairingId={currentBoardNumber}
           board={currentBoardNumber}
+          showProgrammaticBoards={showProgrammaticBoards}
           pairing={pairings[currentBoardNumber - 1]}
         />
         : pairings.map((item, i) => {
           return <Board
             key={i + 1}
+            showProgrammaticBoards={showProgrammaticBoards}
             board={i + 1}
             pairing={item}
+            socket={socket}
           />;
         })}
     </>
