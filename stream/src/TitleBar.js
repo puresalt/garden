@@ -1,19 +1,19 @@
 import React from 'react';
 import './TitleBar.css';
-import OrDefault from 'garden-common/react/OrDefault';
+
+const __ = React.createElement;
 
 function TitleBar(props) {
-  const {homeTeam} = props;
+  const {bottomLeftText, bottomMiddleText, bottomRightText} = props;
+
+  if (!bottomLeftText && !bottomMiddleText && !bottomRightText) {
+    return <></>;
+  }
 
   return <div className="TitleBar">
-    <div className="TeamName"><span>Garden State</span> Passers</div>
-    <div className="MatchName">States Chess Cup: <span><OrDefault
-      value={props.homeTeamName}/></span> vs <span><OrDefault
-      value={props.awayTeamName}/></span></div>
-    <div className="Host">
-      HOST: {props.icons.map((item, i) => <i key={i} className={"fab fa-" + item}/>)}<OrDefault value={props.name}
-                                                                                                parse={true}/>
-    </div>
+    {bottomLeftText ? <div className="TeamName">{__(React.Fragment, {}, bottomLeftText)}</div> : <></>}
+    {bottomMiddleText ? <div className="MatchName">{__(React.Fragment, {}, bottomMiddleText)}</div> : <></>}
+    {bottomRightText ? <div className="Host">{__(React.Fragment, {}, bottomRightText)}</div> : <></>}
   </div>;
 }
 

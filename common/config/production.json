@@ -1,8 +1,8 @@
 {
   "discord": {
-    "redirectUrl": "https://garden.ps.vg/callback"
+    "redirectUrl": "https://usate.passers.gg/callback"
   },
   "socketIo": {
-    "url": "https://state.garden.ps.vg"
+    "url": "https://state.usate.passers.gg"
   }
 }

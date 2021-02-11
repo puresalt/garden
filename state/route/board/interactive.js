@@ -1,6 +1,6 @@
 const updatePairing = require('../pairing').updatePairing;
 
-function BoardInteractiveRoute(db, redis, socketWrapper, teamId, boardId) {
+function BoardInteractiveRoute(db, redis, socketWrapper, boardId) {
   let currentGameId = null;
   let currentEventId = 0;
   let isPaused = false;
@@ -8,7 +8,7 @@ function BoardInteractiveRoute(db, redis, socketWrapper, teamId, boardId) {
   let didJumpAround = false;
   const startGame = (gameId, finished) => {
     if (!gameId) {
-      socketWrapper.emit(`board:${boardId}`, {
+      socketWrapper.emit(`usate:board:${boardId}`, {
         type: 'goto',
         data: {
           fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
@@ -17,9 +17,9 @@ function BoardInteractiveRoute(db, redis, socketWrapper, teamId, boardId) {
           moving: 'home'
         }
       });
-      redis.del(`game:${teamId}:${boardId}:current`, (err) => {
+      redis.del(`usate:game:${boardId}:current`, (err) => {
         if (err) {
-          console.warn('Could not delete current gameId:', teamId, boardId, currentGameId, err);
+          console.warn('Could not delete current gameId:',boardId, currentGameId, err);
         }
         finished(`no gameId: ${gameId} (${typeof gameId})`);
         currentEventId = 0;
@@ -35,12 +35,12 @@ function BoardInteractiveRoute(db, redis, socketWrapper, teamId, boardId) {
     gameHash = null;
     didJumpAround = false;
     currentGameId = gameId;
-    gameHash = `game:${teamId}:${currentGameId}`;
-    redis.set(`game:${teamId}:${boardId}:current`, currentGameId, (err) => {
+    gameHash = `game:${currentGameId}`;
+    redis.set(`usate:game:${boardId}:current`, currentGameId, (err) => {
       if (err) {
-        return console.warn('Could not set current gameId:', teamId, boardId, currentGameId, err);
+        return console.warn('Could not set current gameId:', boardId, currentGameId, err);
       }
-      console.info(`Updated game:${teamId}:${boardId}:current to`, currentGameId);
+      console.info(`Updated usate:game:${boardId}:current to`, currentGameId);
     });
     let eventList = [];
     const getGameEvents = (lastEventId) => {
@@ -91,8 +91,8 @@ function BoardInteractiveRoute(db, redis, socketWrapper, teamId, boardId) {
               return setTimeout(() => makeNextEvent(nextEventId), 200);
             }
             if ((!currentEventId && !nextEventId) || (currentEventId === nextEventId - 1)) {
-              socketWrapper.emit(`board:${boardId}`, currentEvent);
-              redis.rpush(`viewer:${gameHash}`, JSON.stringify(currentEvent));
+              socketWrapper.emit(`usate:board:${boardId}`, currentEvent);
+              redis.rpush(`usate:viewer:${gameHash}`, JSON.stringify(currentEvent));
               currentEventId = nextEventId;
             } else {
               nextEventId = currentEventId;
@@ -115,15 +115,13 @@ function BoardInteractiveRoute(db, redis, socketWrapper, teamId, boardId) {
         }
       })
     }
-    redis.del(`viewer:game:${teamId}:${data.gameId}`, (err) => {
+    redis.del(`usate:viewer:game:${data.gameId}`, (err) => {
       if (err) {
         return console.warn('Error deleting previous game events:', data.gameId, err);
       }
       socketWrapper.broadcast(`viewer:board:${boardId}:started`, {
-        teamId: teamId,
         gameId: data.gameId,
-        orientation: data.orientation,
-        pairingIndex: data.pairingIndex
+        orientation: data.orientation
       });
       didJumpAround = false;
       startGame(data.gameId, (err) => {
@@ -135,11 +133,11 @@ function BoardInteractiveRoute(db, redis, socketWrapper, teamId, boardId) {
   }
 
   function updateGameId(data) {
-    updatePairing(db, socketWrapper, teamId, data, (err) => {
+    updatePairing(db, socketWrapper, data, (err) => {
       if (err) {
-        return console.warn('Error updating pairings:', teamId, data, err);
+        return console.warn('Error updating pairings:', data, err);
       }
-      socketWrapper.broadcast(`viewer:board:${boardId}:change`, {teamId: teamId, gameId: data.gameId});
+      socketWrapper.broadcast(`viewer:board:${boardId}:change`, {gameId: data.gameId});
       didJumpAround = false;
       startGame(data.gameId, (err) => {
         if (err) {
@@ -165,8 +163,8 @@ function BoardInteractiveRoute(db, redis, socketWrapper, teamId, boardId) {
       currentEventId = data.id;
       const returnResult = JSON.parse(result);
       returnResult.type = 'goto';
-      socketWrapper.emit(`board:${boardId}`, returnResult);
-      redis.rpush(`viewer:${gameHash}`, JSON.stringify(returnResult));
+      socketWrapper.emit(`usate:board:${boardId}`, returnResult);
+      redis.rpush(`usate:viewer:${gameHash}`, JSON.stringify(returnResult));
     });
   }
 
@@ -174,7 +172,7 @@ function BoardInteractiveRoute(db, redis, socketWrapper, teamId, boardId) {
     if (!gameHash) {
       return;
     }
-    redis.rpush(`viewer:${gameHash}`, JSON.stringify({
+    redis.rpush(`usate:viewer:${gameHash}`, JSON.stringify({
       type: 'draw',
       data: data
     }));

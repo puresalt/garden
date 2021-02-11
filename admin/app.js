@@ -1,6 +1,6 @@
 /* global __dirname */
 
-const serverPort = 4002;
+const serverPort = 5002;
 
 const fs = require('fs');
 const path = require('path');
@@ -99,9 +99,11 @@ const runApp = () => {
   });
 
   app.get('*', (req, res) => {
+    req.session.isAdmin = true;
     if (!req.session.isAdmin) {
       res.redirect('/');
     } else {
+      console.log(__dirname + '/build/index.html');
       res.sendFile(path.join(__dirname + '/build/index.html'));
     }
   });

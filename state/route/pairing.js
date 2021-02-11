@@ -1,167 +1,202 @@
-const ratingSort = require('garden-common/src/ratingSort');
-
-const CHESS_BLACK = 'black';
-const CHESS_WHITE = 'white';
-
-const emptyPlayer = () => {
-  return {
-    id: null,
-    name: null,
-    lichess_handle: null,
-    rating: null
-  }
-};
-
-const COMPLETE_LIST = [0, -1];
-Object.freeze(COMPLETE_LIST);
-const MATCH_UPS = [
-  [0, 3, CHESS_BLACK, CHESS_WHITE],
-  [1, 2, CHESS_BLACK, CHESS_WHITE],
-  [2, 1, CHESS_WHITE, CHESS_BLACK],
-  [3, 0, CHESS_WHITE, CHESS_BLACK],
-  [0, 2, CHESS_WHITE, CHESS_BLACK],
-  [1, 3, CHESS_WHITE, CHESS_BLACK],
-  [2, 0, CHESS_BLACK, CHESS_WHITE],
-  [3, 1, CHESS_BLACK, CHESS_WHITE],
-  [0, 1, CHESS_WHITE, CHESS_BLACK],
-  [1, 0, CHESS_WHITE, CHESS_BLACK],
-  [2, 3, CHESS_BLACK, CHESS_WHITE],
-  [3, 2, CHESS_BLACK, CHESS_WHITE],
-  [0, 0, CHESS_BLACK, CHESS_WHITE],
-  [1, 1, CHESS_BLACK, CHESS_WHITE],
-  [2, 2, CHESS_WHITE, CHESS_BLACK],
-  [3, 3, CHESS_WHITE, CHESS_BLACK]
-];
-Object.freeze(MATCH_UPS);
-
-function updatePairing(db, socketWrapper, teamId, data, callback) {
-  const values = [data.matchId, data.player.id, data.opponent.id, data.result, data.gameId, data.result, data.gameId];
-  db.query(
-      `INSERT INTO garden_pairing (match_id, member_id, opponent_id, result, lichess_game_id)
-       VALUES (?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE result = ?,
-                            lichess_game_id = ?;`, values, (err, result) => {
-      if (err) {
-        console.warn('Error updating pairin:', teamId, err);
-        socketWrapper.emit('pairing:updated', null);
-        return callback && callback(err);
-      }
-      if (result.insertId) {
-        data.id = result.insertId;
-      }
-      socketWrapper.broadcastAll('pairing:updated', {teamId: teamId, ...data});
-      callback && callback(null);
-    });
-}
-
-function PairingRoute(db, redis, socketWrapper, teamId) {
-  const _updatePairing = (data) => {
-    updatePairing(db, socketWrapper, teamId, data);
-  };
-
-  function getPairingList(matchId) {
+function matchRoute(db, redis, socketWrapper) {
+  function pairingList(global) {
     db.query(
-        `SELECT garden_member.*,
-             garden_player.id AS player_id,
-             garden_pairing.id AS pairing_id,
-             garden_pairing.result AS result,
-             garden_pairing.lichess_game_id AS lichess_game_id,
-             garden_pairing.opponent_id AS opponent_id,
-             garden_match.home AS home
-         FROM garden_member
-              INNER JOIN garden_match ON (garden_match.id = ?)
-              INNER JOIN garden_player
-                         ON (garden_player.match_id = garden_match.id AND garden_player.member_id = garden_member.id)
-              LEFT JOIN garden_pairing
-                        ON (garden_pairing.match_id = garden_match.id AND
-                            garden_pairing.member_id = garden_player.member_id)
-              LEFT JOIN garden_opponent
-                        ON (garden_opponent.match_id = garden_match.id AND
-                            garden_opponent.id = garden_pairing.opponent_id)
-         WHERE garden_member.team_id = ?
-           AND garden_member.deleted = false
-         ORDER BY garden_pairing.id DESC, garden_member.rating DESC;
-      `, [matchId, teamId], (err, memberPlayerList) => {
+      `SELECT usate_player.team_id AS playerTeamId,
+              usate_player.name,
+              usate_player.handle,
+              usate_player.rating,
+              home_pairing.id      AS homeTeamPairingId,
+              home_team.id         AS homeTeamId,
+              home_team.name       AS homeTeamName,
+              away_pairing.id      AS awayTeamPairingId,
+              away_team.id         AS awayTeamId,
+              away_team.name       AS awayTeamName
+       FROM usate_player
+                LEFT JOIN usate_pairing home_pairing ON (usate_player.team_id = home_pairing.home_id)
+                LEFT JOIN usate_team home_team ON (home_pairing.home_id = home_team.id)
+                LEFT JOIN usate_pairing away_pairing ON (usate_player.team_id = away_pairing.away_id)
+                LEFT JOIN usate_team away_team ON (away_pairing.away_id = away_team.id)
+       ORDER BY usate_player.id;`,
+      (err, playerList) => {
         if (err) {
-          console.warn('Error retrieving player pairing list:', teamId, err);
-          socketWrapper.emit('pairing:listed', null);
+          console.warn('Error retrieving match list:', err);
+          socketWrapper.emit('pairing:listed', []);
           return;
         }
-        db.query(`SELECT garden_opponent.*
-                  FROM garden_opponent
-                       INNER JOIN garden_match
-                                  ON (garden_opponent.match_id = garden_match.id
-                                      AND garden_match.team_id = ?
-                                      AND garden_match.deleted = false)
-                  WHERE garden_opponent.match_id = ?
-                  ORDER BY garden_opponent.rating DESC;`, [teamId, matchId], (err, opponentPlayerList) => {
-          if (err) {
-            console.warn('Error retrieving opponent pairing list:', teamId, err);
-            socketWrapper.emit('pairing:listed', null);
-            return;
+
+        const pairingList = playerList.reduce((gathered, player) => {
+          const pairingId = (player.homeTeamPairingId || player.awayTeamPairingId);
+          if (!gathered[pairingId - 1]) {
+            gathered[pairingId - 1] = {
+              id: pairingId,
+              home: player.homeTeamName,
+              away: player.awayTeamName,
+              matchUps: [
+                {board: 1, home: null, away: null},
+                {board: 2, home: null, away: null},
+                {board: 3, home: null, away: null},
+                {board: 4, home: null, away: null}
+              ]
+            };
           }
 
-          const isHome = memberPlayerList.length
-            ? memberPlayerList[0].home
-            : null;
-          const getUniquePlayers = memberPlayerList.reduce((gathered, item) => {
-            if (!gathered.filter(gatheredItem => gatheredItem.id === item.id).length) {
-              gathered.push({
-                id: parseInt(item.id),
-                name: item.name,
-                lichess_handle: item.lichess_handle,
-                rating: item.rating ? parseInt(item.rating) : null
-              });
+          const isHome = player.homeTeamId !== null;
+          if (isHome) {
+            if (!gathered[pairingId - 1].home) {
+              gathered[pairingId - 1].home = player.homeTeamName;
             }
-            return gathered;
-          }, []);
-          const pairingLookUp = memberPlayerList.reduce((gathered, item) => {
-            if (item.pairing_id) {
-              gathered[`${item.id}:${item.opponent_id}`] = {
-                id: parseInt(item.pairing_id),
-                result: item.result !== null ? parseFloat(item.result) : null,
-                gameId: item.lichess_game_id
+            for (let i = 0, count = gathered[pairingId - 1].matchUps.length; i < count; ++i) {
+              if (gathered[pairingId - 1].matchUps[i].home === null) {
+                gathered[pairingId - 1].matchUps[i].home = {
+                  name: player.name,
+                  handle: player.handle,
+                  rating: player.rating
+                };
+                break;
               }
             }
-            return gathered;
-          }, {});
-          getUniquePlayers.sort(ratingSort);
-          const matchUps = MATCH_UPS.map((matchUp) => {
-            const player = getUniquePlayers[matchUp[0]] || emptyPlayer();
-            const opponent = opponentPlayerList[matchUp[1]] || emptyPlayer();
-            const pairing = pairingLookUp[`${player.id}:${opponent.id}`] || {};
-            return {
-              id: pairing.id ? parseInt(pairing.id) : null,
-              matchId: matchId,
-              player: {
-                id: parseInt(player.id),
-                name: player.name,
-                lichessHandle: player.lichess_handle,
-                rating: player.rating ? parseInt(player.rating) : null
-              },
-              opponent: {
-                id: parseInt(opponent.id),
-                name: opponent.name,
-                lichessHandle: opponent.lichess_handle,
-                rating: opponent.rating ? parseInt(opponent.rating) : null
-              },
-              orientation: isHome !== false ? matchUp[2] : matchUp[3],
-              result: pairing.result !== null && pairing.result !== undefined ? pairing.result : null,
-              gameId: pairing.gameId || null
+          } else {
+            if (!gathered[pairingId - 1].away) {
+              gathered[pairingId - 1].away = player.awayTeamName;
             }
-          });
-          socketWrapper.emit('pairing:listed', {matchId: matchId, pairings: matchUps});
-        });
-      });
+            for (let i = 0, count = gathered[pairingId - 1].matchUps.length; i < count; ++i) {
+              if (gathered[pairingId - 1].matchUps[i].away === null) {
+                gathered[pairingId - 1].matchUps[i].away = {
+                  name: player.name,
+                  handle: player.handle,
+                  rating: player.rating
+                };
+                break;
+              }
+            }
+          }
+
+          return gathered;
+        }, []);
+
+        socketWrapper[global ? 'broadcastAll' : 'emit']('pairing:listed', pairingList);
+      }
+    );
   }
 
-  socketWrapper.on('pairing:list', getPairingList);
-  socketWrapper.on('pairing:update', _updatePairing);
+  function watchPairing(id) {
+    db.query(
+      `SELECT usate_player.team_id AS playerTeamId,
+              usate_player.name,
+              usate_player.handle,
+              usate_player.rating,
+              home_pairing.id      AS homeTeamPairingId,
+              home_team.id         AS homeTeamId,
+              home_team.name       AS homeTeamName,
+              away_pairing.id      AS awayTeamPairingId,
+              away_team.id         AS awayTeamId,
+              away_team.name       AS awayTeamName
+       FROM usate_player
+                LEFT JOIN usate_pairing home_pairing ON (usate_player.team_id = home_pairing.home_id)
+                LEFT JOIN usate_team home_team ON (home_pairing.home_id = home_team.id)
+                LEFT JOIN usate_pairing away_pairing ON (usate_player.team_id = away_pairing.away_id)
+                LEFT JOIN usate_team away_team ON (away_pairing.away_id = away_team.id)
+                INNER JOIN usate_pairing pairing ON (pairing.id = ? AND (usate_player.team_id = home_pairing.home_id OR
+                                                                         usate_player.team_id = away_pairing.away_id))
+       ORDER BY usate_player.id;`,
+      [id],
+      (err, playerList) => {
+        if (err) {
+          console.error('Error finding pair data to watch:', err);
+          return;
+        }
+
+        const pairing = playerList.reduce((gathered, player) => {
+          const isHome = player.homeTeamId !== null;
+          if (isHome) {
+            if (!gathered.home) {
+              gathered.home = player.homeTeamName;
+            }
+            for (let i = 0, count = gathered.matchUps.length; i < count; ++i) {
+              if (gathered.matchUps[i].home === null) {
+                gathered.matchUps[i].home = {
+                  name: player.name,
+                  handle: player.handle,
+                  rating: player.rating
+                };
+                break;
+              }
+            }
+          } else {
+            if (!gathered.away) {
+              gathered.away = player.awayTeamName;
+            }
+            for (let i = 0, count = gathered.matchUps.length; i < count; ++i) {
+              if (gathered.matchUps[i].away === null) {
+                gathered.matchUps[i].away = {
+                  name: player.name,
+                  handle: player.handle,
+                  rating: player.rating
+                };
+                break;
+              }
+            }
+          }
+
+          return gathered;
+        }, {
+          id: id,
+          home: null,
+          away: null,
+          matchUps: [
+            {board: 1, home: null, away: null},
+            {board: 2, home: null, away: null},
+            {board: 3, home: null, away: null},
+            {board: 4, home: null, away: null}
+          ]
+        });
+
+        const stateData = {
+          isLive: '1',
+          boardNumber: '0',
+          pairingId: id,
+          home: pairing.home,
+          away: pairing.away
+        };
+
+        const hset = Object.keys(stateData).reduce((gathered, key) => {
+          gathered.push(key, stateData[key]);
+          return gathered;
+        }, []);
+
+        redis.hset('usate:stream:state', hset, (err) => {
+          if (err) {
+            console.error('Error setting the pair state data:', err);
+          }
+          const boardData = pairing.matchUps.reduce((gathered, row, i) => {
+            gathered[`${row.board}:home:name`] = row.home.name;
+            gathered[`${row.board}:home:handle`] = row.home.handle;
+            gathered[`${row.board}:home:rating`] = row.home.rating;
+            gathered[`${row.board}:away:name`] = row.away.name;
+            gathered[`${row.board}:away:handle`] = row.away.handle;
+            gathered[`${row.board}:away:rating`] = row.away.rating;
+            return gathered;
+          }, {});
+          const hset = Object.keys(boardData).reduce((gathered, key) => {
+            gathered.push(key, boardData[key]);
+            return gathered;
+          }, []);
+          redis.hset('usate:stream:board', hset, (err) => {
+            if (err) {
+              console.error('Error setting the pair player data:', err);
+            }
+          });
+          socketWrapper.broadcastAll('stream:loaded', stateData);
+        });
+      });
+  };
+
+  socketWrapper.on('pairing:list', pairingList);
+  socketWrapper.on('pairing:watch', watchPairing);
   return () => {
-    socketWrapper.off('pairing:list', getPairingList);
-    socketWrapper.off('pairing:update', _updatePairing);
+    socketWrapper.off('pairing:list', pairingList);
+    socketWrapper.off('pairing:watch', watchPairing);
   };
 }
 
-const pairingRoute = module.exports = PairingRoute;
-pairingRoute.updatePairing = updatePairing;
+module.exports = matchRoute;

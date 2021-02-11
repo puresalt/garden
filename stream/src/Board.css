@@ -197,10 +197,18 @@
     font-weight: 700;
 }
 
-.Board.debug .board,
-.Board.debug .board-placeholder,
-.Board.debug .board-placeholder-info {
-    background: rgba(255, 0, 0, 0.5);
+.Board header {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.board-header-home {
+}
+
+.board-header-away {
+    margin-left: auto;
 }
 
 .board-placeholder {

@@ -1,9 +1,7 @@
-const axios = require('axios');
 const ChessBoard = require('chess.js').Chess;
 const duration = require('moment').duration;
 const StringDecoder = require('string_decoder').StringDecoder;
 const stringDecoder = new StringDecoder('utf8');
-const updatePairing = require('../route/pairing').updatePairing;
 
 const individualMoveRegex = /([NBQRKOxa-h0-9=/+#-]+) { \[%clk ([0-9:]+)]/g;
 const noop = () => {
@@ -15,67 +13,10 @@ const nullSocket = {
 
 const gameList = {};
 
-function CrawlerLoop(db, redis, teamId, matchId, config) {
+function CrawlerLoop(telnet, redis) {
+  redis.hgetall('usate:');
 
-  db.query(`SELECT garden_member.lichess_handle AS username
-            FROM garden_pairing
-                 INNER JOIN garden_member ON (garden_member.id = garden_pairing.member_id)
-            WHERE garden_pairing.match_id = ?
-            UNION ALL
-            SELECT garden_opponent.lichess_handle AS username
-            FROM garden_opponent
-            WHERE garden_opponent.match_id = ?;`, [matchId, matchId], (err, result) => {
-    if (err || !result.length) {
-      console.warn('Error getting the player list: ', err, result);
-      return;
-    }
-    const pairingPlayerList = result.map(item => item.username);
-    console.log('Listening for games between:', pairingPlayerList);
-    axios.post(`/api/stream/games-by-users`, pairingPlayerList, {
-      baseURL: 'https://lichess.org/',
-      headers: {'Accept': 'application/json', 'Content-Type': 'text/plain'},
-      responseType: 'stream'
-    }).then((response) => {
-        response.data
-          .on('data', data => {
-            const parsedData = stringDecoder.write(data);
-            if (!parsedData.players || !parsedData.id) {
-              return;
-            }
-            const homePlayer = parsedData.players.white.userId;
-            const awayPlayer = parsedData.players.black.userId;
-            db.query(
-                `SELECT garden_member.id as playerId,
-                     garden_opponent.id as opponentId
-                 FROM garden_member
-                      LEFT JOIN garden_opponent
-                                ON (garden_opponent.match_id = ? AND
-                                    (garden_opponent.lichess_handle = ? OR garden_opponent.lichess_handle = ?))
-                 WHERE garden_member.lichess_handle = ?
-                    OR garden_member.lichess_handle = ?;`, [matchId, homePlayer, awayPlayer, matchId, homePlayer, awayPlayer], (err, result) => {
-                if (err || !result.length) {
-                  console.log('Error retrieving player and opponent:', err, result.length);
-                  return;
-                }
-                const updatedData = {
-                  matchId: matchId,
-                  player: {id: result[0].playerId},
-                  opponent: {id: result[0].opponentId},
-                  gameId: parsedData.id,
-                  result: null
-                };
-                updatePairing(db, nullSocket, nullSocket, teamId, updatedData, (err) => {
-                  if (err) {
-                    console.log('Error updating pairing:', updatedData);
-                  }
-                  storeGame(redis, teamId, parsedData.id);
-                });
-              });
-          });
-      },
-      err => console.error(err.message)
-    );
-  });
+
 
   function checkPairingDataList() {
     const alreadyCrawledGameList = Object.keys(gameList).length
@@ -96,7 +37,7 @@ function CrawlerLoop(db, redis, teamId, matchId, config) {
       for (let i = 0, count = result.length; i < count; ++i) {
         ((item) => {
           console.log('Found:', item.lichess_game_id);
-          storeGame(redis, teamId, item.lichess_game_id, (err, result) => {
+          storeGame(redis, item.lichess_game_id, (err, result) => {
             if (err) {
               console.error('Error getting data for:', matchId, result, err);
               return;
@@ -152,7 +93,7 @@ function storeGame(redis, teamId, gameId, callback) {
     return process.nextTick(() => callback('running already'));
   }
   gameList[gameId] = false;
-  const gameHash = `game:${teamId}:${gameId}`;
+  const gameHash = `usate:game:${gameId}`;
   const chessBoard = new ChessBoard();
   let lastPgn = null;
   let clock = [];
@@ -181,20 +122,6 @@ function storeGame(redis, teamId, gameId, callback) {
     });
   });
 
-  function nextLoop(data, checkState, finished) {
-    switch (data.status) {
-      case 'started':
-        setTimeout(() => checkState(), 250);
-        break;
-      case 'aborted':
-        finished('aborted', data);
-        break;
-      default:
-        finished(null, data);
-        break;
-    }
-  }
-
   function addMoveToHistory(incomingMove, timeLeft, next) {
     const move = chessBoard.move(incomingMove);
     if (move === null) {
@@ -222,6 +149,8 @@ function storeGame(redis, teamId, gameId, callback) {
       }
     }), next);
   }
+
+
 
   function getGame(currentGameId, finished) {
     checkState();

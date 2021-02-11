@@ -1,6 +1,6 @@
 const ChessBoard = require('chess.js');
 
-function BoardViewerRoute(db, redis, socketWrapper, teamId, boardId) {
+function BoardViewerRoute(db, redis, socketWrapper, boardId) {
   let currentGameId = null;
   let lastEventId = 0;
   const startGame = (gameId, newLastEventId, finished) => {
@@ -12,12 +12,12 @@ function BoardViewerRoute(db, redis, socketWrapper, teamId, boardId) {
       lastEventId = newLastEventId;
     }
     currentGameId = gameId;
-    const gameHash = `viewer:game:${teamId}:${currentGameId}`;
+    const gameHash = `usate:viewer:game:${currentGameId}`;
 
     const getGameEvents = () => {
       redis.lrange(gameHash, lastEventId, -1, (err, result) => {
         if (err) {
-          return console.error('Error getting events:', teamId, gameId);
+          return console.error('Error getting events:',gameId);
         }
 
         const eventList = result.map(JSON.parse);
@@ -47,7 +47,7 @@ function BoardViewerRoute(db, redis, socketWrapper, teamId, boardId) {
   function startSession(data) {
     startGame(data.gameId, 0, (err) => {
       if (err) {
-        console.warn('Error trying to start a new viewer session:', teamId, boardId, err);
+        console.warn('Error trying to start a new viewer session:', boardId, err);
       }
     })
   }
@@ -60,13 +60,13 @@ function BoardViewerRoute(db, redis, socketWrapper, teamId, boardId) {
     if (currentGameId !== null) {
       return;
     }
-    redis.get(`game:${teamId}:${boardId}:current`, (err, data) => {
+    redis.get(`usate:game:${boardId}:current`, (err, data) => {
       if (err || !data) {
-        return console.warn('Error catching up or nothing to catch up to:', teamId, boardId, data, err);
+        return console.warn('Error catching up or nothing to catch up to:', boardId, data, err);
       }
       redis.lrange(data, 0, -1, (err, eventList) => {
         if (err || !data) {
-          return console.warn('Error catching up or nothing in the list to catch up to:', teamId, boardId, eventList, err);
+          return console.warn('Error catching up or nothing in the list to catch up to:', boardId, eventList, err);
         }
 
         const lastEventId = eventList.length;
@@ -88,7 +88,7 @@ function BoardViewerRoute(db, redis, socketWrapper, teamId, boardId) {
         }
 
         if (!currentEvent || !currentEvent.data || !currentEvent.data.fen) {
-          return console.info('No events present, we are done', teamId, boardId);
+          return console.info('No events present, we are done', boardId);
         }
 
         const moveList = currentEvent.data.moveList;
@@ -116,9 +116,9 @@ function BoardViewerRoute(db, redis, socketWrapper, teamId, boardId) {
 
         startGame(currentGameId, lastEventId, (err) => {
           if (err) {
-            console.warn('Error starting viewer game:', teamId, boardId, err);
+            console.warn('Error starting viewer game:',  boardId, err);
           }
-          console.info('Finished viewing game:', teamId, boardId);
+          console.info('Finished viewing game:', boardId);
         });
       });
     });

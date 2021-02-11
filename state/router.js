@@ -5,13 +5,10 @@ const express = require('express');
 const socketIo = require('socket.io');
 
 const routes = [
-  require('./route/match'),
-  require('./route/player'),
+  require('./route/configuration'),
   require('./route/pairing'),
-  require('./route/board')
+  require('./route/stream')
 ];
-
-const teamId = 1;
 
 function Router(db, redis, config) {
   const app = express();
@@ -31,7 +28,7 @@ function Router(db, redis, config) {
       on: (name, func) => {
         const eventName = eventListenerHash(name, func);
         callbacks[eventName] = [name, (...args) => {
-          console.info(name, teamId, ...args);
+          console.info(name, JSON.stringify(...args, null, '\t'));
           func(...args);
         }];
         socket.on(name, callbacks[eventName][1]);
@@ -43,20 +40,20 @@ function Router(db, redis, config) {
         delete callbacks[eventName];
       },
       broadcast: (name, ...args) => {
-        console.info(name, teamId, ...args);
+        console.info(name, JSON.stringify(...args, null, '\t'));
         socket.broadcast.emit(name, ...args);
       },
       broadcastAll: (name, ...args) => {
-        console.info(name, teamId, ...args);
+        console.info(name, JSON.stringify(...args, null, '\t'));
         io.sockets.emit(name, ...args);
       },
       emit: (name, ...args) => {
-        console.info(name, teamId, ...args);
+        console.info(name, JSON.stringify(...args, null, '\t'));
         socket.emit(name, ...args);
       }
     };
 
-    const disconnectCallbacks = routes.map(route => route(db, redis, socketWrapper, teamId));
+    const disconnectCallbacks = routes.map(route => route(db, redis, socketWrapper));
     socket.on('disconnect', () => {
       disconnectCallbacks.forEach(c => c());
       const remainingCallbacks = Object.keys(callbacks);
