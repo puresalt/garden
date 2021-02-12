@@ -53,6 +53,7 @@ function ObserverLoop(boardId, redis, config) {
   let checkingHistory = false;
   let checkedHistory = false;
   let runningMoveList = [];
+  let lastMove = 0;
   const loopForUsernameChanges = () => {
     redis.get(`usate:stream:board:${boardId}`, (err, usernames) => {
       if (err) {
@@ -98,23 +99,19 @@ function ObserverLoop(boardId, redis, config) {
           }
           console.info('New gameId:', gameId);
           process.nextTick(() => connection.write(`pgn ${liveGameData[1]}\n`));
-          const waitForPgn = () => {
-            if (loadingMoveList) {
-              setTimeout(() => waitForPgn(), 250);
-            }
-          };
-          waitForPgn();
         });
       });
     } else if (!gameId) {
       console.info('nothing yet');
     } else if (queueMoves !== null) {
       queueMoves.push(boardData);
-    } else if (boardData.id && boardData.pgn) {
+    } else if (boardData.id && boardData.id !== lastMove && boardData.pgn) {
+      runningMoveList.push(boardData.pgn);
+      lastMove = boardData.id;
       redis.rpush(gameHash, JSON.stringify({
         type: 'goto',
         data: {
-          id: runningMoveList.length,
+          id: boardData.id,
           pgn: boardData.pgn,
           fen: boardData.fen,
           clock: boardData.clock,
@@ -172,6 +169,7 @@ function ObserverLoop(boardId, redis, config) {
             moving: queuedMove.moving
           }
         }));
+        lastMove = queuedMove.id;
       }
 
       loadingMoveList = false;

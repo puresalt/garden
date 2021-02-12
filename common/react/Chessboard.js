@@ -4,6 +4,7 @@ import PropTypes from 'prop-types'
 import { Chessground as NativeChessground } from 'chessground'
 import './Chessboard/css/chessground.css';
 
+const highlightSquareRegex = /([a-h][1-8])/;
 const isPawnToTheDangerSquareMove = /^([a-h][4|5])$/;
 const pawnCaptureRegex = /^([a-h]x)/;
 const promotionRegex = /=([QRKB])$/;
@@ -219,13 +220,18 @@ export default class Chessground extends React.PureComponent {
 
   goto(data) {
     const orientation = data.orientation || this.state.orientation;
-    this.cg.set({fen: data.fen, orientation: orientation});
+    this.cg.set({fen: data.fen, orientation: orientation === 'home' ? 'white' : 'black'});
+    const highlightSquare = (data.pgn || '').match(highlightSquareRegex);
+    this.cg.cancelMove();
+    if (highlightSquare) {
+      this.cg.selectSquare(highlightSquare[1]);
+    }
     this.cg.setShapes([]);
     const moveList = data.moveList || [];
     this.setState({
       moving: data.moving || 'home',
       moveList: moveList,
-      pauseClocks: true,
+      pauseClocks: moveList.length === 0,
       pausePosition: false,
       currentMove: data.id || moveList.length,
       orientation: orientation
@@ -243,13 +249,7 @@ export default class Chessground extends React.PureComponent {
       awayClock: awayClock,
       awayHours: awayClock.hours(),
       awayMinutes: awayClock.minutes(),
-      awaySeconds: awayClock.seconds(),
-      moving: data.moving || 'home',
-      moveList: moveList,
-      pauseClocks: true,
-      pausePosition: false,
-      currentMove: data.id || moveList.length,
-      orientation: orientation
+      awaySeconds: awayClock.seconds()
     });
   }
 
