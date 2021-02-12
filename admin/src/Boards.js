@@ -6,7 +6,6 @@ function Boards(props) {
   const {socket} = props;
 
   const [pairingList, setPairingList] = useState([]);
-
   const updateList = (pairingList) => {
     setPairingList(pairingList);
   };
@@ -31,4 +30,3 @@ function Boards(props) {
 }
 
 export default Boards;
- 

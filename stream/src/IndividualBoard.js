@@ -2,7 +2,7 @@ import React from 'react';
 import Board from './Board';
 
 function IndividualBoard(props) {
-  const {board, pairing} = props;
+  const {socket, board, pairing, showProgrammaticBoards} = props;
 
   if (!pairing) {
     return (
@@ -14,6 +14,8 @@ function IndividualBoard(props) {
       board={board}
       pairing={pairing}
       large={true}
+      showProgrammaticBoards={showProgrammaticBoards}
+      socket={socket}
     />
   );
 }

@@ -46,7 +46,6 @@ function Header(props) {
       pathname={pathname}
       updateSetIsLive={updateSetIsLive}
     />
-    }
   </div>;
 }
 

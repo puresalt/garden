@@ -81,7 +81,8 @@ function matchRoute(db, redis, socketWrapper) {
 
   function watchPairing(id) {
     db.query(
-      `SELECT usate_player.team_id AS playerTeamId,
+      `SELECT pairing.id,
+              usate_player.team_id AS playerTeamId,
               usate_player.name,
               usate_player.handle,
               usate_player.rating,
@@ -96,8 +97,8 @@ function matchRoute(db, redis, socketWrapper) {
                 LEFT JOIN usate_team home_team ON (home_pairing.home_id = home_team.id)
                 LEFT JOIN usate_pairing away_pairing ON (usate_player.team_id = away_pairing.away_id)
                 LEFT JOIN usate_team away_team ON (away_pairing.away_id = away_team.id)
-                INNER JOIN usate_pairing pairing ON (pairing.id = ? AND (usate_player.team_id = home_pairing.home_id OR
-                                                                         usate_player.team_id = away_pairing.away_id))
+                INNER JOIN usate_pairing pairing ON (pairing.id = ? AND (usate_player.team_id = pairing.home_id OR
+                                                                         usate_player.team_id = pairing.away_id))
        ORDER BY usate_player.id;`,
       [id],
       (err, playerList) => {
@@ -150,6 +151,7 @@ function matchRoute(db, redis, socketWrapper) {
             {board: 4, home: null, away: null}
           ]
         });
+        console.log(playerList, pairing);
 
         const stateData = {
           isLive: '1',
@@ -168,24 +170,27 @@ function matchRoute(db, redis, socketWrapper) {
           if (err) {
             console.error('Error setting the pair state data:', err);
           }
-          const boardData = pairing.matchUps.reduce((gathered, row, i) => {
-            gathered[`${row.board}:home:name`] = row.home.name;
-            gathered[`${row.board}:home:handle`] = row.home.handle;
-            gathered[`${row.board}:home:rating`] = row.home.rating;
-            gathered[`${row.board}:away:name`] = row.away.name;
-            gathered[`${row.board}:away:handle`] = row.away.handle;
-            gathered[`${row.board}:away:rating`] = row.away.rating;
+          const [matchUpDate, boardData] = pairing.matchUps.reduce((gathered, row, i) => {
+            gathered[0].push([row.board, [row.home.handle, row.away.handle].join(',')]);
+            gathered[1][`${row.board}:home:name`] = row.home.name;
+            gathered[1][`${row.board}:home:handle`] = row.home.handle;
+            gathered[1][`${row.board}:home:rating`] = row.home.rating;
+            gathered[1][`${row.board}:away:name`] = row.away.name;
+            gathered[1][`${row.board}:away:handle`] = row.away.handle;
+            gathered[1][`${row.board}:away:rating`] = row.away.rating;
             return gathered;
-          }, {});
+          }, [[], {}]);
           const hset = Object.keys(boardData).reduce((gathered, key) => {
             gathered.push(key, boardData[key]);
             return gathered;
           }, []);
+          matchUpDate.forEach((item) => redis.set(`usate:stream:board:${item[0]}`, item[1].toLowerCase()));
           redis.hset('usate:stream:board', hset, (err) => {
             if (err) {
               console.error('Error setting the pair player data:', err);
             }
           });
+          console.log('letting everybody know:', stateData);
           socketWrapper.broadcastAll('stream:loaded', stateData);
         });
       });

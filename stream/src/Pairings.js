@@ -13,6 +13,7 @@ function Match(props) {
           board={currentBoardNumber}
           showProgrammaticBoards={showProgrammaticBoards}
           pairing={pairings[currentBoardNumber - 1]}
+          socket={socket}
         />
         : pairings.map((item, i) => {
           return <Board

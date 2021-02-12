@@ -165,22 +165,20 @@ export default class Chessground extends React.PureComponent {
   move(data) {
     this.cg.move(data.move[0], data.move[1]);
     this.cg.setShapes([]);
-    let homeClock = duration().add(data.clock[0], 's');
-    let awayClock = duration().add(data.clock[1], 's');
-    let pauseClocks = false;
-    if (homeClock.as('seconds') > this.state.homeClock.as('seconds') + data.clock[2]) {
-      homeClock = this.state.homeClock;
-      pauseClocks = true;
-    }
-    if (awayClock.as('seconds') > this.state.awayClock.as('seconds') + data.clock[2]) {
-      awayClock = this.state.awayClock;
-      pauseClocks = true;
-    }
+    this.setState({
+      moving: data.moving,
+      currentMove: data.id
+    });
     if (data.id > this.state.moveList.length) {
       const moveList = this.state.moveList.map(item => item);
       moveList.push(data.pgn);
       this.setState({moveList: moveList});
     }
+    if (data.clock === null) {
+      return;
+    }
+    let homeClock = duration().add(data.clock[0], 's');
+    let awayClock = duration().add(data.clock[1], 's');
     this.setState({
       homeClock: homeClock,
       homeHours: homeClock.hours(),
@@ -190,9 +188,7 @@ export default class Chessground extends React.PureComponent {
       awayHours: awayClock.hours(),
       awayMinutes: awayClock.minutes(),
       awaySeconds: awayClock.seconds(),
-      moving: data.moving,
-      pauseClocks: pauseClocks,
-      currentMove: data.id
+      pauseClocks: false
     });
   }
 
@@ -200,9 +196,20 @@ export default class Chessground extends React.PureComponent {
     const orientation = data.orientation || this.state.orientation;
     this.cg.set({fen: data.fen, orientation: orientation});
     this.cg.setShapes([]);
+    const moveList = data.moveList || [];
+    this.setState({
+      moving: data.moving || 'home',
+      moveList: moveList,
+      pauseClocks: true,
+      pausePosition: false,
+      currentMove: data.id || moveList.length,
+      orientation: orientation
+    });
+    if (data.clock === null) {
+      return;
+    }
     const homeClock = duration().add(data.clock[0], 's');
     const awayClock = duration().add(data.clock[1], 's');
-    const moveList = data.moveList || this.state.moveList;
     this.setState({
       homeClock: homeClock,
       homeHours: homeClock.hours(),

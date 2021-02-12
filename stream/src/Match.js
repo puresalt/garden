@@ -11,9 +11,7 @@ function Match(props) {
   const {currentBoardNumber, currentMatchId, socket} = props;
 
   const [awayTeamName, setAwayTeamName] = useState('');
-  const [awayTeamScore, setAwayTeamScore] = useState(0);
   const [homeTeamName, setHomeTeamName] = useState('');
-  const [homeTeamScore, setHomeTeamScore] = useState(0);
 
   const [pairingList, setPairingList] = useState([]);
 
@@ -25,6 +23,7 @@ function Match(props) {
   const loadStream = (incomingStreamData) => {
     setAwayTeamName(incomingStreamData.away);
     setHomeTeamName(incomingStreamData.home);
+    socket.emit('stream:board:list');
   };
   const loadBoardList = (incomingBoardList) => {
     setPairingList(incomingBoardList);

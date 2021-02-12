@@ -5,7 +5,7 @@ import './Board.css';
 
 function Board(props) {
   const {board, pairing, showProgrammaticBoards, large, socket} = props;
-  const {home, away, result, orientation} = pairing;
+  const {home, away, result} = pairing;
 
   const size = large
     ? 936

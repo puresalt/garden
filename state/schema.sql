@@ -22,11 +22,11 @@ create TABLE `usate_player`
     INDEX (team_id)
 );
 INSERT INTO `usate_player`
-VALUES (1, 1, 'GM Mackenzie Molner', 'MacMolner', 2531),
+VALUES (1, 1, 'GM Mackenzie Molner', 'PassersGG', 2531),
        (2, 1, 'Sean Finn', 'JerseyFish', 2070),
        (3, 1, 'Danny Rohde', 'rohde', 1900),
        (4, 1, 'Arrik Leman', 'arrik', 1772),
-       (5, 2, 'FM Dov Gorman', 'art2331', 2342),
+       (5, 2, 'FM Dov Gorman', 'PassersGG', 2342),
        (6, 2, 'Dan Smith', 'PokerDan', 2150),
        (7, 2, 'Ethan Klein', 'EthanKlein_NJ', 2081),
        (8, 2, 'Ted Bartman', 'DoTheBartman', 2000),
