@@ -151,7 +151,6 @@ function matchRoute(db, redis, socketWrapper) {
             {board: 4, home: null, away: null}
           ]
         });
-        console.log(playerList, pairing);
 
         const stateData = {
           isLive: '1',
@@ -190,7 +189,6 @@ function matchRoute(db, redis, socketWrapper) {
               console.error('Error setting the pair player data:', err);
             }
           });
-          console.log('letting everybody know:', stateData);
           socketWrapper.broadcastAll('stream:loaded', stateData);
         });
       });

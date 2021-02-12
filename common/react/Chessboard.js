@@ -4,6 +4,11 @@ import PropTypes from 'prop-types'
 import { Chessground as NativeChessground } from 'chessground'
 import './Chessboard/css/chessground.css';
 
+const isPawnToTheDangerSquareMove = /^([a-h][4|5])$/;
+const pawnCaptureRegex = /^([a-h]x)/;
+const promotionRegex = /=([QRKB])$/;
+const roles = {Q: 'queen', R: 'rook', K: 'king', B: 'bishop'};
+
 const padded = num => String(num).padStart(2, '0');
 const parseClock = (hours, minutes, seconds) => {
   if (hours) {
@@ -163,7 +168,27 @@ export default class Chessground extends React.PureComponent {
   }
 
   move(data) {
+    const pawnCapture = data.pgn.match(pawnCaptureRegex);
+    if (pawnCapture) {
+      console.log('isPawnCapture?', pawnCapture, pawnCapture[0][0], data.move[0][0]);
+      const lastMove = this.state.moveList[this.state.moveList.length - 1];
+      const lastMoveWasIt = lastMove.match(isPawnToTheDangerSquareMove);
+      if (lastMoveWasIt) {
+        console.log({[lastMoveWasIt[0]]: null});
+        this.cg.setPieces([[lastMoveWasIt[0], null]]);
+      }
+    }
+
     this.cg.move(data.move[0], data.move[1]);
+    const promote = data.pgn.match(promotionRegex);
+    if (promote) {
+      this.cg.setPieces([[data.move[1], {
+        promoted: true,
+        color: data.moving === 'home' ? 'white' : 'black',
+        role: roles[promote[1]]
+      }]]);
+    }
+
     this.cg.setShapes([]);
     this.setState({
       moving: data.moving,

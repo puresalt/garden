@@ -9,7 +9,7 @@ const loginPromptRegex = /login: $/;
 const passwordPromptRegex = /password: /;
 const observeResponseRegex = /Game ([0-9]+) \(([a-zA-Z0-9_-]+) vs\. ([a-zA-Z0-9_-]+)\)/;
 const pgnResponseRegex = /[\s\S]+\[Site [\s\S]+/;
-const resultsResponseRegex = /^{Game ([0-9]+) (([a-zA-Z0-9_-]+) vs. ([a-zA-Z0-9_-]+)) ([a-zA-Z0-9_-]+) ([a-zA-Z0-9]+)} (0|0.5|1)-(0|0.5|1)[\s\S]+/;
+const resultsResponseRegex = /^{Game ([0-9]+) (([a-zA-Z0-9_-]+) vs. ([a-zA-Z0-9_-]+)) ([a-zA-Z0-9_-]+) ([a-zA-Z0-9 ]+)} (0|0.5|1)-(0|0.5|1)[\s\S]+/;
 const historyResponseRegex = /^Recent games of ([a-zA-Z0-9_-]+)[\s\S]+/;
 const pgnMovesRegex = /1. ([NBQRKOxa-h0-9=/+#\s\S .-]+)$/;
 const noExaminersRegex = /game [0-9]+ \(which you were observing\) has no examiners./;
@@ -80,52 +80,52 @@ function ObserverLoop(boardId, redis, config) {
           console.warn('Error setting:', gameId, err);
         }
       });
+    } else if (!gameId) {
+      console.info('nothing yet');
     } else if (queueMoves !== null) {
       queueMoves.push(boardData);
-    } else {
-      if (!boardData.id || !boardData.pgn) {
-        chessBoard = new ChessBoard();
-        runningMoveList = [];
-        lastMove = 0;
-        redis.del(gameHash, (err) => {
-          if (err) {
-            console.warn('Troubles removing the game hash:', gameHash, err);
-          }
-          redis.rpush(gameHash, JSON.stringify({
-            type: 'goto',
-            data: {
-              fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-              clock: [3600, 3600],
-              moveList: [],
-              moving: 'home'
-            }
-          }));
-        });
-      } else if (boardData.id < lastMove) {
-        const diff = lastMove - boardData.id;
-        for (let i = 0; i < diff; ++i) {
-          chessBoard.undo();
-          runningMoveList.pop();
-          redis.rpop(gameHash);
+    } else if (!boardData.id || !boardData.pgn) {
+      chessBoard = new ChessBoard();
+      runningMoveList = [];
+      lastMove = 0;
+      redis.del(gameHash, (err) => {
+        if (err) {
+          console.warn('Troubles removing the game hash:', gameHash, err);
         }
-        lastMove = boardData.id;
-      } else {
-        const move = chessBoard.move(boardData.pgn);
-        runningMoveList.push(boardData.pgn);
-        lastMove = boardData.id;
         redis.rpush(gameHash, JSON.stringify({
-          type: 'move',
+          type: 'goto',
           data: {
-            id: chessBoard.history().length,
-            pgn: move.san,
-            fen: chessBoard.fen(),
-            move: [move.from, move.to],
-            clock: boardData.clock,
-            moveList: runningMoveList.map(i => i),
-            moving: move.color === 'w' ? 'home' : 'away'
+            fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+            clock: [3600, 3600],
+            moveList: [],
+            moving: 'home'
           }
         }));
+      });
+    } else if (boardData.id < lastMove) {
+      const diff = lastMove - boardData.id;
+      for (let i = 0; i < diff; ++i) {
+        chessBoard.undo();
+        runningMoveList.pop();
+        redis.rpop(gameHash);
       }
+      lastMove = boardData.id;
+    } else {
+      const move = chessBoard.move(boardData.pgn);
+      runningMoveList.push(boardData.pgn);
+      lastMove = boardData.id;
+      redis.rpush(gameHash, JSON.stringify({
+        type: 'move',
+        data: {
+          id: chessBoard.history().length,
+          pgn: move.san,
+          fen: chessBoard.fen(),
+          move: [move.from, move.to],
+          clock: boardData.clock,
+          moveList: runningMoveList.map(i => i),
+          moving: move.color === 'w' ? 'home' : 'away'
+        }
+      }));
     }
   };
 
