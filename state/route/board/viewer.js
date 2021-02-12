@@ -40,7 +40,7 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
             }
             socketWrapper.emit(`viewer:board:${boardId}`, currentEvent);
             ++lastEventId;
-            setTimeout(() => makeNextEvent(nextEventId + 1), 250);
+            process.nextTick(() => makeNextEvent(nextEventId + 1));
           };
           makeNextEvent(0);
         });

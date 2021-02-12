@@ -27,7 +27,7 @@ function Board(props) {
           viewOnly={true}
           viewer={true}
           coordinates={false}
-          orientation={board % 2 === 1 ? 'white' : 'black'}
+          orientation={board % 2 === 1 ? 'home' : 'away'}
           socket={socket}
         />
         : <>

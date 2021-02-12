@@ -37,6 +37,7 @@ module.exports = (data) => {
     }
   }
 
+  console.log(auxiliary, data);
   const lastMoveNumber = auxiliary[0].match(moveNumberRegex);
   const id = (lastMoveNumber[1] * 2) - (lastMoveNumber[2] === 'White' ? 2 : 1);
   return {

@@ -192,7 +192,8 @@ export default class Chessground extends React.PureComponent {
     this.cg.setShapes([]);
     this.setState({
       moving: data.moving,
-      currentMove: data.id
+      currentMove: data.id,
+      pauseClocks: false
     });
     if (data.id > this.state.moveList.length) {
       const moveList = this.state.moveList.map(item => item);
@@ -212,8 +213,7 @@ export default class Chessground extends React.PureComponent {
       awayClock: awayClock,
       awayHours: awayClock.hours(),
       awayMinutes: awayClock.minutes(),
-      awaySeconds: awayClock.seconds(),
-      pauseClocks: false
+      awaySeconds: awayClock.seconds()
     });
   }
 

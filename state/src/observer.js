@@ -9,7 +9,7 @@ const loginPromptRegex = /login: $/;
 const passwordPromptRegex = /password: /;
 const observeResponseRegex = /Game ([0-9]+) \(([a-zA-Z0-9_-]+) vs\. ([a-zA-Z0-9_-]+)\)/;
 const pgnResponseRegex = /[\s\S]+\[Site [\s\S]+/;
-const resultsResponseRegex = /^{Game ([0-9]+) (([a-zA-Z0-9_-]+) vs. ([a-zA-Z0-9_-]+)) ([a-zA-Z0-9_-]+) ([a-zA-Z0-9 ]+)} (0|0.5|1)-(0|0.5|1)[\s\S]+/;
+const resultsResponseRegex = /^{Game ([0-9]+) \(([a-zA-Z0-9_-]+) vs\. ([a-zA-Z0-9_-]+)\) ([a-zA-Z0-9_-]+) ([a-zA-Z0-9 ]+)} (0|0.5|1)-(0|0.5|1)[\s\S]+/;
 const historyResponseRegex = /^Recent games of ([a-zA-Z0-9_-]+)[\s\S]+/;
 const pgnMovesRegex = /1. ([NBQRKOxa-h0-9=/+#\s\S .-]+)$/;
 const noExaminersRegex = /game [0-9]+ \(which you were observing\) has no examiners./;
@@ -79,12 +79,14 @@ function ObserverLoop(boardId, redis, config) {
         if (err) {
           console.warn('Error setting:', gameId, err);
         }
+        console.info('New gameId:', gameId);
       });
     } else if (!gameId) {
       console.info('nothing yet');
     } else if (queueMoves !== null) {
       queueMoves.push(boardData);
     } else if (!boardData.id || !boardData.pgn) {
+      console.log('done?');
       chessBoard = new ChessBoard();
       runningMoveList = [];
       lastMove = 0;
@@ -110,8 +112,9 @@ function ObserverLoop(boardId, redis, config) {
         redis.rpop(gameHash);
       }
       lastMove = boardData.id;
-    } else {
+    } else if (runningMoveList[runningMoveList - 1] !== boardData.pgn) {
       const move = chessBoard.move(boardData.pgn);
+      console.log(runningMoveList, boardData.pgn);
       runningMoveList.push(boardData.pgn);
       lastMove = boardData.id;
       redis.rpush(gameHash, JSON.stringify({
@@ -228,6 +231,11 @@ function ObserverLoop(boardId, redis, config) {
       return noHistoryData();
     }
 
+    const resultsData = data.match(resultsResponseRegex);
+    if (resultsData !== null) {
+      return parseResultsData(resultsData, data);
+    }
+
     const liveGameData = data.match(observeResponseRegex);
     if (liveGameData !== null) {
       return parseLiveGameData(liveGameData, data);
@@ -236,11 +244,6 @@ function ObserverLoop(boardId, redis, config) {
     const staleGameData = data.match(pgnResponseRegex);
     if (staleGameData !== null) {
       return parseStaleGameData(staleGameData, data);
-    }
-
-    const resultsData = data.match(resultsResponseRegex);
-    if (resultsData !== null) {
-      return parseResultsData(resultsData, data);
     }
 
     const historyData = data.match(historyResponseRegex);
