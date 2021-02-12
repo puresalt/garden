@@ -62,9 +62,6 @@ function App() {
             <Route path="/pairings">
               <Pairings socket={socket} watchedPairing={watchedPairing} handleWatchedPairing={handleWatchedPairing}/>
             </Route>
-            <Route path="/boards">
-              <Boards socket={socket}/>
-            </Route>
             <Route path="/configuration">
               <Configuration socket={socket}/>
             </Route>

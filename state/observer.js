@@ -2,7 +2,10 @@ const path = require('path');
 const common = require('garden-common');
 const config = common.Config(process.env, require(path.join(__dirname, '../common/config/runtime.json')));
 const redis = require('redis');
-const observerLoop = require('./src/observer');
+
+const observerLoop = parseInt(process.env.DIRECT_QUEUE) === 1
+  ? require('./src/observer/direct')
+  : require('./src/observer');
 
 const client = redis.createClient();
 client.on('connect', () => {

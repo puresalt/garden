@@ -13,9 +13,7 @@ function Header(props) {
 
   const {pathname} = useLocation();
 
-  const routerLinks = [
-    ['/configuration', 'Configuration']
-  ];
+  const routerLinks = [];
 
   return <div className="Header">
     <div className="TopBar">
@@ -53,8 +51,8 @@ function Navigation(props) {
   const {socket, pathname, isLive, updateSetIsLive} = props;
 
   const routerLinks = [
-    ['/pairings', 'Pairings'],
-    ['/boards', 'Boards']
+    ['/configuration', 'Configuration'],
+    ['/pairings', 'Pairings']
   ];
 
   return <Navbar>

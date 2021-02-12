@@ -1,7 +1,6 @@
-const ChessBoard = require('chess.js').Chess;
 const net = require('net');
-const generateGameHash = require('garden-common/src/state').generateGameHash;
-const parseLiveBoard = require('./parse/liveBoard');
+const ChessBoard = require('chess.js').Chess;
+const parseLiveBoard = require('../parse/liveBoard');
 
 const READ_TERMINATE = 'aics%';
 
@@ -15,11 +14,33 @@ const pgnMovesRegex = /1. ([NBQRKOxa-h0-9=/+#\s\S .-]+)$/;
 const noExaminersRegex = /game [0-9]+ \(which you were observing\) has no examiners./;
 const individualMoveRegex = /([NBQRKOxa-h0-9=/+#-]+)\s/g;
 
+const buildPosition = (moveList) => {
+  const chessBoard = new ChessBoard();
+  let move;
+  for (let i = 0, count = moveList.length; i < count; ++i) {
+    move = chessBoard.move(moveList[i]);
+    if (!move) {
+      return null;
+    }
+  }
+  return {
+    id: chessBoard.history().length,
+    pgn: move.san,
+    fen: chessBoard.fen(),
+    move: [move.from, move.to],
+    clock: [3600, 3600],
+    moveList: moveList,
+    moving: move.color === 'w' ? 'home' : 'away'
+  };
+};
+
 function ObserverLoop(boardId, redis, config) {
+  const gameHash = `usate:viewer:game:${boardId}`;
+
   const connection = net.createConnection(config.port, config.host);
 
-  let chessBoard = null;
-  let gameHash = null;
+  let loadingMoveList = false;
+
   let loggedIn = false;
   let observing = null;
   let home = null;
@@ -31,7 +52,6 @@ function ObserverLoop(boardId, redis, config) {
   let noHistoryResponse = null;
   let checkingHistory = false;
   let checkedHistory = false;
-  let lastMove = 0;
   let runningMoveList = [];
   const loopForUsernameChanges = () => {
     redis.get(`usate:stream:board:${boardId}`, (err, usernames) => {
@@ -52,19 +72,17 @@ function ObserverLoop(boardId, redis, config) {
       checkingHistory = false;
       checkedHistory = false;
       queueMoves = null;
-      gameHash = generateGameHash(home, away);
       lastMove = 0;
     });
   }
 
   const parseLiveGameData = (liveGameData, data) => {
     const boardData = parseLiveBoard(data);
-    console.log(data, boardData);
     const isValidNewGame = gameId !== liveGameData[1]
       && (liveGameData[2].toLowerCase() === away || liveGameData[3].toLowerCase() === away);
     if (isValidNewGame) {
+      loadingMoveList = true;
       gameId = liveGameData[1];
-      chessBoard = new ChessBoard();
       runningMoveList = [];
       queueMoves = [];
       if (boardData.pgn) {
@@ -74,59 +92,34 @@ function ObserverLoop(boardId, redis, config) {
         if (err) {
           console.warn('Error deleting:', gameHash, err);
         }
-        process.nextTick(() => connection.write(`pgn ${liveGameData[1]}\n`));
-      });
-      redis.set(`usate:viewer:game:${boardId}:id`, gameId, (err) => {
-        if (err) {
-          console.warn('Error setting:', gameId, err);
-        }
-        console.info('New gameId:', gameId);
+        redis.set(`usate:viewer:game:${boardId}:id`, gameId, (err) => {
+          if (err) {
+            console.warn('Error setting:', gameId, err);
+          }
+          console.info('New gameId:', gameId);
+          process.nextTick(() => connection.write(`pgn ${liveGameData[1]}\n`));
+          const waitForPgn = () => {
+            if (loadingMoveList) {
+              setTimeout(() => waitForPgn(), 250);
+            }
+          };
+          waitForPgn();
+        });
       });
     } else if (!gameId) {
       console.info('nothing yet');
     } else if (queueMoves !== null) {
       queueMoves.push(boardData);
-    } else if (!boardData.id || !boardData.pgn) {
-      chessBoard = new ChessBoard();
-      runningMoveList = [];
-      lastMove = 0;
-      redis.del(gameHash, (err) => {
-        if (err) {
-          console.warn('Troubles removing the game hash:', gameHash, err);
-        }
-        redis.rpush(gameHash, JSON.stringify({
-          type: 'goto',
-          data: {
-            fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-            clock: [3600, 3600],
-            moveList: [],
-            moving: 'home'
-          }
-        }));
-      });
-    } else if (boardData.id < lastMove) {
-      const diff = lastMove - boardData.id;
-      for (let i = 0; i < diff; ++i) {
-        chessBoard.undo();
-        runningMoveList.pop();
-        redis.rpop(gameHash);
-      }
-      lastMove = boardData.id;
-    } else if (runningMoveList[runningMoveList - 1] !== boardData.pgn) {
-      const move = chessBoard.move(boardData.pgn);
-      console.log(runningMoveList, boardData.pgn);
-      runningMoveList.push(boardData.pgn);
-      lastMove = boardData.id;
+    } else if (boardData.id && boardData.pgn) {
       redis.rpush(gameHash, JSON.stringify({
-        type: 'move',
+        type: 'goto',
         data: {
-          id: chessBoard.history().length,
-          pgn: move.san,
-          fen: chessBoard.fen(),
-          move: [move.from, move.to],
+          id: runningMoveList.length,
+          pgn: boardData.pgn,
+          fen: boardData.fen,
           clock: boardData.clock,
-          moveList: runningMoveList.map(i => i),
-          moving: move.color === 'w' ? 'home' : 'away'
+          moveList: runningMoveList,
+          moving: boardData.color === 'w' ? 'home' : 'away'
         }
       }));
     }
@@ -134,13 +127,12 @@ function ObserverLoop(boardId, redis, config) {
 
   const parseStaleGameData = (staleGameData, data) => {
     const pgnMoves = (data.match(pgnMovesRegex) || [''])[0];
-    const moveList = [...pgnMoves.matchAll(individualMoveRegex)].map(i => i[1]);
     redis.rpush(gameHash, JSON.stringify({
       type: 'goto',
       data: {
         fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
         clock: [3600, 3600],
-        moveList: moveList.map(i => i),
+        moveList: [],
         moving: 'home'
       }
     }), (err) => {
@@ -148,45 +140,41 @@ function ObserverLoop(boardId, redis, config) {
         console.warn('Error pushing:', gameHash, err);
       }
 
+      const moveList = [...pgnMoves.matchAll(individualMoveRegex)].map(i => i[1]);
       const firstQueuedMove = ((queueMoves || [])[0] || []).id || null;
       for (let i = 0, count = moveList.length; i < count; ++i) {
         if (firstQueuedMove !== null && i >= firstQueuedMove - 1) {
           break;
         }
-        const move = chessBoard.move(moveList[i]);
         runningMoveList.push(moveList[i]);
+      }
+
+      let queuedMove;
+      while ((queuedMove = queueMoves.shift())) {
+        if (queuedMove.pgn) {
+          runningMoveList.push(queuedMove.pgn);
+        }
+      }
+
+      if (!queuedMove) {
+        queuedMove = buildPosition(runningMoveList);
+      }
+
+      if (queuedMove) {
         redis.rpush(gameHash, JSON.stringify({
-          type: 'move',
+          type: 'goto',
           data: {
-            id: chessBoard.history().length,
-            pgn: move.san,
-            fen: chessBoard.fen(),
-            move: [move.from, move.to],
-            clock: null,
-            moving: move.color === 'w' ? 'home' : 'away'
+            id: queuedMove.id,
+            pgn: queuedMove.pgn,
+            fen: queuedMove.fen,
+            clock: queuedMove.clock,
+            moveList: runningMoveList,
+            moving: queuedMove.moving
           }
         }));
       }
 
-      let nextQueueMove;
-      while ((nextQueueMove = queueMoves.shift())) {
-        if (nextQueueMove.pgn) {
-          const move = chessBoard.move(nextQueueMove.pgn);
-          runningMoveList.push(nextQueueMove.pgn);
-          redis.rpush(gameHash, JSON.stringify({
-            type: 'move',
-            data: {
-              id: chessBoard.history().length,
-              pgn: move.san,
-              fen: chessBoard.fen(),
-              move: [move.from, move.to],
-              clock: nextQueueMove.clock,
-              moving: move.color === 'w' ? 'home' : 'away'
-            }
-          }));
-        }
-      }
-      lastMove = runningMoveList.length;
+      loadingMoveList = false;
       queueMoves = null;
     });
   };
