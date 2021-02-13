@@ -26,7 +26,7 @@
     width: 664px;
 }
 
-.ScratchBoard .scratchBoard-placeholder {
+.ScratchBoard.Large .scratchBoard-placeholder {
     height: 650px;
     width: 650px;
 }
