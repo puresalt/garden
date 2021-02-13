@@ -1,32 +1,24 @@
 .Webcam {
     background: #006747;
-    border-radius: 1em;
-    left: 1430px;
-    height: 262px;
-    opacity: 0.75;
+    border-radius: 1em 0 0 0;
+    border-bottom: 0;
+    height: 252px;
+    opacity: 5.75;
     position: absolute;
-    top: 733px;
-    width: 450px;
+    top: 789px;
+    width: 524px;
+    left: 1396px;
 }
 
 .Webcam .webcam-placeholder {
     background: #fff;
     position: absolute;
-    top: 10px;
-    left: 10px;
-    height: 242px;
-    width: 430px;
+    top: 7px;
+    left: 7px;
+    height: 245px;
+    width: 251px;
 }
 
-.Webcam.debug .webcam-placeholder {
-    background: rgba(255, 0, 0, 0.5);
-}
-
-.Webcam.debug .webcam-placeholder > * {
-    visibility: hidden;
-}
-
-.Webcam.debug .webcam-placeholder .debug-info {
-    visibility: visible;
-    display: block;
+.Webcam .webcam-placeholder:nth-child(2) {
+    left: 266px;
 }
