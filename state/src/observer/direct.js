@@ -9,6 +9,7 @@ const passwordPromptRegex = /password: /;
 const newGameIdRegex = /Game ([0-9]+): PassersObs[1|2|3|4] goes forward [0-9]+./;
 const observeResponseRegex = /Game ([0-9]+) \(([a-zA-Z0-9_-]+) vs\. ([a-zA-Z0-9_-]+)\)/;
 const pgnResponseRegex = /[\s\S]+\[Site [\s\S]+/;
+const pgnExamineBoardMatch = '| P | P | P | P | P | P | P | P |     White Strength : 39';
 const resultsResponseRegex = /{Game ([0-9]+) \(([a-zA-Z0-9_-]+) vs\. ([a-zA-Z0-9_-]+)\) ([a-zA-Z0-9_-]+) ([a-zA-Z0-9 ]+)} (0|0.5|1)-(0|0.5|1)[\s\S]+/;
 const historyResponseRegex = /^Recent games of ([a-zA-Z0-9_-]+)[\s\S]+/;
 const historyResultRegex = /([0-9]+): ([-+=]) [0-9]+ [B|W] [0-9]+ ([a-zA-Z0-9_-]+)\s+\[/;
@@ -48,6 +49,7 @@ function ObserverLoop(boardId, redis, config) {
 
   const connection = net.createConnection(config.port, config.host);
 
+  let pgnWaitedFor = false;
   let gameIdWaitedFor = null;
   let loadingMoveList = false;
   let usingHistoryOnly = false;
@@ -236,23 +238,20 @@ function ObserverLoop(boardId, redis, config) {
             }
             gameId = `${home}:${probableGame[1][1]}`;
             connection.write(`examine ${home} ${probableGame[0]}\n`);
-            gameIdWaitedFor = false;
             const waitForPgn = () => {
-              if (gameIdWaitedFor === null || (!gameIdWaitedFor && gameIdWaitedFor !== gameId)) {
-                return;
-              }
-              if (!gameIdWaitedFor) {
+              if (!pgnWaitedFor) {
                 return setTimeout(waitForPgn, 100);
               }
               redis.set(`usate:viewer:game:${boardId}:id`, gameId, (err) => {
-                if (gameIdWaitedFor === null || (!gameIdWaitedFor && gameIdWaitedFor !== gameId)) {
-                  return;
-                }
                 process.nextTick(() => {
+                  gameIdWaitedFor = false;
                   connection.write(`forward 999\n`);
                   process.nextTick(() => {
                     connection.write(`pgn\n`);
                     const waitForHistory = () => {
+                      if (gameIdWaitedFor === null || (gameIdWaitedFor && gameIdWaitedFor !== gameId)) {
+                        return;
+                      }
                       if (!gameIdWaitedFor || loadingMoveList) {
                         return setTimeout(waitForHistory, 100);
                       }
@@ -318,6 +317,11 @@ function ObserverLoop(boardId, redis, config) {
       || noExaminersRegex.test(lowerCaseData)
     ) {
       return checkHistory();
+    }
+
+    if (data.indexOf(pgnExamineBoardMatch) > -1) {
+      pgnWaitedFor = true;
+      return;
     }
 
     if (lowerCaseData === noHistoryResponse) {
