@@ -6,6 +6,7 @@ const READ_TERMINATE = 'aics%';
 
 const loginPromptRegex = /login: $/;
 const passwordPromptRegex = /password: /;
+const newGameIdRegex = /Game ([0-9]+): PassersObs[1|2|3|4] goes forward [0-9]+./;
 const observeResponseRegex = /Game ([0-9]+) \(([a-zA-Z0-9_-]+) vs\. ([a-zA-Z0-9_-]+)\)/;
 const pgnResponseRegex = /[\s\S]+\[Site [\s\S]+/;
 const resultsResponseRegex = /{Game ([0-9]+) \(([a-zA-Z0-9_-]+) vs\. ([a-zA-Z0-9_-]+)\) ([a-zA-Z0-9_-]+) ([a-zA-Z0-9 ]+)} (0|0.5|1)-(0|0.5|1)[\s\S]+/;
@@ -194,7 +195,6 @@ function ObserverLoop(boardId, redis, config) {
       }
     }));
     gameHasEnded = true;
-    console.log('parseResultsData', resultsData, data);
   };
 
   const checkHistory = () => {
@@ -211,32 +211,69 @@ function ObserverLoop(boardId, redis, config) {
     checkingHistory = false;
     checkedHistory = true;
     usingHistoryOnly = true;
-    const probableGame = historyData[0].split('\n').map((row) => {
+    let matches = 0;
+    const probableGame = historyData[0].split('\n').map((row, i) => {
       const hasMatch = row.trim().match(historyResultRegex);
-      if (hasMatch && hasMatch[3].toLowerCase() === away) {
-        return hasMatch;
+      if (hasMatch) {
+        ++matches;
+        if (away.indexOf(hasMatch[3].toLowerCase()) === 0) {
+          return [hasMatch[1], hasMatch];
+        }
       }
       return null;
     }).filter(i => i !== null)[0];
     if (probableGame) {
       loadingMoveList = true;
-      connection.write(`examine ${home} ${probableGame[1]}\n`);
-      process.nextTick(() => {
-        connection.write(`forward 999\n`);
-        process.nextTick(() => {
-          connection.write(`pgn\n`)
-          const waitForHistory = () => {
-            if (loadingMoveList) {
-              return setTimeout(waitForHistory, 100);
-            }
-            redis.rpush(gameHash, JSON.stringify({
-              type: 'result',
-              data: {
-                winner: winnerMap[probableGame[2]]
-              }
-            }));
-          };
-          process.nextTick(waitForHistory);
+      redis.del(gameHash, (err) => {
+        if (err) {
+          console.warn('Error deleting:', gameHash, err);
+        }
+        redis.del(`usate:viewer:game:${boardId}`, (err) => {
+          if (err) {
+            console.warn('Error setting:', gameId, err);
+          }
+          gameId = `${home}:${probableGame[1][1]}`;
+          connection.write(`examine ${home} ${probableGame[0]}\n`);
+          redis.set(`usate:viewer:game:${boardId}:id`, gameId, (err) => {
+            process.nextTick(() => {
+              connection.write(`forward 999\n`);
+              process.nextTick(() => {
+                connection.write(`pgn\n`)
+                const waitForHistory = () => {
+                  if (`${home}:${probableGame[1][1]}` !== gameId) {
+                    return;
+                  }
+                  if (loadingMoveList) {
+                    return setTimeout(waitForHistory, 100);
+                  }
+                  gameHasEnded = true;
+                  const queuedMove = buildPosition(runningMoveList);
+
+                  if (queuedMove) {
+                    runningMoveList = runningMoveList.slice(0, queuedMove.id);
+                    redis.rpush(gameHash, JSON.stringify({
+                      type: 'goto',
+                      data: {
+                        id: queuedMove.id,
+                        pgn: queuedMove.pgn,
+                        fen: queuedMove.fen,
+                        clock: queuedMove.clock,
+                        moveList: runningMoveList,
+                        moving: queuedMove.moving
+                      }
+                    }));
+                  }
+                  redis.rpush(gameHash, JSON.stringify({
+                    type: 'result',
+                    data: {
+                      winner: winnerMap[probableGame[1][2]]
+                    }
+                  }));
+                };
+                process.nextTick(waitForHistory);
+              });
+            });
+          });
         });
       });
     }
@@ -255,6 +292,11 @@ function ObserverLoop(boardId, redis, config) {
     const data = buffer.toString().replace(READ_TERMINATE, '');
     const lowerCaseData = data.toLowerCase().trim();
 
+    const newGameId = data.match(newGameIdRegex);
+    if (newGameId !== null) {
+      gameId = newGameId[1];
+      return;
+    }
     if (
       lowerCaseData === notLoggedIn
       || lowerCaseData === notPlaying

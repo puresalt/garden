@@ -98,8 +98,6 @@ function StreamerRoute(db, redis, socketWrapper) {
   socketWrapper.on('stream:board:list', listBoards);
   const boardSubRoutes = [1, 2, 3, 4].reduce((gathered, i) => {
     gathered.push(
-      BoardEventRoute(db, redis, socketWrapper, i),
-      BoardInteractiveRoute(db, redis, socketWrapper, i),
       BoardViewerRoute(db, redis, socketWrapper, i)
     );
     return gathered;

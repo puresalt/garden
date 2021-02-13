@@ -49,7 +49,6 @@ module.exports = (data) => {
     }
   }
 
-	console.log(data);
   const [_, moveNumber, color] = (data.match(moveNumberRegex) || [null, 1, 'White']);
   return {
     id: (moveNumber * 2) - (color === 'White' ? 2 : 1),

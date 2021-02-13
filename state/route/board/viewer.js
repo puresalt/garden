@@ -14,7 +14,7 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
     viewing = true;
     const getGameEvents = () => {
       if (closed) {
-        return;
+        return finished('Closed');
       }
       redis.get(`usate:viewer:game:${boardId}:id`, (err, gameId) => {
         if (!currentGameId) {
@@ -54,7 +54,7 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
   }
 
   function readySession(notFirstRun) {
-    if (viewing) {
+    if (viewing || closed) {
       return;
     }
     socketWrapper.emit(`viewer:board:${boardId}`, {
@@ -70,6 +70,9 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
       return startGame(0, (err) => {
         if (err) {
           console.warn('Error starting viewer game:', boardId, err);
+          if (closed) {
+            return;
+          }
         }
         currentGameId = 0;
         lastEventId = 0;
@@ -78,6 +81,7 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
       });
     }
     redis.lrange(gameHash, 0, -1, (err, eventList) => {
+      console.log('why?');
       if (err) {
         return console.warn('Error catching up or nothing in the list to catch up to:', boardId, eventList, err);
       }

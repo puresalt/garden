@@ -3,7 +3,7 @@ CREATE TABLE `usate_team`
 (
     id     INT AUTO_INCREMENT PRIMARY KEY,
     name   VARCHAR(255) NULL,
-    rating DECIMAL(4, 2) UNSIGNED NULL
+    rating INT UNSIGNED NULL
 );
 
 DROP TABLE IF EXISTS `usate_player`;
@@ -41,4 +41,4 @@ CREATE TABLE `usate_configuration`
     bottom_right_text        VARCHAR(255) NULL
 );
 INSERT INTO `usate_configuration`
-VALUES (1, 1, 1, 0, 1, 'Day 1', 'US Amateur Team East', 'Hosts: IM Tom Bartell & Dan Smith');
+VALUES (1, 1, 1, 1, 0, 1, 'Day 1', 'US Amateur Team East', 'Hosts: IM Tom Bartell & Dan Smith');
