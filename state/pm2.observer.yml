@@ -13,18 +13,23 @@
 #
 
 apps:
-  - script: 243
-    name: 'usate:admin'
+  - script: node ./observer.js
+    name: 'usate:state:observer:4'
     env:
-      NODE_ENV: production
-      PORT: 5002
-  - script: node ./state/app.js
-    name: 'usate:state'
+      DIRECT_QUEUE: 1
+      BOARD_ID: 1
+  - script: node ./observer.js
+    name: 'usate:state:observer:2'
     env:
-      NODE_ENV: production
-      PORT: 5003
-  - script: ./node_modules/.bin/serve -s stream/build
-    name: 'usate:stream'
+      DIRECT_QUEUE: 1
+      BOARD_ID: 2
+  - script: node ./observer.js
+    name: 'usate:state:observer:3'
     env:
-      NODE_ENV: production
-      PORT: 5004
+      DIRECT_QUEUE: 1
+      BOARD_ID: 3
+  - script: node ./observer.js
+    name: 'usate:state:observer:4'
+    env:
+      DIRECT_QUEUE: 1
+      BOARD_ID: 4

@@ -8,16 +8,28 @@ function Board(props) {
   const {home, away, result} = pairing;
 
   const size = large
-    ? 936
-    : 464;
+    ? 970
+    : 480;
+
+  let homeColor = 'white';
+  let awayColor = 'black';
+  if ((board % 2) === 0) {
+    homeColor = 'black';
+    awayColor = 'white';
+  }
 
   return (
     <div className={'Board' + (large ? ' Large' : '')} key={board}
          id={'board-' + board}>
       <header>
-        <div className="board-header-home"><OrDefault value={home.name}/> <em><OrDefault value={home.rating}/></em>
+        <span>Board <OrDefault value={board} />:</span>
+        <div className="board-header-home">
+          <div class={`${homeColor}-square`}/>
+          <OrDefault value={home.name}/> <em><OrDefault value={home.rating}/></em>
         </div>
-        <div className="board-header-away"><OrDefault value={away.name}/> <em><OrDefault value={away.rating}/></em>
+        <div className="board-header-away">
+          <div className={`${awayColor}-square`}/>
+          <OrDefault value={away.name}/> <em><OrDefault value={away.rating}/></em>
         </div>
       </header>
       {showProgrammaticBoards

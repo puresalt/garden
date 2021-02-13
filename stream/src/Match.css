@@ -32,10 +32,16 @@ em {
 header {
     background: #006747;
     color: #fff;
-    height: 43px;
-    line-height: 39px;
-    font-size: 36px;
+    height: 27px;
+    line-height: 24px;
+    font-size: 22px;
     text-transform: uppercase;
+}
+
+.TitleBar {
+    height: 39px;
+    line-height: 33px;
+    font-size: 36px;
 }
 
 .MatchResultBar {

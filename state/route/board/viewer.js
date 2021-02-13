@@ -129,6 +129,10 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
         });
       }
 
+      if (resultEvent) {
+        socketWrapper.emit(`viewer:board:${boardId}`, resultEvent);
+      }
+
       startGame(currentEventId, (err) => {
         if (err) {
           console.warn('Error starting viewer game:', boardId, err);

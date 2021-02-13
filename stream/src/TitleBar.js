@@ -11,9 +11,15 @@ function TitleBar(props) {
   }
 
   return <div className="TitleBar">
-    {bottomLeftText ? <div className="TeamName">{__(React.Fragment, {}, bottomLeftText)}</div> : <></>}
-    {bottomMiddleText ? <div className="MatchName">{__(React.Fragment, {}, bottomMiddleText)}</div> : <></>}
-    {bottomRightText ? <div className="Host">{__(React.Fragment, {}, bottomRightText)}</div> : <></>}
+    {bottomLeftText
+      ? <div className="TeamName" dangerouslySetInnerHTML={{__html: bottomLeftText}}/>
+      : <></>}
+    {bottomMiddleText
+      ? <div className="MatchName" dangerouslySetInnerHTML={{__html: bottomMiddleText}}/>
+      : <></>}
+    {bottomRightText
+      ? <div className="Host" dangerouslySetInnerHTML={{__html: bottomRightText}}/>
+      : <></>}
   </div>;
 }
 

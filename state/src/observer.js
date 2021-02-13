@@ -59,7 +59,6 @@ function ObserverLoop(boardId, redis, config) {
 
   const parseLiveGameData = (liveGameData, data) => {
     const boardData = parseLiveBoard(data);
-    console.log(data, boardData);
     const isValidNewGame = gameId !== liveGameData[1]
       && (liveGameData[2].toLowerCase() === away || liveGameData[3].toLowerCase() === away);
     if (isValidNewGame) {
@@ -114,7 +113,6 @@ function ObserverLoop(boardId, redis, config) {
       lastMove = boardData.id;
     } else if (runningMoveList[runningMoveList - 1] !== boardData.pgn) {
       const move = chessBoard.move(boardData.pgn);
-      console.log(runningMoveList, boardData.pgn);
       runningMoveList.push(boardData.pgn);
       lastMove = boardData.id;
       redis.rpush(gameHash, JSON.stringify({

@@ -72,7 +72,7 @@ function matchRoute(db, redis, socketWrapper) {
           }
 
           return gathered;
-        }, []);
+        }, []).filter(item => item.home !== null && item.away !== null);
 
         socketWrapper[global ? 'broadcastAll' : 'emit']('pairing:listed', pairingList);
       }
@@ -173,10 +173,10 @@ function matchRoute(db, redis, socketWrapper) {
             gathered[0].push([row.board, [row.home.handle, row.away.handle].join(',')]);
             gathered[1][`${row.board}:home:name`] = row.home.name;
             gathered[1][`${row.board}:home:handle`] = row.home.handle;
-            gathered[1][`${row.board}:home:rating`] = row.home.rating;
+            gathered[1][`${row.board}:home:rating`] = row.home.rating || '';
             gathered[1][`${row.board}:away:name`] = row.away.name;
             gathered[1][`${row.board}:away:handle`] = row.away.handle;
-            gathered[1][`${row.board}:away:rating`] = row.away.rating;
+            gathered[1][`${row.board}:away:rating`] = row.away.rating || '';
             return gathered;
           }, [[], {}]);
           const hset = Object.keys(boardData).reduce((gathered, key) => {

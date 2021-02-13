@@ -8,30 +8,38 @@ const loginPromptRegex = /login: $/;
 const passwordPromptRegex = /password: /;
 const observeResponseRegex = /Game ([0-9]+) \(([a-zA-Z0-9_-]+) vs\. ([a-zA-Z0-9_-]+)\)/;
 const pgnResponseRegex = /[\s\S]+\[Site [\s\S]+/;
-const resultsResponseRegex = /^{Game ([0-9]+) \(([a-zA-Z0-9_-]+) vs\. ([a-zA-Z0-9_-]+)\) ([a-zA-Z0-9_-]+) ([a-zA-Z0-9 ]+)} (0|0.5|1)-(0|0.5|1)[\s\S]+/;
+const resultsResponseRegex = /{Game ([0-9]+) \(([a-zA-Z0-9_-]+) vs\. ([a-zA-Z0-9_-]+)\) ([a-zA-Z0-9_-]+) ([a-zA-Z0-9 ]+)} (0|0.5|1)-(0|0.5|1)[\s\S]+/;
 const historyResponseRegex = /^Recent games of ([a-zA-Z0-9_-]+)[\s\S]+/;
+const historyResultRegex = /([0-9]+): ([-+=]) [0-9]+ [B|W] [0-9]+ ([a-zA-Z0-9_-]+)\s+\[/;
 const pgnMovesRegex = /1. ([NBQRKOxa-h0-9=/+#\s\S .-]+)$/;
 const noExaminersRegex = /game [0-9]+ \(which you were observing\) has no examiners./;
 const individualMoveRegex = /([NBQRKOxa-h0-9=/+#-]+)\s/g;
+const winnerMap = {
+  '+': 'home',
+  '-': 'away',
+  '=': null
+};
 
 const buildPosition = (moveList) => {
   const chessBoard = new ChessBoard();
   let move;
+  let lastValidMove;
   for (let i = 0, count = moveList.length; i < count; ++i) {
     move = chessBoard.move(moveList[i]);
     if (!move) {
-      return null;
+      break
     }
+    lastValidMove = move;
   }
-  return {
+  return lastValidMove ? {
     id: chessBoard.history().length,
-    pgn: move.san,
+    pgn: lastValidMove.san,
     fen: chessBoard.fen(),
-    move: [move.from, move.to],
+    move: [lastValidMove.from, lastValidMove.to],
     clock: [3600, 3600],
     moveList: moveList,
-    moving: move.color === 'w' ? 'home' : 'away'
-  };
+    moving: lastValidMove.color === 'w' ? 'home' : 'away'
+  } : null;
 };
 
 function ObserverLoop(boardId, redis, config) {
@@ -40,7 +48,8 @@ function ObserverLoop(boardId, redis, config) {
   const connection = net.createConnection(config.port, config.host);
 
   let loadingMoveList = false;
-
+  let usingHistoryOnly = false;
+  let gameHasEnded = false;
   let loggedIn = false;
   let observing = null;
   let home = null;
@@ -68,12 +77,16 @@ function ObserverLoop(boardId, redis, config) {
       notPlaying = `${home} is not playing or examining a game.`;
       noHistoryResponse = `${home} has no games record.`;
       connection.write(`unobs\n`);
+      connection.write(`unex\n`);
       connection.write(`obs ${home}\n`);
       gameId = null;
       checkingHistory = false;
       checkedHistory = false;
       queueMoves = null;
       lastMove = 0;
+      loadingMoveList = false;
+      usingHistoryOnly = false;
+      gameHasEnded = false;
     });
   }
 
@@ -105,7 +118,7 @@ function ObserverLoop(boardId, redis, config) {
       console.info('nothing yet');
     } else if (queueMoves !== null) {
       queueMoves.push(boardData);
-    } else if (boardData.id && boardData.id !== lastMove && boardData.pgn) {
+    } else if (boardData.id && boardData.id > lastMove && boardData.pgn) {
       runningMoveList.push(boardData.pgn);
       lastMove = boardData.id;
       redis.rpush(gameHash, JSON.stringify({
@@ -116,7 +129,7 @@ function ObserverLoop(boardId, redis, config) {
           fen: boardData.fen,
           clock: boardData.clock,
           moveList: runningMoveList,
-          moving: boardData.color === 'w' ? 'home' : 'away'
+          moving: boardData.moving
         }
       }));
     }
@@ -124,60 +137,63 @@ function ObserverLoop(boardId, redis, config) {
 
   const parseStaleGameData = (staleGameData, data) => {
     const pgnMoves = (data.match(pgnMovesRegex) || [''])[0];
-    redis.rpush(gameHash, JSON.stringify({
-      type: 'goto',
-      data: {
-        fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-        clock: [3600, 3600],
-        moveList: [],
-        moving: 'home'
-      }
-    }), (err) => {
-      if (err) {
-        console.warn('Error pushing:', gameHash, err);
-      }
 
-      const moveList = [...pgnMoves.matchAll(individualMoveRegex)].map(i => i[1]);
-      const firstQueuedMove = ((queueMoves || [])[0] || []).id || null;
-      for (let i = 0, count = moveList.length; i < count; ++i) {
-        if (firstQueuedMove !== null && i >= firstQueuedMove - 1) {
-          break;
-        }
-        runningMoveList.push(moveList[i]);
+    const moveList = [...pgnMoves.matchAll(individualMoveRegex)].map(i => i[1]);
+    const firstQueuedMove = ((queueMoves || [])[0] || []).id || null;
+    for (let i = 0, count = moveList.length; i < count; ++i) {
+      if (firstQueuedMove !== null && i >= firstQueuedMove - 1) {
+        break;
       }
+      runningMoveList.push(moveList[i]);
+    }
 
-      let queuedMove;
+    let queuedMove;
+    if (queueMoves !== null) {
       while ((queuedMove = queueMoves.shift())) {
         if (queuedMove.pgn) {
           runningMoveList.push(queuedMove.pgn);
         }
       }
+    }
 
-      if (!queuedMove) {
-        queuedMove = buildPosition(runningMoveList);
-      }
+    if (!queuedMove) {
+      queuedMove = buildPosition(runningMoveList);
+      runningMoveList = runningMoveList.slice(0, queuedMove.id);
+    }
 
-      if (queuedMove) {
-        redis.rpush(gameHash, JSON.stringify({
-          type: 'goto',
-          data: {
-            id: queuedMove.id,
-            pgn: queuedMove.pgn,
-            fen: queuedMove.fen,
-            clock: queuedMove.clock,
-            moveList: runningMoveList,
-            moving: queuedMove.moving
-          }
-        }));
-        lastMove = queuedMove.id;
-      }
+    if (queuedMove) {
+      redis.rpush(gameHash, JSON.stringify({
+        type: 'goto',
+        data: {
+          id: queuedMove.id,
+          pgn: queuedMove.pgn,
+          fen: queuedMove.fen,
+          clock: queuedMove.clock,
+          moveList: runningMoveList,
+          moving: queuedMove.moving
+        }
+      }));
+      lastMove = queuedMove.id;
+    }
 
-      loadingMoveList = false;
-      queueMoves = null;
-    });
+    loadingMoveList = false;
+    queueMoves = null;
   };
 
   const parseResultsData = (resultsData, data) => {
+    let winner = null;
+    if (resultsData[6] === '1') {
+      winner = 'home';
+    } else if (resultsData[6] === '0') {
+      winner = 'away';
+    }
+    redis.rpush(gameHash, JSON.stringify({
+      type: 'result',
+      data: {
+        winner: winner
+      }
+    }));
+    gameHasEnded = true;
     console.log('parseResultsData', resultsData, data);
   };
 
@@ -194,6 +210,36 @@ function ObserverLoop(boardId, redis, config) {
   const parseHistoryData = (historyData, data) => {
     checkingHistory = false;
     checkedHistory = true;
+    usingHistoryOnly = true;
+    const probableGame = historyData[0].split('\n').map((row) => {
+      const hasMatch = row.trim().match(historyResultRegex);
+      if (hasMatch && hasMatch[3].toLowerCase() === away) {
+        return hasMatch;
+      }
+      return null;
+    }).filter(i => i !== null)[0];
+    if (probableGame) {
+      loadingMoveList = true;
+      connection.write(`examine ${home} ${probableGame[1]}\n`);
+      process.nextTick(() => {
+        connection.write(`forward 999\n`);
+        process.nextTick(() => {
+          connection.write(`pgn\n`)
+          const waitForHistory = () => {
+            if (loadingMoveList) {
+              return setTimeout(waitForHistory, 100);
+            }
+            redis.rpush(gameHash, JSON.stringify({
+              type: 'result',
+              data: {
+                winner: winnerMap[probableGame[2]]
+              }
+            }));
+          };
+          process.nextTick(waitForHistory);
+        });
+      });
+    }
   };
   const noHistoryData = () => {
     checkingHistory = false;
@@ -202,6 +248,10 @@ function ObserverLoop(boardId, redis, config) {
   }
 
   const clientOn = (buffer) => {
+    if (gameHasEnded) {
+      console.log('Ignored, waiting for a new game to start.');
+    }
+
     const data = buffer.toString().replace(READ_TERMINATE, '');
     const lowerCaseData = data.toLowerCase().trim();
 
@@ -223,7 +273,7 @@ function ObserverLoop(boardId, redis, config) {
     }
 
     const liveGameData = data.match(observeResponseRegex);
-    if (liveGameData !== null) {
+    if (liveGameData !== null && !usingHistoryOnly) {
       return parseLiveGameData(liveGameData, data);
     }
 

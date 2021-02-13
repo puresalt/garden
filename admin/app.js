@@ -37,7 +37,7 @@ const runApp = () => {
 
   app.get('/', (req, res) => {
     if (req.session.isAdmin) {
-      return res.redirect('/admin');
+      return res.redirect('/configuration');
     }
     res.send(mustache.render(fs.readFileSync(path.join(templateFileDirectory, 'index.html.mustache'), 'utf8'), accessConfig));
   });
@@ -83,7 +83,7 @@ const runApp = () => {
                   .send(mustache.render(fs.readFileSync(path.join(templateFileDirectory, 'unauthorized.html.mustache'), 'utf8'), accessConfig));
               }
               req.session.isAdmin = true;
-              res.redirect('/admin');
+              res.redirect('/configuration');
             })
             .catch(err => {
               console.warn(err);
@@ -99,7 +99,6 @@ const runApp = () => {
   });
 
   app.get('*', (req, res) => {
-    req.session.isAdmin = true;
     if (!req.session.isAdmin) {
       res.redirect('/');
     } else {
