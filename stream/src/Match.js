@@ -5,7 +5,7 @@ import TitleBar from './TitleBar';
 import AdUnit from './AdUnit';
 import Pairings from './Pairings';
 import './Match.css';
-import Board from './Board';
+import ScratchBoard from './ScratchBoard';
 
 function Match(props) {
   const {currentBoardNumber, currentMatchId, socket} = props;
@@ -42,6 +42,8 @@ function Match(props) {
     };
   }, [currentMatchId, currentBoardNumber]);
 
+  const large = !!currentBoardNumber;
+
   return (
     <div className="Match">
       <Pairings
@@ -60,7 +62,8 @@ function Match(props) {
         bottomRightText={configurationData.bottomRightText}
       />
       <AdUnit showAdUnit={configurationData.showAdUnit}/>
-      <Webcam showWebcam={configurationData.showWebcam}/>
+      <ScratchBoard showScratchBoard={configurationData.showScratchBoard} large={large}/>
+      <Webcam showWebcam={configurationData.showWebcam} large={large}/>
     </div>
   );
 }

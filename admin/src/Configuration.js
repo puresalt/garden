@@ -91,6 +91,11 @@ function Settings(props) {
                 onChange={(value) => updateConfiguration('showMatchScore', value)}
               />
               <ToggleOption
+                name="Scratch Board Holder"
+                checked={configurationData.showScratchBoard}
+                onChange={(value) => updateConfiguration('showScratchBoard', value)}
+              />
+              <ToggleOption
                 name="Webcam Holder"
                 checked={configurationData.showWebcam}
                 onChange={(value) => updateConfiguration('showWebcam', value)}

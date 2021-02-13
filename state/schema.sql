@@ -3,7 +3,7 @@ CREATE TABLE `usate_team`
 (
     id     INT AUTO_INCREMENT PRIMARY KEY,
     name   VARCHAR(255) NULL,
-    rating INT UNSIGNED NULL
+    rating DECIMAL(4, 2) UNSIGNED NULL
 );
 
 DROP TABLE IF EXISTS `usate_player`;
@@ -33,6 +33,7 @@ CREATE TABLE `usate_configuration`
     id                       INT AUTO_INCREMENT PRIMARY KEY,
     show_programmatic_boards BOOLEAN      NULL,
     show_match_score         BOOLEAN      NULL,
+    show_scratch_board       BOOLEAN      NULL,
     show_webcam              BOOLEAN      NULL,
     show_ad_unit             BOOLEAN      NULL,
     bottom_left_text         VARCHAR(255) NULL,

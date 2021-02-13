@@ -3,13 +3,14 @@ function configurationRoute(db, redis, socketWrapper) {
     db.query(`UPDATE usate_configuration
               SET show_programmatic_boards = ?,
                   show_match_score         = ?,
+                  show_scratch_board       = ?,
                   show_webcam              = ?,
                   show_ad_unit             = ?,
                   bottom_left_text         = ?,
                   bottom_middle_text       = ?,
                   bottom_right_text        = ?
               WHERE id = 1;`,
-      [data.showProgrammaticBoards, data.showMatchScore, data.showWebcam, data.showAdUnit, data.bottomLeftText, data.bottomMiddleText, data.bottomRightText],
+      [data.showProgrammaticBoards, data.showMatchScore, data.showScratchBoard, data.showWebcam, data.showAdUnit, data.bottomLeftText, data.bottomMiddleText, data.bottomRightText],
       (err, result) => {
         if (err) {
           console.error('Error updating:', result, err);
@@ -23,6 +24,7 @@ function configurationRoute(db, redis, socketWrapper) {
   function loadConfiguration(global) {
     db.query(`SELECT show_programmatic_boards AS showProgrammaticBoards,
                      show_match_score         AS showMatchScore,
+                     show_scratch_board       AS showScratchBoard,
                      show_webcam              AS showWebcam,
                      show_ad_unit             AS showAdUnit,
                      bottom_left_text         AS bottomLeftText,
@@ -41,6 +43,9 @@ function configurationRoute(db, redis, socketWrapper) {
         : null;
       returnData.showMatchScore = returnData.showMatchScore !== null
         ? !!returnData.showMatchScore
+        : null;
+      returnData.showScratchBoard = returnData.showScratchBoard !== null
+        ? !!returnData.showScratchBoard
         : null;
       returnData.showWebcam = returnData.showWebcam !== null
         ? !!returnData.showWebcam

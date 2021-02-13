@@ -1,0 +1,27 @@
+.ScratchBoard {
+    background: #006747;
+    border-radius: 1em 0 0 1em;
+    border-bottom: 0;
+    height: 524px;
+    opacity: 5.75;
+    position: absolute;
+    top: 258px;
+    width: 524px;
+    left: 1396px;
+}
+
+.ScratchBoard .scratchBoard-placeholder {
+    background: #800;
+    position: absolute;
+    top: 7px;
+    left: 7px;
+    height: 510px;
+    width: 510px;
+}
+
+.ScratchBoard.Large {
+    top: 118px;
+    height: 664px;
+    left: 1256px;
+    width: 664px;
+}
