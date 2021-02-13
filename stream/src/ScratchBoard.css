@@ -25,3 +25,8 @@
     left: 1256px;
     width: 664px;
 }
+
+.ScratchBoard .scratchBoard-placeholder {
+    height: 650px;
+    width: 650px;
+}
