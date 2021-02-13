@@ -48,6 +48,7 @@ function ObserverLoop(boardId, redis, config) {
 
   const connection = net.createConnection(config.port, config.host);
 
+  let gameIdWaitedFor = null;
   let loadingMoveList = false;
   let usingHistoryOnly = false;
   let gameHasEnded = false;
@@ -88,6 +89,7 @@ function ObserverLoop(boardId, redis, config) {
       loadingMoveList = false;
       usingHistoryOnly = false;
       gameHasEnded = false;
+      gameIdWaitedFor = null;
     });
   }
 
@@ -238,12 +240,13 @@ function ObserverLoop(boardId, redis, config) {
             process.nextTick(() => {
               connection.write(`forward 999\n`);
               process.nextTick(() => {
-                connection.write(`pgn\n`)
+                connection.write(`pgn\n`);
+                gameIdWaitedFor = false;
                 const waitForHistory = () => {
-                  if (`${home}:${probableGame[1][1]}` !== gameId) {
+                  if (gameIdWaitedFor === null || gameIdWaitedFor !== gameId) {
                     return;
                   }
-                  if (loadingMoveList) {
+                  if (!gameIdWaitedFor || loadingMoveList) {
                     return setTimeout(waitForHistory, 100);
                   }
                   gameHasEnded = true;
@@ -269,6 +272,7 @@ function ObserverLoop(boardId, redis, config) {
                       winner: winnerMap[probableGame[1][2]]
                     }
                   }));
+                  gameIdWaitedFor = null;
                 };
                 process.nextTick(waitForHistory);
               });
@@ -294,6 +298,7 @@ function ObserverLoop(boardId, redis, config) {
 
     const newGameId = data.match(newGameIdRegex);
     if (newGameId !== null) {
+      gameIdWaitedFor = newGameId[1];
       gameId = newGameId[1];
       return;
     }
