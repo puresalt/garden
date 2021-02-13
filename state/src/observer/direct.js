@@ -231,54 +231,64 @@ function ObserverLoop(boardId, redis, config) {
           console.warn('Error deleting:', gameHash, err);
         }
         redis.del(`usate:viewer:game:${boardId}`, (err) => {
-          if (err) {
-            console.warn('Error setting:', gameId, err);
-          }
-          gameId = `${home}:${probableGame[1][1]}`;
-          connection.write(`examine ${home} ${probableGame[0]}\n`);
-          redis.set(`usate:viewer:game:${boardId}:id`, gameId, (err) => {
-            process.nextTick(() => {
-              connection.write(`forward 999\n`);
-              process.nextTick(() => {
-                connection.write(`pgn\n`);
-                gameIdWaitedFor = false;
-                const waitForHistory = () => {
-                  if (gameIdWaitedFor === null || gameIdWaitedFor !== gameId) {
-                    return;
-                  }
-                  if (!gameIdWaitedFor || loadingMoveList) {
-                    return setTimeout(waitForHistory, 100);
-                  }
-                  gameHasEnded = true;
-                  const queuedMove = buildPosition(runningMoveList);
-
-                  if (queuedMove) {
-                    runningMoveList = runningMoveList.slice(0, queuedMove.id);
-                    redis.rpush(gameHash, JSON.stringify({
-                      type: 'goto',
-                      data: {
-                        id: queuedMove.id,
-                        pgn: queuedMove.pgn,
-                        fen: queuedMove.fen,
-                        clock: queuedMove.clock,
-                        moveList: runningMoveList,
-                        moving: queuedMove.moving
+            if (err) {
+              console.warn('Error setting:', gameId, err);
+            }
+            gameId = `${home}:${probableGame[1][1]}`;
+            connection.write(`examine ${home} ${probableGame[0]}\n`);
+            gameIdWaitedFor = false;
+            const waitForPgn = () => {
+              if (gameIdWaitedFor === null || (!gameIdWaitedFor && gameIdWaitedFor !== gameId)) {
+                return;
+              }
+              if (!gameIdWaitedFor) {
+                return setTimeout(waitForPgn, 100);
+              }
+              redis.set(`usate:viewer:game:${boardId}:id`, gameId, (err) => {
+                if (gameIdWaitedFor === null || (!gameIdWaitedFor && gameIdWaitedFor !== gameId)) {
+                  return;
+                }
+                process.nextTick(() => {
+                  connection.write(`forward 999\n`);
+                  process.nextTick(() => {
+                    connection.write(`pgn\n`);
+                    const waitForHistory = () => {
+                      if (!gameIdWaitedFor || loadingMoveList) {
+                        return setTimeout(waitForHistory, 100);
                       }
-                    }));
-                  }
-                  redis.rpush(gameHash, JSON.stringify({
-                    type: 'result',
-                    data: {
-                      winner: winnerMap[probableGame[1][2]]
-                    }
-                  }));
-                  gameIdWaitedFor = null;
-                };
-                process.nextTick(waitForHistory);
+                      gameHasEnded = true;
+                      const queuedMove = buildPosition(runningMoveList);
+
+                      if (queuedMove) {
+                        runningMoveList = runningMoveList.slice(0, queuedMove.id);
+                        redis.rpush(gameHash, JSON.stringify({
+                          type: 'goto',
+                          data: {
+                            id: queuedMove.id,
+                            pgn: queuedMove.pgn,
+                            fen: queuedMove.fen,
+                            clock: queuedMove.clock,
+                            moveList: runningMoveList,
+                            moving: queuedMove.moving
+                          }
+                        }));
+                      }
+                      redis.rpush(gameHash, JSON.stringify({
+                        type: 'result',
+                        data: {
+                          winner: winnerMap[probableGame[1][2]]
+                        }
+                      }));
+                      gameIdWaitedFor = null;
+                    };
+                    process.nextTick(waitForHistory);
+                  });
+                });
               });
-            });
-          });
-        });
+            };
+            waitForPgn();
+          }
+        );
       });
     }
   };
