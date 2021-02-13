@@ -3,6 +3,6 @@
     "redirectUrl": "https://usate.passers.gg/callback"
   },
   "socketIo": {
-    "url": "https://127.0.0.1:5003"
+    "url": "https://state.usate.passers.gg"
   }
 }
