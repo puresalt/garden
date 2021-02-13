@@ -23,6 +23,9 @@ function Board(props) {
     homeColor = 'black';
     awayColor = 'white';
   }
+  if (!showProgrammaticBoards) {
+    boardSize += ' not-automatic';
+  }
 
   return (
     <div className={'Board' + boardSize} key={board}

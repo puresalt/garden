@@ -62,7 +62,7 @@ function Match(props) {
         bottomMiddleText={configurationData.bottomMiddleText}
         bottomRightText={configurationData.bottomRightText}
       />
-      <AdUnit showAdUnit={configurationData.showAdUnit}/>
+      <AdUnit showAdUnit={configurationData.showAdUnit} small={small}/>
       <ScratchBoard showScratchBoard={configurationData.showScratchBoard} large={large}/>
       <Webcam showWebcam={configurationData.showWebcam} large={large}/>
     </div>
