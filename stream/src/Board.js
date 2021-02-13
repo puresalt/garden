@@ -33,7 +33,7 @@ function Board(props) {
       <header>
         <span>Board <OrDefault value={board}/><span>:</span></span>
         <div className="board-header-home">
-          <div class={`${homeColor}-square`}/>
+          <div className={`${homeColor}-square`}/>
           <OrDefault value={home.name}/> <em><OrDefault value={home.rating}/></em>
         </div>
         <div className="board-header-away">
