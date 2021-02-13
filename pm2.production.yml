@@ -13,7 +13,7 @@
 #
 
 apps:
-  - script: 243
+  - script: node ./admin/app.js
     name: 'usate:admin'
     env:
       NODE_ENV: production
