@@ -22,3 +22,7 @@
 .Webcam .webcam-placeholder:nth-child(2) {
     left: 266px;
 }
+
+.Small .Webcam {
+    opacity: 0.5;
+}

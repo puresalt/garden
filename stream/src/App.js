@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Route, Switch, useParams } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Route, Switch, useParams, useLocation } from 'react-router-dom';
 import socketIoClient from 'socket.io-client';
 import { Config } from 'garden-common';
 import Match from './Match';
@@ -13,7 +13,7 @@ function App() {
   return (
     <Router>
       <Switch>
-        <Route path={['/board/:boardNumber', '/']}>
+        <Route path={['/board/:boardNumber', '/small', '/']}>
           <ParseRoute/>
         </Route>
       </Switch>
@@ -23,11 +23,13 @@ function App() {
 
 function ParseRoute() {
   const {boardNumber} = useParams();
+  const small = useLocation().pathname === '/small';
   const requestedBoardNumber = boardNumber
     ? parseInt(boardNumber)
     : null;
   return <Match
     currentBoardNumber={requestedBoardNumber}
+    small={small}
     socket={socket}
   />;
 }

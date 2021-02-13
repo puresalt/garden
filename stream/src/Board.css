@@ -246,7 +246,7 @@
     width: 10px;
     height: 21px;
     display: block;
-    float:left;
+    float: left;
     position: relative;
     top: 3px;
     left: -4px;
@@ -266,4 +266,49 @@
     margin-right: 16px;
     margin-left: 0px;
     top: 0;
+}
+
+.Board.Small {
+    opacity: 0.8;
+    border-radius: 0.5em;
+    height: 240px;
+    width: 240px;
+    border: solid 4px #006747;
+}
+
+.Board.Small .board {
+    top: 0;
+}
+
+.Board.Small header {
+    border-radius: 0 0 0.5em 0;
+    padding: 0.25em;
+    line-height: 14px;
+    height: 24px;
+    position: absolute;
+    opacity: 0.5;
+    z-index: 100;
+}
+
+.Board.Small .eventData {
+    display: none;
+}
+
+.Board.Small .board-header-home,
+.Board.Small .board-header-away,
+.Board.Small span span {
+    display: none;
+}
+
+#board-2.Small {
+    left: 7px; top: 262px;
+}
+
+#board-3.Small {
+    left: 7px; top: 517px;
+}
+
+
+#board-4.Small {
+    left: 7px; top: 771px;
 }

@@ -8,7 +8,7 @@ import './Match.css';
 import ScratchBoard from './ScratchBoard';
 
 function Match(props) {
-  const {currentBoardNumber, currentMatchId, socket} = props;
+  const {currentBoardNumber, currentMatchId, small, socket} = props;
 
   const [awayTeamName, setAwayTeamName] = useState('');
   const [homeTeamName, setHomeTeamName] = useState('');
@@ -45,11 +45,12 @@ function Match(props) {
   const large = !!currentBoardNumber;
 
   return (
-    <div className="Match">
+    <div className={`Match${small ? ' Small' : ''}`}>
       <Pairings
         pairings={pairingList}
         showProgrammaticBoards={configurationData.showProgrammaticBoards}
         currentBoardNumber={currentBoardNumber}
+        small={small}
         socket={socket}
       />
       {configurationData.showMatchScore ? <Score

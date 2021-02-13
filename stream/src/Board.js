@@ -4,12 +4,18 @@ import Chessboard from 'garden-common/react/Chessboard';
 import './Board.css';
 
 function Board(props) {
-  const {board, pairing, showProgrammaticBoards, large, socket} = props;
+  const {board, pairing, showProgrammaticBoards, large, socket, small} = props;
   const {home, away, result} = pairing;
 
-  const size = large
-    ? 970
-    : 480;
+  let boardSize = '';
+  let size = 480;
+  if (large) {
+    boardSize = ' Large';
+    size = 970;
+  } else if (small) {
+    boardSize = ' Small';
+    size = 240;
+  }
 
   let homeColor = 'white';
   let awayColor = 'black';
@@ -19,10 +25,10 @@ function Board(props) {
   }
 
   return (
-    <div className={'Board' + (large ? ' Large' : '')} key={board}
+    <div className={'Board' + boardSize} key={board}
          id={'board-' + board}>
       <header>
-        <span>Board <OrDefault value={board} />:</span>
+        <span>Board <OrDefault value={board}/><span>:</span></span>
         <div className="board-header-home">
           <div class={`${homeColor}-square`}/>
           <OrDefault value={home.name}/> <em><OrDefault value={home.rating}/></em>

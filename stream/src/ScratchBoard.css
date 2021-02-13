@@ -30,3 +30,7 @@
     height: 650px;
     width: 650px;
 }
+
+.Small .ScratchBoard {
+    opacity: 0.5;
+}

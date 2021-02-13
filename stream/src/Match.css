@@ -6,7 +6,6 @@
 }
 
 html, body {
-    background: url(./background.png) center no-repeat;
     width: 1920px;
     height: 1080px;
     overflow: hidden;
@@ -22,9 +21,14 @@ em {
 }
 
 .Match {
+    background: url(./background.png) center no-repeat;
     position: absolute;
     width: 1920px;
     height: 1080px;
+}
+
+.Match.Small {
+    background: transparent;
 }
 
 .MatchResultBar,
