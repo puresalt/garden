@@ -17,6 +17,7 @@ function Router(db, redis, config) {
 
   const server = http.createServer(app);
   const io = socketIo(server, {
+    cors: false,
     path: '/admin'
   });
   if (config.socketIo.allowedOrigins) {
