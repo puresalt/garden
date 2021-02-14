@@ -6,7 +6,6 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
   let closed = false;
   let viewing = false;
   let lastEventId = 0;
-  let currentGameId = 0;
   const startGame = (newLastEventId, finished) => {
     if (newLastEventId) {
       lastEventId = newLastEventId;
@@ -17,15 +16,12 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
         return finished('Closed');
       }
       redis.get(`usate:viewer:game:${boardId}:id`, (err, gameId) => {
-        if (!currentGameId) {
-          currentGameId = gameId;
-        }
-        if (err || !gameId || gameId !== currentGameId) {
+        if (err) {
           return finished(err);
         }
         redis.lrange(gameHash, lastEventId, -1, (err, result) => {
           if (err) {
-            return console.error('Error getting events:', boardId, err);
+            return finished(err);
           }
 
           const eventList = result.map(JSON.parse);
@@ -34,6 +30,9 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
           }
 
           const makeNextEvent = (nextEventId) => {
+            if (closed) {
+              return finished('Closed');
+            }
             const currentEvent = eventList[nextEventId];
             if (!currentEvent) {
               return setTimeout(() => getGameEvents(), 250);
@@ -50,10 +49,10 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
   };
 
   function stopSession() {
-    viewing = false;
+    closed = false;
   }
 
-  function readySession(notFirstRun) {
+  function readySession() {
     if (viewing || closed) {
       return;
     }
@@ -66,28 +65,12 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
         moving: 'home'
       }
     });
-    if (notFirstRun) {
-      return startGame(0, (err) => {
-        if (err) {
-          console.warn('Error starting viewer game:', boardId, err);
-          if (closed) {
-            return;
-          }
-        }
-        currentGameId = 0;
-        lastEventId = 0;
-        viewing = false;
-        setTimeout(() => readySession(true), 1000);
-      });
-    }
     redis.lrange(gameHash, 0, -1, (err, eventList) => {
-      console.log('why?');
       if (err) {
         return console.warn('Error catching up or nothing in the list to catch up to:', boardId, eventList, err);
       }
 
       lastEventId = eventList.length;
-      const parsedEventList = [];
       let currentEventId;
       let currentEvent;
       let resultEvent;
@@ -96,8 +79,6 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
         if (currentEvent && currentEvent.type) {
           if (currentEvent.type === 'goto' || currentEvent.type === 'start') {
             break;
-          } else if (currentEvent.type === 'move') {
-            parsedEventList.unshift(currentEvent);
           } else if (currentEvent.type === 'result') {
             resultEvent = currentEvent;
           }
@@ -108,43 +89,12 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
         return setTimeout(readySession, 1000);
       }
 
-      const moveList = currentEvent.data.moveList || [];
-
-      let lastMove = null;
-      let lastClock = currentEvent.data.clock;
-      const chessBoard = new ChessBoard(currentEvent.fen);
-      for (let i = 0, count = parsedEventList.length; i < count; ++i) {
-        lastMove = chessBoard.move(parsedEventList[i].data.pgn);
-        if (lastMove && parsedEventList[i].data.id > moveList.length) {
-          moveList.push(lastMove.san);
-        } else {
-        }
-        lastClock = parsedEventList[i].data.clock;
-      }
-      if (lastMove) {
-        socketWrapper.emit(`viewer:board:${boardId}`, {
-          type: 'goto',
-          data: {
-            fen: chessBoard.fen(),
-            clock: lastClock,
-            moveList: moveList,
-            moving: lastMove.move === 'w' ? 'home' : 'away'
-          }
-        });
-      }
-
-      if (resultEvent) {
-        socketWrapper.emit(`viewer:board:${boardId}`, resultEvent);
-      }
-
       startGame(currentEventId, (err) => {
         if (err) {
           console.warn('Error starting viewer game:', boardId, err);
         }
-        currentGameId = 0;
-        lastEventId = 0;
         viewing = false;
-        setTimeout(() => readySession(true), 1000);
+        setTimeout(() => startGame(), 1000);
       });
     });
   }
