@@ -161,7 +161,7 @@ function ObserverLoop(connection, boardId, redis) {
     currentCommand = 'findHistory';
     searchingHistoryFor = historyFor;
     emptyGameHistoryRegex = new RegExp(`${searchingHistoryFor} has no games record.`, 'i');
-    process.nextTick(() => sendCommand('history', historyFor);
+    process.nextTick(() => sendCommand('history', historyFor));
   }
 
   const individualGameHistoryRegex = /([0-9]+): [-+=] [0-9]+ [B|W] [0-9]+ ([a-zA-Z0-9_-]+)\s+\[/g;

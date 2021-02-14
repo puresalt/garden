@@ -9,7 +9,7 @@
     "secret": "usate"
   },
   "socketIo": {
-    "url": "http://127.0.0.1:5003"
+    "url": "https://state.usate.passers.gg"
   },
   "state": {
     "mysql": {
