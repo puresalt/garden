@@ -333,14 +333,14 @@ function ObserverLoop(boardId, redis, config) {
       return parseResultsData(resultsData, data);
     }
 
-    const liveGameData = data.match(observeResponseRegex);
-    if (liveGameData !== null && !usingHistoryOnly) {
-      return parseLiveGameData(liveGameData, data);
-    }
-
     const staleGameData = data.match(pgnResponseRegex);
     if (staleGameData !== null) {
       return parseStaleGameData(staleGameData, data);
+    }
+
+    const liveGameData = data.match(observeResponseRegex);
+    if (liveGameData !== null && !usingHistoryOnly) {
+      return parseLiveGameData(liveGameData, data);
     }
 
     const historyData = data.match(historyResponseRegex);

@@ -4,7 +4,7 @@ const config = common.Config(process.env, require(path.join(__dirname, '../commo
 const redis = require('redis');
 
 const observerLoop = parseInt(process.env.DIRECT_QUEUE) === 1
-  ? require('./src/observer/direct')
+  ? require('./src/observer/directQueue')
   : require('./src/observer');
 
 const client = redis.createClient();
