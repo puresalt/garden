@@ -175,7 +175,7 @@ function ObserverLoop(connection, boardId, redis) {
         : white;
       if (historyList.length) {
         const probableGame = historyList.map((row, i) => {
-          return against.indexOf(row[2].toLowerCase())
+          return against.indexOf(row[2].toLowerCase()) > -1
             ? row[1]
             : null;
         }).filter(i => i !== null)[0];

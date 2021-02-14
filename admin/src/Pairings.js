@@ -82,10 +82,10 @@ function Pairing(props) {
 function MatchUp(props) {
   const {board, home, away} = props;
 
-  const homePlayer = <>{home.name || home.handle || 'Someone Unnamed'}
-    <em>({home.rating || '???'})</em></>;
-  const awayPlayer = <>{away.name || away.handle || 'Someone Unnamed'}
-    <em>({away.rating || '???'})</em></>;
+  const homePlayer = <>{(home && (home.name || home.handle)) || 'Someone Unnamed'}
+    <em>({(home && home.rating) || '???'})</em></>;
+  const awayPlayer = <>{(away && (away.name || away.handle)) || 'Someone Unnamed'}
+    <em>({(away && away.rating) || '???'})</em></>;
 
   let homeColor;
   let awayColor;
