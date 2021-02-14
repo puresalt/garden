@@ -90,6 +90,9 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
       }
 
       const loop = (err) => {
+        if (err === 'Closed') {
+          return;
+        }
         if (err) {
           console.warn('Error starting viewer game:', boardId, err);
         }
