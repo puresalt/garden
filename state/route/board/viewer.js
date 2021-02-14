@@ -7,7 +7,7 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
   let viewing = false;
   let lastEventId = 0;
   const startGame = (newLastEventId, finished) => {
-    if (newLastEventId) {
+    if (newLastEventId !== null) {
       lastEventId = newLastEventId;
     }
     viewing = true;
@@ -94,7 +94,7 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
           console.warn('Error starting viewer game:', boardId, err);
         }
         viewing = false;
-        setTimeout(() => loop(), 1000);
+        setTimeout(() => startGame(null, loop), 1000);
       };
       startGame(currentEventId, loop);
     });
