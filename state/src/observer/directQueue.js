@@ -55,7 +55,7 @@ function ObserverLoop(connection, boardId, redis) {
   };
 
   const clearGameHistory = (callback) => {
-    console.log('clearing history');
+    console.log('clearing history to look for:', white, black);
     pushPosition({
       fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
       clock: [3600, 3600],
@@ -92,6 +92,7 @@ function ObserverLoop(connection, boardId, redis) {
     currentCommand = 'observeGame';
     hopefullyGameId = gameId;
     runningMoves = null;
+    console.log(`observe ${gameId}`);
     connection.write(`observe ${gameId}\n`);
   }
 
@@ -135,6 +136,7 @@ function ObserverLoop(connection, boardId, redis) {
             if (boardDataId) {
               runningMoves[boardData.id - 1] = boardData.pgn;
             }
+            console.info(`pgn ${hopefullyGameId}`);
             connection.write(`pgn ${hopefullyGameId}\n`);
           } else if (boardDataId) {
             runningMoves.push(boardData.pgn);
@@ -156,7 +158,10 @@ function ObserverLoop(connection, boardId, redis) {
     currentCommand = 'findHistory';
     searchingHistoryFor = historyFor;
     emptyGameHistoryRegex = new RegExp(`${searchingHistoryFor} has no games record.`, 'i');
-    process.nextTick(() => connection.write(`history ${historyFor}\n`));
+    process.nextTick(() => {
+      console.info(`history ${historyFor}`);
+      connection.write(`history ${historyFor}\n`);
+    });
   }
 
   const individualGameHistoryRegex = /([0-9]+): [-+=] [0-9]+ [B|W] [0-9]+ ([a-zA-Z0-9_-]+)\s+\[/g;
@@ -190,7 +195,10 @@ function ObserverLoop(connection, boardId, redis) {
     currentCommand = 'findGames';
     foundGame = null;
     gameListRegex = new RegExp(`([0-9]+)[ ]+[0-9]+[ ]+${white}[a-zA-Z0-9() ]+${black}[a-zA-Z0-9() ]+[a-zA-Z]+[ ]+[0-9]+[ ]+[0-9]+[ ]+[W|B]:[ ]+[0-9]+`, 'i');
-    clearGameHistory(() => connection.write(`games\n`));
+    clearGameHistory(() => {
+      console.info(`games`);
+      connection.write(`games\n`);
+    });
   }
 
 
@@ -213,11 +221,19 @@ function ObserverLoop(connection, boardId, redis) {
   const noGameFoundRegex = /([a-zA-Z0-9_-]+) has no game numbered [0-9]+/i;
 
   let moveListData = null;
-
-  function getSmoves(player, index) {
+  let smovesPlayer = null;
+  let smovesIndex = null;
+  let smovesWaiting = 0;
+  function getSmoves(player, index, incomingSmovesWaiting) {
     currentCommand = 'smoves';
     moveListData = '';
-    process.nextTick(() => connection.write(`smoves ${player} ${index}\n`));
+    smovesPlayer = player;
+    smovesIndex = index;
+    smovesWaiting = incomingSmovesWaiting || 0;
+    process.nextTick(() => {
+      console.info(`smoves ${player} ${index}`);
+      connection.write(`smoves ${player} ${index}\n`);
+    });
   }
 
   function smovesObserver(data) {
@@ -229,6 +245,20 @@ function ObserverLoop(connection, boardId, redis) {
 
     moveListData += data;
     if (data.indexOf(END_OF_COMMAND) > -1) {
+      if(data.indexOf('Game database temporarily unavailable.') > -1) {
+        if (smovesWaiting > 15) {
+          console.warn('Giving up on:', smovesPlayer, smovesIndex);
+          noGameFound = true;
+          currentCommand = null;
+          smovesPlayer = null;
+          smovesIndex = null;
+          smovesWaiting = 0;
+          return
+	}
+        return setTimeout(() => {
+          getSmoves(smovesPlayer, smovesIndex, smovesWaiting + 1);
+	}, 500);
+      }
       const foundMoves = moveListData.matchAll(smovesListRegex);
       if (!foundMoves) {
         noGameFound = true;
@@ -238,6 +268,9 @@ function ObserverLoop(connection, boardId, redis) {
         pushPosition(finalPosition, (err) => {
           noGameFound = false;
           currentCommand = null;
+          smovesPlayer = null;
+          smovesIndex = null;
+          smovesWaiting = 0;
           console.log('Finished storing game:', observing);
         });
       }
@@ -251,6 +284,7 @@ function ObserverLoop(connection, boardId, redis) {
     observeGame: gameObserver
   };
   connection.on('data', (data) => {
+	  console.log(data.toString());
     if (observing === null || noGameFound) {
       return console.info('Nothing to observe');
     }
