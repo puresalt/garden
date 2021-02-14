@@ -231,7 +231,7 @@ export default class Chessground extends React.PureComponent {
     this.setState({
       moving: data.moving || 'home',
       moveList: moveList,
-      pauseClocks: moveList.length === 0,
+      pauseClocks: data.pauseClocks || moveList.length === 0,
       pausePosition: false,
       currentMove: data.id || moveList.length,
       orientation: orientation
