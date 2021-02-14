@@ -41,6 +41,11 @@ const buildPosition = (moveList) => {
 };
 
 function ObserverLoop(connection, boardId, redis) {
+  const sendCommand = (command, ...attributes) => {
+    const sending = [command, attributes.join(' ')].join(' ');
+    console.info('CMD:', sending);
+    connection.write(`${sending}\n`);
+  };
   const boardHash = `usate:viewer:game:${boardId}`;
   const pushPosition = (position, callback) => {
     redis.rpush(boardHash, JSON.stringify({
@@ -92,8 +97,7 @@ function ObserverLoop(connection, boardId, redis) {
     currentCommand = 'observeGame';
     hopefullyGameId = gameId;
     runningMoves = null;
-    console.log(`observe ${gameId}`);
-    connection.write(`observe ${gameId}\n`);
+    sendCommand('observe', gameId);
   }
 
   const liveGameRegex = /Game ([0-9]+) \([a-zA-Z0-9_()-]+ vs\. [a-zA-Z0-9_()-]+\)/;
@@ -136,8 +140,7 @@ function ObserverLoop(connection, boardId, redis) {
             if (boardDataId) {
               runningMoves[boardData.id - 1] = boardData.pgn;
             }
-            console.info(`pgn ${hopefullyGameId}`);
-            connection.write(`pgn ${hopefullyGameId}\n`);
+            sendCommand('pgn', hopefullyGameId);
           } else if (boardDataId) {
             runningMoves.push(boardData.pgn);
             pushPosition({...boardData, moveList: runningMoves});
@@ -158,10 +161,7 @@ function ObserverLoop(connection, boardId, redis) {
     currentCommand = 'findHistory';
     searchingHistoryFor = historyFor;
     emptyGameHistoryRegex = new RegExp(`${searchingHistoryFor} has no games record.`, 'i');
-    process.nextTick(() => {
-      console.info(`history ${historyFor}`);
-      connection.write(`history ${historyFor}\n`);
-    });
+    process.nextTick(() => sendCommand('history', historyFor);
   }
 
   const individualGameHistoryRegex = /([0-9]+): [-+=] [0-9]+ [B|W] [0-9]+ ([a-zA-Z0-9_-]+)\s+\[/g;
@@ -195,10 +195,7 @@ function ObserverLoop(connection, boardId, redis) {
     currentCommand = 'findGames';
     foundGame = null;
     gameListRegex = new RegExp(`([0-9]+)[ ]+[0-9]+[ ]+${white}[a-zA-Z0-9() ]+${black}[a-zA-Z0-9() ]+[a-zA-Z]+[ ]+[0-9]+[ ]+[0-9]+[ ]+[W|B]:[ ]+[0-9]+`, 'i');
-    clearGameHistory(() => {
-      console.info(`games`);
-      connection.write(`games\n`);
-    });
+    clearGameHistory(() => sendCommand(`games`));
   }
 
 
@@ -230,10 +227,7 @@ function ObserverLoop(connection, boardId, redis) {
     smovesPlayer = player;
     smovesIndex = index;
     smovesWaiting = incomingSmovesWaiting || 0;
-    process.nextTick(() => {
-      console.info(`smoves ${player} ${index}`);
-      connection.write(`smoves ${player} ${index}\n`);
-    });
+    process.nextTick(() => sendCommand('smoves', player, index));
   }
 
   function smovesObserver(data) {
