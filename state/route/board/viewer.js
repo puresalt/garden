@@ -89,13 +89,14 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
         return setTimeout(readySession, 1000);
       }
 
-      startGame(currentEventId, (err) => {
+      const loop = (err) => {
         if (err) {
           console.warn('Error starting viewer game:', boardId, err);
         }
         viewing = false;
-        setTimeout(() => startGame(), 1000);
-      });
+        setTimeout(() => loop(), 1000);
+      };
+      startGame(currentEventId, loop);
     });
   }
 
