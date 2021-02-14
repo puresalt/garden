@@ -65,7 +65,8 @@ function ObserverLoop(connection, boardId, redis) {
       fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
       clock: [3600, 3600],
       moveList: [],
-      moving: 'home'
+      moving: 'home',
+      pauseClocks: true
     }, callback);
   };
 
@@ -113,6 +114,10 @@ function ObserverLoop(connection, boardId, redis) {
     if (data.indexOf('There is no such game.') === -1) {
       if (isGameOver(data)) {
         currentCommand = null;
+        if (runningMoves[runningMoves.length - 1]) {
+
+        }
+        pushPosition({...runningMoves[runningMoves.length - 1], pauseClocks: true});
         console.log('Finished storing live game:', observing);
       } else if (isPgn(data)) {
         const pgnMoves = (data.match(pgnMovesRegex) || [''])[0];
@@ -221,6 +226,7 @@ function ObserverLoop(connection, boardId, redis) {
   let smovesPlayer = null;
   let smovesIndex = null;
   let smovesWaiting = 0;
+
   function getSmoves(player, index, incomingSmovesWaiting) {
     currentCommand = 'smoves';
     moveListData = '';
@@ -239,7 +245,7 @@ function ObserverLoop(connection, boardId, redis) {
 
     moveListData += data;
     if (data.indexOf(END_OF_COMMAND) > -1) {
-      if(data.indexOf('Game database temporarily unavailable.') > -1) {
+      if (data.indexOf('Game database temporarily unavailable.') > -1) {
         if (smovesWaiting > 15) {
           console.warn('Giving up on:', smovesPlayer, smovesIndex);
           noGameFound = true;
@@ -248,10 +254,10 @@ function ObserverLoop(connection, boardId, redis) {
           smovesIndex = null;
           smovesWaiting = 0;
           return
-	}
+        }
         return setTimeout(() => {
           getSmoves(smovesPlayer, smovesIndex, smovesWaiting + 1);
-	}, 500);
+        }, 500);
       }
       const foundMoves = moveListData.matchAll(smovesListRegex);
       if (!foundMoves) {
@@ -259,7 +265,7 @@ function ObserverLoop(connection, boardId, redis) {
       }
       const finalPosition = buildPosition([...foundMoves].map(i => [i[1], i[2]]));
       if (finalPosition) {
-        pushPosition(finalPosition, (err) => {
+        pushPosition({...finalPosition, pauseClocks: true}, (err) => {
           noGameFound = false;
           currentCommand = null;
           smovesPlayer = null;
@@ -278,7 +284,7 @@ function ObserverLoop(connection, boardId, redis) {
     observeGame: gameObserver
   };
   connection.on('data', (data) => {
-	  console.log(data.toString());
+    console.log(data.toString());
     if (observing === null || noGameFound) {
       return console.info('Nothing to observe');
     }

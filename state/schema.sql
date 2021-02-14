@@ -27,18 +27,3 @@ CREATE TABLE `usate_pairing`
     UNIQUE INDEX (away_id)
 );
 
-DROP TABLE IF EXISTS `usate_configuration`;
-CREATE TABLE `usate_configuration`
-(
-    id                       INT AUTO_INCREMENT PRIMARY KEY,
-    show_programmatic_boards BOOLEAN      NULL,
-    show_match_score         BOOLEAN      NULL,
-    show_scratch_board       BOOLEAN      NULL,
-    show_webcam              BOOLEAN      NULL,
-    show_ad_unit             BOOLEAN      NULL,
-    bottom_left_text         VARCHAR(255) NULL,
-    bottom_middle_text       VARCHAR(255) NULL,
-    bottom_right_text        VARCHAR(255) NULL
-);
-INSERT INTO `usate_configuration`
-VALUES (1, 1, 1, 1, 0, 1, 'Day 1', 'US Amateur Team East', 'Hosts: IM Tom Bartell & Dan Smith');
