@@ -10,6 +10,7 @@ function Config(environment, runtimeConfig) {
     : {};
 
   return _.defaultsDeep(
+    {},
     processConfig,
     runtimeConfig || {},
     environmentConfig,

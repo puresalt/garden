@@ -5,7 +5,7 @@ const express = require('express');
 const socketIo = require('socket.io');
 
 const routes = [
-  require('./route/configuration'),
+  require('./route/settings'),
   require('./route/pairing'),
   require('./route/stream')
 ];

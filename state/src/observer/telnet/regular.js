@@ -1,95 +1,26 @@
-const net = require('net');
-const ChessBoard = require('chess.js').Chess;
-const parseLiveBoard = require('../parse/liveBoard');
+const ObserverUtility = require('../utility');
+const parseLiveBoard = require('./parseLiveBoard');
+const {buildPosition} = require('../../utility');
 
-const END_OF_COMMAND = 'aics%';
-
-const convertToSeconds = (raw) => {
-  const clock = raw.split(':').map(i => i.trim());
-  const fragments = clock.map(i => parseInt(i.trim()));
-  let seconds = fragments.pop();
-  let minutes = (fragments.pop() || 0) * 60;
-  let hours = (fragments.pop() || 0) * 60 * 60;
-  return seconds + minutes + hours;
-};
-
-const buildPosition = (moveList) => {
-  const chessBoard = new ChessBoard();
-  let move;
-  let lastValidMove;
-  const clock = [3600, 3600];
-  const moves = [];
-  for (let i = 0, count = moveList.length; i < count; ++i) {
-    move = chessBoard.move(moveList[i][0]);
-    if (!move) {
-      break
-    }
-    moves.push(move.san);
-    const time = convertToSeconds(moveList[i][1]);
-    clock[i % 2 === 1 ? 0 : 1] += 10 - time;
-    lastValidMove = move;
-  }
-  return lastValidMove ? {
-    id: chessBoard.history().length,
-    pgn: lastValidMove.san,
-    fen: chessBoard.fen(),
-    move: [lastValidMove.from, lastValidMove.to],
-    clock: clock,
-    moveList: moves,
-    moving: lastValidMove.color === 'w' ? 'home' : 'away'
-  } : null;
-};
-
-function ObserverLoop(connection, boardId, redis) {
-  const sendCommand = (command, ...attributes) => {
-    const sending = [command, attributes.join(' ')].join(' ');
-    console.info('CMD:', sending);
-    connection.write(`${sending}\n`);
-  };
-  const boardHash = `usate:viewer:game:${boardId}`;
-  const pushPosition = (position, callback) => {
-    redis.rpush(boardHash, JSON.stringify({
-      type: 'goto',
-      data: position
-    }), (err) => {
-      if (err) {
-        console.log('ERROR STORING:', position);
-      }
-      callback && callback(err);
-    });
-  };
-
-  const clearGameHistory = (callback) => {
-    console.log('clearing history to look for:', white, black);
-    pushPosition({
-      fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-      clock: [3600, 3600],
-      moveList: [],
-      moving: 'home',
-      pauseClocks: true
-    }, callback);
-  };
+function RegularObserverLoop(connection, pairingId, redis, sendCommand, endOfCommand, pgnCommandName) {
+  const {
+    pushPosition,
+    clearGameHistory,
+    loopForUsernameChanges,
+  } = ObserverUtility(pairingId, redis);
 
   let white = null;
   let black = null;
   let observing = null;
   let currentCommand = null;
   let noGameFound = false;
-  const loopForUsernameChanges = () => {
-    redis.get(`usate:stream:board:${boardId}`, (err, usernames) => {
-      if (err) {
-        console.warn('Error finding players, will try again in a bit:', err);
-      }
-      if (!usernames || observing === usernames) {
-        return;
-      }
-      observing = usernames;
-      [white, black] = usernames.split(',');
-      noGameFound = false;
-      findGames();
-    });
-  }
-  process.nextTick(() => setInterval(loopForUsernameChanges, 500));
+
+  loopForUsernameChanges((usernames) => {
+    observing = usernames;
+    [white, black] = usernames.split(',');
+    noGameFound = false;
+    findGames();
+  });
 
   let hopefullyGameId = null;
   let runningMoves = null;
@@ -101,7 +32,7 @@ function ObserverLoop(connection, boardId, redis) {
     sendCommand('observe', gameId);
   }
 
-  const liveGameRegex = /Game ([0-9]+) \([a-zA-Z0-9_()-]+ vs\. [a-zA-Z0-9_()-]+\)/;
+  const liveGameRegex = /^<12>/;
   const pgnRegexMatch = /[\s\S]+\[Site [\s\S]+/;
   const pgnMovesRegex = /1. ([NBQRKOxa-h0-9=/+#\s\S .-]+)$/;
   const individualMoveRegex = /([NBQRKOxa-h0-9=/+#-]+)\s/g;
@@ -145,7 +76,7 @@ function ObserverLoop(connection, boardId, redis) {
             if (boardDataId) {
               runningMoves[boardData.id - 1] = boardData.pgn;
             }
-            sendCommand('pgn', hopefullyGameId);
+            sendCommand(pgnCommandName, hopefullyGameId);
           } else if (boardDataId) {
             runningMoves.push(boardData.pgn);
             pushPosition({...boardData, moveList: runningMoves});
@@ -203,12 +134,11 @@ function ObserverLoop(connection, boardId, redis) {
     clearGameHistory(() => sendCommand(`games`));
   }
 
-
   function findGameObserver(data) {
     if (foundGame === null) {
       foundGame = data.match(gameListRegex);
     }
-    if (data.indexOf(END_OF_COMMAND) > -1) {
+    if (data.indexOf(endOfCommand) > -1) {
       currentCommand = null;
       if (foundGame !== null) {
         return observeGame(foundGame[1]);
@@ -244,7 +174,7 @@ function ObserverLoop(connection, boardId, redis) {
     }
 
     moveListData += data;
-    if (data.indexOf(END_OF_COMMAND) > -1) {
+    if (data.indexOf(endOfCommand) > -1) {
       if (data.indexOf('Game database temporarily unavailable.') > -1) {
         if (smovesWaiting > 15) {
           console.warn('Giving up on:', smovesPlayer, smovesIndex);
@@ -294,28 +224,11 @@ function ObserverLoop(connection, boardId, redis) {
   });
 }
 
-module.exports = (boardId, redis, config) => {
-  const loginPromptRegex = /login: $/;
-  const passwordPromptRegex = /password: /;
-
-  const connection = net.createConnection(config.port, config.host);
-  const logOn = (buffer) => {
-    const data = buffer.toString().toLowerCase();
-    if (loginPromptRegex.test(data)) {
-      connection.write(`${config.username}\n`);
-    } else if (passwordPromptRegex.test(data)) {
-      connection.write(`${config.password}\n`);
-      connection.off('data', logOn);
-      process.nextTick(() => ObserverLoop(connection, boardId, redis));
-    }
-  };
-  connection.on('data', logOn);
-  connection.on('timeout', () => {
-    console.log('Connection timed out');
-    process.exit();
-  });
-  connection.on('end', () => {
-    console.log('Connection ended');
-    process.exit();
-  });
-};
+/**
+ * Observe regular games regardless of time control.
+ *
+ * @param {Number|String} pairingId
+ * @param {redis} redis
+ * @param {{username: String, password: String}} config
+ */
+module.exports = RegularObserverLoop;

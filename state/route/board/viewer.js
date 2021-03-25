@@ -1,7 +1,7 @@
 const ChessBoard = require('chess.js').Chess;
 
 function BoardViewerRoute(db, redis, socketWrapper, boardId) {
-  const gameHash = `usate:viewer:game:${boardId}`;
+  const gameHash = `garden:viewer:game:${boardId}`;
 
   let closed = false;
   let viewing = false;
@@ -15,7 +15,7 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
       if (closed) {
         return finished('Closed');
       }
-      redis.get(`usate:viewer:game:${boardId}:id`, (err, gameId) => {
+      redis.get(`garden:viewer:game:${boardId}:id`, (err, gameId) => {
         if (err) {
           return finished(err);
         }

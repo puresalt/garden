@@ -4,7 +4,7 @@ const BoardViewerRoute = require('./board/viewer');
 
 function StreamerRoute(db, redis, socketWrapper) {
   function updateStreamState(isLive) {
-    redis.hset('usate:stream:state', 'isLive', isLive ? '1' : '0', (err) => {
+    redis.hset('garden:stream:state', 'isLive', isLive ? '1' : '0', (err) => {
       if (err) {
         return console.warn('Failed updating stream state:', isLive, err);
       }
@@ -21,7 +21,7 @@ function StreamerRoute(db, redis, socketWrapper) {
       away: undefined
     };
     const loopForStateChanges = () => {
-      redis.hgetall('usate:stream:state', (err, data) => {
+      redis.hgetall('garden:stream:state', (err, data) => {
         if (err) {
           return console.warn('Failed getting stream state:', err);
         }
@@ -60,7 +60,7 @@ function StreamerRoute(db, redis, socketWrapper) {
   }
 
   function listBoards() {
-    redis.hgetall('usate:stream:board', (err, data) => {
+    redis.hgetall('garden:stream:board', (err, data) => {
       if (err) {
         return console.warn('Failed getting live stream board status:', data, err);
       }

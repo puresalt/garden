@@ -1,6 +1,6 @@
-function configurationRoute(db, redis, socketWrapper) {
-  function updateConfiguration(data) {
-    db.query(`UPDATE usate_configuration
+function settingsRouter(db, redis, socketWrapper) {
+  function update(data) {
+    db.query(`UPDATE garden_event
               SET show_programmatic_boards = ?,
                   show_match_score         = ?,
                   show_scratch_board       = ?,
@@ -9,19 +9,20 @@ function configurationRoute(db, redis, socketWrapper) {
                   bottom_left_text         = ?,
                   bottom_middle_text       = ?,
                   bottom_right_text        = ?
-              WHERE id = 1;`,
-      [data.showProgrammaticBoards, data.showMatchScore, data.showScratchBoard, data.showWebcam, data.showAdUnit, data.bottomLeftText, data.bottomMiddleText, data.bottomRightText],
+              WHERE event_id = xc?
+                AND account_id = ?;`,
+      [data.showProgrammaticBoards, data.showMatchScore, data.showScratchBoard, data.showWebcam, data.showAdUnit, data.bottomLeftText, data.bottomMiddleText, data.bottomRightText, data.eventId, accountId],
       (err, result) => {
         if (err) {
           console.error('Error updating:', result, err);
           socketWrapper.emit('configuration:updated', null);
           return;
         }
-        loadConfiguration(true);
+        load(data.eventId, true);
       });
   }
 
-  function loadConfiguration(global) {
+  function load(eventId, global) {
     db.query(`SELECT show_programmatic_boards AS showProgrammaticBoards,
                      show_match_score         AS showMatchScore,
                      show_scratch_board       AS showScratchBoard,
@@ -30,8 +31,9 @@ function configurationRoute(db, redis, socketWrapper) {
                      bottom_left_text         AS bottomLeftText,
                      bottom_middle_text       AS bottomMiddleText,
                      bottom_right_text        AS bottomRightText
-              FROM usate_configuration
-              WHERE id = 1;`, (err, result) => {
+              FROM garden_event
+              WHERE id = ?
+                AND account_id = ?;`, [eventId, accountId], (err, result) => {
       if (err) {
         console.warn('Error retrieving configuration:', err);
         socketWrapper.emit('configuration:loaded', {});
@@ -57,12 +59,12 @@ function configurationRoute(db, redis, socketWrapper) {
     });
   }
 
-  socketWrapper.on('configuration:update', updateConfiguration);
-  socketWrapper.on('configuration:load', loadConfiguration);
+  socketWrapper.on('settings:update', update);
+  socketWrapper.on('settings:load', load);
   return () => {
-    socketWrapper.off('configuration:update', updateConfiguration);
-    socketWrapper.off('configuration:load', loadConfiguration);
+    socketWrapper.off('settings:update', update);
+    socketWrapper.off('settings:load', load);
   };
 }
 
-module.exports = configurationRoute;
+module.exports = settingsRouter;

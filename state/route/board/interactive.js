@@ -20,7 +20,7 @@ function BoardInteractiveRoute(db, redis, socketWrapper, boardId) {
       if (closed) {
         return;
       }
-      redis.get(`usate:viewer:game:${boardId}:id`, (err, gameId) => {
+      redis.get(`garden:viewer:game:${boardId}:id`, (err, gameId) => {
         if (!currentGameId) {
           currentGameId = gameId;
         }
@@ -76,7 +76,7 @@ function BoardInteractiveRoute(db, redis, socketWrapper, boardId) {
               }
               if ((!currentEventId && !nextEventId) || (currentEventId === nextEventId - 1)) {
                 socketWrapper.emit(`board:${boardId}`, currentEvent);
-                redis.rpush(`usate:viewer:game:${boardId}`, JSON.stringify(currentEvent));
+                redis.rpush(`garden:viewer:game:${boardId}`, JSON.stringify(currentEvent));
                 currentEventId = nextEventId;
               } else {
                 nextEventId = currentEventId;
@@ -96,14 +96,14 @@ function BoardInteractiveRoute(db, redis, socketWrapper, boardId) {
     socketWrapper.broadcast(`viewer:board:${boardId}:started`);
     didJumpAround = false;
     const getPlayerNames = () => {
-      redis.get(`usate:stream:board:${boardId}`, (err, usernames) => {
+      redis.get(`garden:stream:board:${boardId}`, (err, usernames) => {
         if (err) {
           console.warn('Error getting usernames:', err);
         }
         if (!usernames) {
           return;
         }
-        redis.del(`usate:viewer:game:${boardId}`, (err) => {
+        redis.del(`garden:viewer:game:${boardId}`, (err) => {
           if (err) {
             return console.warn('Error deleting previous game events:', boardId, err);
           }
@@ -140,12 +140,12 @@ function BoardInteractiveRoute(db, redis, socketWrapper, boardId) {
       const returnResult = JSON.parse(result);
       returnResult.type = 'goto';
       socketWrapper.emit(`board:${boardId}`, returnResult);
-      redis.rpush(`usate:viewer:game:${boardId}`, JSON.stringify(returnResult));
+      redis.rpush(`garden:viewer:game:${boardId}`, JSON.stringify(returnResult));
     });
   }
 
   function drawShape(data) {
-    redis.rpush(`usate:viewer:game:${boardId}`, JSON.stringify({
+    redis.rpush(`garden:viewer:game:${boardId}`, JSON.stringify({
       type: 'draw',
       data: data
     }));
