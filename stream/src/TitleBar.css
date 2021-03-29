@@ -1,6 +1,7 @@
 .MatchResultBar,
 .TitleBar,
-header {
+header,
+footer {
     background: #006747;
     color: #fff;
     height: 43px;
@@ -22,6 +23,7 @@ header {
     left: 0;
     position: absolute;
     width: 100%;
+    z-index: 10000001;
 }
 
 .TitleBar .TeamName {

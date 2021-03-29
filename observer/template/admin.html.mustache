@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+  <meta name="generator" content="Jekyll v4.1.1">
+  <title>Admin Panel | Garden State Passers</title>
+  <!-- CSS only -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+        integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+  <!-- JS, Popper.js, and jQuery -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+          integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+          crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+          integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+          crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
+          integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV"
+          crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://use.typekit.net/lbf7zfs.css">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.14.0/css/all.css"
+        integrity="sha384-HzLeBuhoNPvSl5KYnjx0BT+WB0QEEqLprO+NBkkk5gbc67FTaL7XIGa2w1L0Xbgc" crossorigin="anonymous">
+  <link rel="canonical" href="https://getbootstrap.com/docs/4.5/examples/sign-in/">
+
+  <!-- Bootstrap core CSS -->
+  <link href="/docs/4.5/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+  <!-- Favicons -->
+  <link rel="apple-touch-icon" href="/docs/4.5/assets/img/favicons/apple-touch-icon.png" sizes="180x180">
+  <link rel="icon" href="/docs/4.5/assets/img/favicons/favicon-32x32.png" sizes="32x32" type="image/png">
+  <link rel="icon" href="/docs/4.5/assets/img/favicons/favicon-16x16.png" sizes="16x16" type="image/png">
+  <link rel="manifest" href="/docs/4.5/assets/img/favicons/manifest.json">
+  <link rel="mask-icon" href="/docs/4.5/assets/img/favicons/safari-pinned-tab.svg" color="#563d7c">
+  <link rel="icon" href="/docs/4.5/assets/img/favicons/favicon.ico">
+  <meta name="msapplication-config" content="/docs/4.5/assets/img/favicons/browserconfig.xml">
+
+  <!-- Custom styles for this template -->
+  <link href="/asset/css/core.css" rel="stylesheet">
+  <link href="/asset/css/admin.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-dark sticky-top flex-md-nowrap p-0 shadow">
+  <a class="navbar-brand col-md-3 col-lg-2 mr-0 px-3" href="#"><span>Garden State</span> Passers</a>
+  <ul class="navbar-nav px-3">
+    <li class="nav-item text-nowrap">
+      <a class="nav-link" href="#">Sign out</a>
+    </li>
+  </ul>
+</nav>
+
+<div class="container mt-5">
+  <div class="row">
+    <div class="col">
+      <form action="/admin/save" method="post">
+        <ul class="nav nav-pills" id="" role="tablist">
+          <li class="nav-item" role="presentation">
+            <a class="nav-link active" id="config-tab" data-toggle="tab" href="#config" role="tab"
+               aria-controls="config"
+               aria-selected="true">Stream</a>
+          </li>
+          
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="homeTeam-tab" data-toggle="tab" href="#homeTeam" role="tab" aria-controls="homeTeam"
+               aria-selected="false">Team Lineup</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="awayTeam-tab" data-toggle="tab" href="#awayTeam" role="tab" aria-controls="awayTeam"
+               aria-selected="false">Opponent Lineup</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="results-tab" data-toggle="tab" href="#results" role="tab" aria-controls="results"
+               aria-selected="false">Results</a>
+          </li>
+        </ul>
+        <div class="tab-content mt-4">
+          <div class="tab-pane fade show active" id="config" role="tabpanel" aria-labelledby="config-tab">
+            <fieldset class="form-group">
+              <h3>Team:</h3>
+              <div class="row">
+                <div class="col">
+                  <label class="font-weight-bold" for="field-home">Playing As:</label>
+                  <select class="form-control" id="field-home" name="config[home]">
+                    <option value="home">Home</option>
+                    <option value="away">Away</option>
+                  </select>
+                </div>
+                <div class="col">
+                  <div class="form-group">
+                    <label class="font-weight-bold" for="field-opponent">Opponent:</label>
+                    <select class="form-control" id="field-opponent" name="config[opponent]">
+                      {{#stateList}}
+                        <option{{#selected}} selected="selected"{{/selected}} value="{{key}}">{{name}}</option>
+                      {{/stateList}}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+            <fieldset class="form-group">
+              <h3>Host:</h3>
+              <div class="row">
+                <div class="col">
+                  <div class="form-group">
+                    <label class="font-weight-bold" for="field-hostName">Name:</label>
+                    <input type="text" class="form-control" id="field-hostName" name="config[hostName]"
+                           aria-describedby="field-hostName-help">
+                    <small id="field-hostName-help" class="form-text text-muted">Recommend using your Twitch
+                      username.</small>
+                  </div>
+                </div>
+                <div class="col">
+                  <fieldset class="form-group">
+                    <legend class="col-form-label pt-0 font-weight-bold">Social Media Icons:</legend>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" name="config[hostIcons][]" type="checkbox"
+                             id="field-hostIcons-twitch"
+                             value="twitch">
+                      <label class="form-check-label" for="field-hostIcons-twitch">Twitch</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" name="config[hostIcons][]" type="checkbox"
+                             id="field-hostIcons-instagram"
+                             value="instagram">
+                      <label class="form-check-label" for="field-hostIcons-instagram">Instagram</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" name="config[hostIcons][]" type="checkbox"
+                             id="field-hostIcons-twitter"
+                             value="twitter">
+                      <label class="form-check-label" for="field-hostIcons-twitter">Twitter</label>
+                    </div>
+                  </fieldset>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+          <div class="tab-pane fade" id="homeTeam" role="tabpanel" aria-labelledby="homeTeam-tab">
+            <h3 class="pb-4">Team Lineup:</h3>
+            <fieldset class="form-group">
+              <legend class="col-form-label pt-0 font-weight-bold">Board 1:</legend>
+              <div class="row">
+                <div class="col-4">
+                  <input type="text" class="form-control" name="home[0][name]" placeholder="Name">
+                </div>
+                <div class="col-3">
+                  <input type="text" class="form-control" name="home[0][username]" placeholder="Username">
+                </div>
+                <div class="col-2">
+                  <input type="number" class="form-control" name="home[0][rating]" placeholder="Rating">
+                </div>
+              </div>
+            </fieldset>
+            <fieldset class="form-group">
+              <legend class="col-form-label pt-0 font-weight-bold">Board 2:</legend>
+              <div class="row">
+                <div class="col-4">
+                  <input type="text" class="form-control" name="home[1][name]" placeholder="Name">
+                </div>
+                <div class="col-3">
+                  <input type="text" class="form-control" name="home[1][username]" placeholder="Username">
+                </div>
+                <div class="col-2">
+                  <input type="number" class="form-control" name="home[1][rating]" placeholder="Rating">
+                </div>
+              </div>
+            </fieldset>
+            <fieldset class="form-group">
+              <legend class="col-form-label pt-0 font-weight-bold">Board 3:</legend>
+              <div class="row">
+                <div class="col-4">
+                  <input type="text" class="form-control" name="home[2][name]" placeholder="Name">
+                </div>
+                <div class="col-3">
+                  <input type="text" class="form-control" name="home[2][username]" placeholder="Username">
+                </div>
+                <div class="col-2">
+                  <input type="number" class="form-control" name="home[2][rating]" placeholder="Rating">
+                </div>
+              </div>
+            </fieldset>
+            <fieldset class="form-group">
+              <legend class="col-form-label pt-0 font-weight-bold">Board 4:</legend>
+              <div class="row">
+                <div class="col-4">
+                  <input type="text" class="form-control" name="home[3][name]" placeholder="Name">
+                </div>
+                <div class="col-3">
+                  <input type="text" class="form-control" name="home[3][username]" placeholder="Username">
+                </div>
+                <div class="col-2">
+                  <input type="number" class="form-control" name="home[3][rating]" placeholder="Rating">
+                </div>
+              </div>
+            </fieldset>
+          </div>
+          <div class="tab-pane fade" id="awayTeam" role="tabpanel" aria-labelledby="awayTeam-tab">
+            <h3 class="pb-4">Opponent Lineup:</h3>
+            <fieldset class="form-group">
+              <legend class="col-form-label pt-0 font-weight-bold">Board 1:</legend>
+              <div class="row">
+                <div class="col-4">
+                  <input type="text" class="form-control" name="away[0][name]" placeholder="Name">
+                </div>
+                <div class="col-3">
+                  <input type="text" class="form-control" name="away[0][username]" placeholder="Username">
+                </div>
+                <div class="col-2">
+                  <input type="number" class="form-control" name="away[0][rating]" placeholder="Rating">
+                </div>
+              </div>
+            </fieldset>
+            <fieldset class="form-group">
+              <legend class="col-form-label pt-0 font-weight-bold">Board 2:</legend>
+              <div class="row">
+                <div class="col-4">
+                  <input type="text" class="form-control" name="away[1][name]" placeholder="Name">
+                </div>
+                <div class="col-3">
+                  <input type="text" class="form-control" name="away[1][username]" placeholder="Username">
+                </div>
+                <div class="col-2">
+                  <input type="number" class="form-control" name="away[1][rating]" placeholder="Rating">
+                </div>
+              </div>
+            </fieldset>
+            <fieldset class="form-group">
+              <legend class="col-form-label pt-0 font-weight-bold">Board 3:</legend>
+              <div class="row">
+                <div class="col-4">
+                  <input type="text" class="form-control" name="away[2][name]" placeholder="Name">
+                </div>
+                <div class="col-3">
+                  <input type="text" class="form-control" name="away[2][username]" placeholder="Username">
+                </div>
+                <div class="col-2">
+                  <input type="number" class="form-control" name="away[2][rating]" placeholder="Rating">
+                </div>
+              </div>
+            </fieldset>
+            <fieldset class="form-group">
+              <legend class="col-form-label pt-0 font-weight-bold">Board 4:</legend>
+              <div class="row">
+                <div class="col-4">
+                  <input type="text" class="form-control" name="away[3][name]" placeholder="Name">
+                </div>
+                <div class="col-3">
+                  <input type="text" class="form-control" name="away[3][username]" placeholder="Username">
+                </div>
+                <div class="col-2">
+                  <input type="number" class="form-control" name="away[3][rating]" placeholder="Rating">
+                </div>
+              </div>
+            </fieldset>
+          </div>
+          <div class="tab-pane fade" id="results" role="tabpanel" aria-labelledby="results-tab">
+            <fieldset class="form-group">
+              <legend class="col-form-label pt-0 font-weight-bold">Board 1:</legend>
+              <div class="row">
+                <div class="col-2">
+                  <select class="form-control" name="result[0][0]">
+                    <optgroup label="Round 1">
+                      <option value="">TBD</option>
+                      <option value="1">Win</option>
+                      <option value="0.5">Draw</option>
+                      <option value="0">Loss</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="col-2">
+                  <select class="form-control" name="result[0][1]">
+                    <optgroup label="Round 2">
+                      <option value="">TBD</option>
+                      <option value="1">Win</option>
+                      <option value="0.5">Draw</option>
+                      <option value="0">Loss</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="col-2">
+                  <select class="form-control" name="result[0][2]">
+                    <optgroup label="Round 3">
+                      <option value="">TBD</option>
+                      <option value="1">Win</option>
+                      <option value="0.5">Draw</option>
+                      <option value="0">Loss</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="col-2">
+                  <select class="form-control" name="result[0][3]">
+                    <optgroup label="Round 4">
+                      <option value="">TBD</option>
+                      <option value="1">Win</option>
+                      <option value="0.5">Draw</option>
+                      <option value="0">Loss</option>
+                    </optgroup>
+                  </select>
+                </div>
+              </div>
+            </fieldset>
+            <fieldset class="form-group">
+              <legend class="col-form-label pt-0 font-weight-bold">Board 2:</legend>
+              <div class="row">
+                <div class="col-2">
+                  <select class="form-control" name="result[1][0]">
+                    <optgroup label="Round 1">
+                      <option value="">TBD</option>
+                      <option value="1">Win</option>
+                      <option value="0.5">Draw</option>
+                      <option value="0">Loss</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="col-2">
+                  <select class="form-control" name="result[1][1]">
+                    <optgroup label="Round 2">
+                      <option value="">TBD</option>
+                      <option value="1">Win</option>
+                      <option value="0.5">Draw</option>
+                      <option value="0">Loss</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="col-2">
+                  <select class="form-control" name="result[1][2]">
+                    <optgroup label="Round 3">
+                      <option value="">TBD</option>
+                      <option value="1">Win</option>
+                      <option value="0.5">Draw</option>
+                      <option value="0">Loss</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="col-2">
+                  <select class="form-control" name="result[1][3]">
+                    <optgroup label="Round 4">
+                      <option value="">TBD</option>
+                      <option value="1">Win</option>
+                      <option value="0.5">Draw</option>
+                      <option value="0">Loss</option>
+                    </optgroup>
+                  </select>
+                </div>
+              </div>
+            </fieldset>
+            <fieldset class="form-group">
+              <legend class="col-form-label pt-0 font-weight-bold">Board 3:</legend>
+              <div class="row">
+                <div class="col-2">
+                  <select class="form-control" name="result[2][0]">
+                    <optgroup label="Round 1">
+                      <option value="">TBD</option>
+                      <option value="1">Win</option>
+                      <option value="0.5">Draw</option>
+                      <option value="0">Loss</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="col-2">
+                  <select class="form-control" name="result[2][1]">
+                    <optgroup label="Round 2">
+                      <option value="">TBD</option>
+                      <option value="1">Win</option>
+                      <option value="0.5">Draw</option>
+                      <option value="0">Loss</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="col-2">
+                  <select class="form-control" name="result[2][2]">
+                    <optgroup label="Round 3">
+                      <option value="">TBD</option>
+                      <option value="1">Win</option>
+                      <option value="0.5">Draw</option>
+                      <option value="0">Loss</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="col-2">
+                  <select class="form-control" name="result[2][3]">
+                    <optgroup label="Round 4">
+                      <option value="">TBD</option>
+                      <option value="1">Win</option>
+                      <option value="0.5">Draw</option>
+                      <option value="0">Loss</option>
+                    </optgroup>
+                  </select>
+                </div>
+              </div>
+            </fieldset>
+            <fieldset class="form-group">
+              <legend class="col-form-label pt-0 font-weight-bold">Board 4:</legend>
+              <div class="row">
+                <div class="col-2">
+                  <select class="form-control" name="result[3][0]">
+                    <optgroup label="Round 1">
+                      <option value="">TBD</option>
+                      <option value="1">Win</option>
+                      <option value="0.5">Draw</option>
+                      <option value="0">Loss</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="col-2">
+                  <select class="form-control" name="result[3][1]">
+                    <optgroup label="Round 2">
+                      <option value="">TBD</option>
+                      <option value="1">Win</option>
+                      <option value="0.5">Draw</option>
+                      <option value="0">Loss</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="col-2">
+                  <select class="form-control" name="result[3][2]">
+                    <optgroup label="Round 3">
+                      <option value="">TBD</option>
+                      <option value="1">Win</option>
+                      <option value="0.5">Draw</option>
+                      <option value="0">Loss</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="col-2">
+                  <select class="form-control" name="result[3][3]">
+                    <optgroup label="Round 4">
+                      <option value="">TBD</option>
+                      <option value="1">Win</option>
+                      <option value="0.5">Draw</option>
+                      <option value="0">Loss</option>
+                    </optgroup>
+                  </select>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+          <hr>
+          <button class="btn btn-primary" type="submit">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+        crossorigin="anonymous"></script>
+<script>window.jQuery || document.write('<script src="/docs/4.5/assets/js/vendor/jquery.slim.min.js"><\/script>')</script>
+<script src="/docs/4.5/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-LtrjvnR4Twt/qOuYxE721u19sVFLVSA4hf/rRt6PrZTmiPltdZcI7q7PXQBYTKyf"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.9.0/feather.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js"></script>
+<script src="/asset/js/admin.js"></script>
+</body>
+
+</body>
+</html>

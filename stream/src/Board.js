@@ -1,62 +1,95 @@
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import OrDefault from 'garden-common/react/OrDefault';
 import Chessboard from 'garden-common/react/Chessboard';
 import './Board.css';
 
 function Board(props) {
-  const {board, pairing, showProgrammaticBoards, large, socket, small} = props;
-  const {home, away, result} = pairing;
+  const {board, pairing, showProgrammaticBoards, observingGame, socket} = props;
+  const {id, home, away} = pairing;
 
-  let boardSize = '';
-  let size = 480;
-  if (large) {
-    boardSize = ' Large';
-    size = 970;
-  } else if (small) {
-    boardSize = ' Small';
-    size = 240;
+  const [result, setResult] = useState({});
+  const handleResult = (board, data) => {
+    setResult({
+      by: data.by,
+      result: data.result
+    });
+  };
+
+  let boardSize = ' fadeIn';
+  let size = 456;
+  if (observingGame) {
+    if (observingGame === id) {
+      boardSize = ' fadeIn Large';
+      size = 920;
+    } else {
+      boardSize = ' fadeOut';
+    }
   }
 
-  let homeColor = 'white';
-  let awayColor = 'black';
-  if ((board % 2) === 0) {
-    homeColor = 'black';
-    awayColor = 'white';
-  }
   if (!showProgrammaticBoards) {
     boardSize += ' not-automatic';
   }
 
+  const orientation = board % 2 === 1
+    ? 'home'
+    : 'away';
+
+  let resultClassName = '';
+  let resultContent = '';
+  if (result.by) {
+    resultClassName = result.by
+      ? ` Faded winner-${result.result === 1 ? 'white' : (result.result === 0 ? 'black' : 'none')}`
+      : '';
+
+    let homeScore = 0.5;
+    let awayScore = 0.5;
+    let loser = '';
+    if (result.result !== 0.5) {
+      if ((orientation === 'home' && result.result === 1) || (orientation !== 'home' && result.result === 0)) {
+        homeScore = 1;
+        awayScore = 0;
+        loser = away.name;
+      } else {
+        homeScore = 0;
+        awayScore = 1;
+        loser = home.name;
+      }
+    }
+
+    resultContent = <div className="board-result">
+      <div>
+        <h2>{homeScore} - {awayScore}</h2>
+        <h3>{loser} {result.by}</h3>
+      </div>
+    </div>;
+  }
+
   return (
-    <div className={'Board' + boardSize} key={board}
-         id={'board-' + board}>
+    <div className={`Board${boardSize} board-${board} orientation-${orientation}${resultClassName}`} key={board}>
       <header>
-        <span>Board <OrDefault value={board}/><span>:</span></span>
-        <div className="board-header-home">
-          <div className={`${homeColor}-square`}/>
-          <OrDefault value={home.name}/> <em><OrDefault value={home.rating}/></em>
-        </div>
         <div className="board-header-away">
-          <div className={`${awayColor}-square`}/>
           <OrDefault value={away.name}/> <em><OrDefault value={away.rating}/></em>
         </div>
       </header>
       {showProgrammaticBoards
         ? <Chessboard
-          boardName={'board:' + board}
+          boardName={'board:' + id}
           size={size}
           viewOnly={true}
           viewer={true}
           coordinates={false}
-          orientation={board % 2 === 1 ? 'home' : 'away'}
+          orientation={orientation}
+          onResult={handleResult}
           socket={socket}
         />
-        : <>
-          <div className="board-placeholder"/>
-          <div className="board-placeholder-info"/>
-        </>
+        : <div className="board-placeholder"/>
       }
-      {typeof result === 'number' ? <div className="board-result">{result} - {1 - result}</div> : <></>}
+      <footer>
+        <div className="board-header-home">
+          <OrDefault value={home.name}/> <em><OrDefault value={home.rating}/></em>
+        </div>
+      </footer>
+      {resultContent}
     </div>
   );
 }

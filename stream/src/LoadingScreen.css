@@ -1,0 +1,45 @@
+.LoadingScreen {
+    background: #006747 url(./loading.png) center center no-repeat;
+    width: 1920px;
+    height: 1041px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 10000002;
+}
+
+.LoadingScreen .bar {
+    background: #006747;
+    color: #fff;
+    height: 43px;
+    line-height: 39px;
+    font-size: 36px;
+    text-transform: uppercase;
+    top: 0;
+    left: 0;
+    position: absolute;
+    width: 100%;
+}
+
+.LoadingScreen .bar .left {
+    position: absolute;
+    left: 8px;
+    top: 0;
+}
+
+.LoadingScreen .bar .right {
+    position: absolute;
+    top: 0;
+    right: 8px;
+}
+
+.LoadingScreen .hide-middle {
+    position: absolute;
+    display: block;
+    bottom: -39px;
+    height: 39px;
+    width: 500px;
+    left: 710px;
+    z-index: 10000003;
+    background: #006747;
+}

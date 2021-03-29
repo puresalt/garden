@@ -1,36 +1,25 @@
 .ScratchBoard {
     background: #006747;
-    border-radius: 1em 0 0 1em;
-    border-bottom: 0;
-    height: 524px;
-    opacity: 5.75;
+    border-radius: 7px;
+    height: 512px;
+    opacity: 0.75;
+    padding: 6px;
     position: absolute;
     top: 258px;
-    width: 524px;
-    left: 1396px;
+    width: 512px;
+    transition: all 1s ease-in-out;
 }
 
-.ScratchBoard .scratchBoard-placeholder {
-    background: #800;
-    position: absolute;
-    top: 7px;
-    left: 7px;
-    height: 510px;
-    width: 510px;
+.ScratchBoard.Center {
+    left: 470px;
+    transition: left 1s ease;
 }
 
-.ScratchBoard.Large {
-    top: 118px;
-    height: 664px;
-    left: 1256px;
-    width: 664px;
+.ScratchBoard.Right {
+    left: 934px;
+    transition: left 1s ease;
 }
 
-.ScratchBoard.Large .scratchBoard-placeholder {
-    height: 650px;
-    width: 650px;
-}
-
-.Small .ScratchBoard {
-    opacity: 0.5;
+.ScratchBoard .eventData {
+    display: none !important;
 }

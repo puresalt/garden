@@ -14,17 +14,23 @@
 
 apps:
   - script: node ./admin/app.js
-    name: 'usate:admin'
+    name: 'college:admin'
     env:
       NODE_ENV: production
-      PORT: 5002
+      PORT: 5102
   - script: node ./state/app.js
-    name: 'usate:state'
+    name: 'college:state'
     env:
       NODE_ENV: production
-      PORT: 5003
+      PORT: 5103
   - script: ./node_modules/.bin/serve -s stream/build
-    name: 'usate:stream'
+    name: 'college:stream'
     env:
       NODE_ENV: production
-      PORT: 5004
+      PORT: 5104
+  - script: node ./observer/app.js
+    name: 'college:observer'
+    env:
+      NODE_ENV: production
+      PORT: 5105
+

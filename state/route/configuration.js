@@ -1,16 +1,19 @@
 function configurationRoute(db, redis, socketWrapper) {
   function updateConfiguration(data) {
-    db.query(`UPDATE usate_configuration
+    const nextRoundStart = data.nextRoundStart
+	  ? data.nextRoundStart.replace('T', ' ').split('.')[0]
+          : null;
+    db.query(`UPDATE college_configuration
               SET show_programmatic_boards = ?,
-                  show_match_score         = ?,
                   show_scratch_board       = ?,
-                  show_webcam              = ?,
                   show_ad_unit             = ?,
+                  show_sponsor_unit        = ?,
                   bottom_left_text         = ?,
                   bottom_middle_text       = ?,
-                  bottom_right_text        = ?
+                  bottom_right_text        = ?,
+                  next_round_start         = ?
               WHERE id = 1;`,
-      [data.showProgrammaticBoards, data.showMatchScore, data.showScratchBoard, data.showWebcam, data.showAdUnit, data.bottomLeftText, data.bottomMiddleText, data.bottomRightText],
+      [data.showProgrammaticBoards, data.showScratchBoard, data.showAdUnit, data.showSponsorUnit, data.bottomLeftText, data.bottomMiddleText, data.bottomRightText, nextRoundStart],
       (err, result) => {
         if (err) {
           console.error('Error updating:', result, err);
@@ -23,35 +26,36 @@ function configurationRoute(db, redis, socketWrapper) {
 
   function loadConfiguration(global) {
     db.query(`SELECT show_programmatic_boards AS showProgrammaticBoards,
-                     show_match_score         AS showMatchScore,
                      show_scratch_board       AS showScratchBoard,
-                     show_webcam              AS showWebcam,
                      show_ad_unit             AS showAdUnit,
+                     show_sponsor_unit        AS showSponsorUnit,
                      bottom_left_text         AS bottomLeftText,
                      bottom_middle_text       AS bottomMiddleText,
-                     bottom_right_text        AS bottomRightText
-              FROM usate_configuration
+                     bottom_right_text        AS bottomRightText,
+                     next_round_start         AS nextRoundStart
+              FROM college_configuration
               WHERE id = 1;`, (err, result) => {
       if (err) {
         console.warn('Error retrieving configuration:', err);
         socketWrapper.emit('configuration:loaded', {});
         return;
       }
+		      console.log(result[0]);
       const returnData = result[0];
       returnData.showProgrammaticBoards = returnData.showProgrammaticBoards !== null
         ? !!returnData.showProgrammaticBoards
         : null;
-      returnData.showMatchScore = returnData.showMatchScore !== null
-        ? !!returnData.showMatchScore
-        : null;
       returnData.showScratchBoard = returnData.showScratchBoard !== null
         ? !!returnData.showScratchBoard
         : null;
-      returnData.showWebcam = returnData.showWebcam !== null
-        ? !!returnData.showWebcam
-        : null;
       returnData.showAdUnit = returnData.showAdUnit !== null
         ? !!returnData.showAdUnit
+        : null;
+      returnData.showSponsorUnit = returnData.showSponsorUnit !== null
+        ? !!returnData.showSponsorUnit
+        : null;
+      returnData.nextRoundStart = returnData.nextRoundStart !== null
+        ? returnData.nextRoundStart.toUTCString()
         : null;
       socketWrapper[global ? 'broadcastAll' : 'emit']('configuration:loaded', result[0]);
     });

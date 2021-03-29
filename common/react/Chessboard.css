@@ -1,0 +1,34 @@
+.promotion-selector {
+    background: rgba(0, 0, 0, 0.5);
+    position: absolute;
+    height: 400px;
+    width: 400px;
+    display: flex;
+    align-items: center;
+    top: 0;
+    left: 0;
+    z-index: 1000000;
+    text-align: center;
+}
+
+.promotion-selector > div {
+    text-align: center;
+    margin: 0 auto;
+    display: inline-block;
+}
+
+.promotion-selector strong {
+    text-transform: uppercase;
+}
+
+.promotion-selector.fadeIn {
+    display: flex;
+    opacity: 1;
+    transition: all 0.5s ease-in;
+}
+
+.promotion-selector.fadeOut {
+    display: none;
+    opacity: 0;
+    transition: all 0.5s ease-out;
+}

@@ -10,6 +10,7 @@
     "garden-common": "file:../common",
     "react": "^16.13.1",
     "react-chessground": "^1.5.0",
+    "react-countdown": "^2.3.1",
     "react-dom": "^16.13.1",
     "react-router-dom": "^5.2.0",
     "react-scripts": "^3.4.3",
@@ -20,7 +21,7 @@
     "build": "react-scripts build",
     "eject": "react-scripts eject",
     "install": "npm run build",
-    "start": "PORT=5004 react-scripts start",
+    "start": "PORT=5104 react-scripts start",
     "test": "react-scripts test"
   },
   "eslintConfig": {

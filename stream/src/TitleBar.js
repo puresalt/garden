@@ -1,8 +1,6 @@
 import React from 'react';
 import './TitleBar.css';
 
-const __ = React.createElement;
-
 function TitleBar(props) {
   const {bottomLeftText, bottomMiddleText, bottomRightText} = props;
 

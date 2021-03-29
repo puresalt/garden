@@ -2,13 +2,9 @@ import React from 'react'
 import { duration } from 'moment';
 import PropTypes from 'prop-types'
 import { Chessground as NativeChessground } from 'chessground'
+import Chess from 'chess.js'
 import './Chessboard/css/chessground.css';
-
-const highlightSquareRegex = /([a-h][1-8])/;
-const isPawnToTheDangerSquareMove = /^([a-h][4|5])$/;
-const pawnCaptureRegex = /^([a-h]x)/;
-const promotionRegex = /=([QRKB])$/;
-const roles = {Q: 'queen', R: 'rook', K: 'king', B: 'bishop'};
+import './Chessboard.css';
 
 const padded = num => String(num).padStart(2, '0');
 const parseClock = (hours, minutes, seconds) => {
@@ -20,6 +16,24 @@ const parseClock = (hours, minutes, seconds) => {
     return String(seconds);
   }
 };
+
+const getOrientation = orientation => orientation === 'away' || orientation === 'black'
+  ? 'black'
+  : 'white';
+
+const availableMoves = (chess) => {
+  const moves = chess.moves({verbose: true}).reduce((gathered, item) => {
+    if (!gathered[item.from]) {
+      gathered[item.from] = [];
+    }
+    gathered[item.from].push(item.to);
+    return gathered;
+  }, {});
+  return Object.keys(moves).reduce((gathered, key) => {
+    gathered.set(key, moves[key]);
+    return gathered;
+  }, new Map());
+}
 
 const propTypes = {
   boardName: PropTypes.string,
@@ -46,8 +60,10 @@ const propTypes = {
   selectable: PropTypes.object,
   onChange: PropTypes.func,
   onMove: PropTypes.func,
+  onMoveFen: PropTypes.func,
   onDropNewPiece: PropTypes.func,
   onSelect: PropTypes.func,
+  onPromotion: PropTypes.func,
   items: PropTypes.object,
   drawable: PropTypes.object,
   socket: PropTypes.object
@@ -56,9 +72,10 @@ const propTypes = {
 export default class Chessground extends React.PureComponent {
   constructor(props) {
     super(props);
-    const homeClock = duration().add(this.props.timeLimt || 3600, 's');
-    const awayClock = duration().add(this.props.timeLimt || 3600, 's');
+    const homeClock = duration().add(this.props.timeLimt || 1500, 's');
+    const awayClock = duration().add(this.props.timeLimt || 1500, 's');
     this.state = {
+      requestingPromotion: false,
       moveList: [],
       homeClock: homeClock,
       homeHours: homeClock.hours(),
@@ -74,10 +91,9 @@ export default class Chessground extends React.PureComponent {
       currentMove: 0,
       viewer: this.props.viewer,
       matchId: this.props.matchId,
-      orientation: this.props.orientation || 'white'
+      orientation: getOrientation(this.props.orientation)
     };
     this.handleEvent = this.handleEvent.bind(this);
-    this.sendEvent = this.sendEvent.bind(this);
     this.updateClocks = this.updateClocks.bind(this);
   }
 
@@ -149,15 +165,6 @@ export default class Chessground extends React.PureComponent {
     this[event.type](event.data);
   }
 
-  sendEvent(id) {
-    this.setState({pausePosition: true, pauseClocks: true});
-    if (!this.socket) {
-      console.warn(`Socket is not ready.`);
-      return;
-    }
-    this.socket.emit(`${this.boardName}:goto`, {id: id, paused: id < this.state.moveList.length});
-  }
-
   result(data) {
     if (this.props.onResult) {
       this.props.onResult(this.boardName, data);
@@ -168,75 +175,53 @@ export default class Chessground extends React.PureComponent {
     });
   }
 
-  move(data) {
-    const pawnCapture = data.pgn.match(pawnCaptureRegex);
-    if (pawnCapture) {
-      console.log('isPawnCapture?', pawnCapture, pawnCapture[0][0], data.move[0][0]);
-      const lastMove = this.state.moveList[this.state.moveList.length - 1];
-      const lastMoveWasIt = lastMove.match(isPawnToTheDangerSquareMove);
-      if (lastMoveWasIt) {
-        console.log({[lastMoveWasIt[0]]: null});
-        this.cg.setPieces([[lastMoveWasIt[0], null]]);
-      }
-    }
-
-    this.cg.move(data.move[0], data.move[1]);
-    const promote = data.pgn.match(promotionRegex);
-    if (promote) {
-      this.cg.setPieces([[data.move[1], {
-        promoted: true,
-        color: data.moving === 'home' ? 'white' : 'black',
-        role: roles[promote[1]]
-      }]]);
-    }
-
-    this.cg.setShapes([]);
-    this.setState({
-      moving: data.moving,
-      currentMove: data.id,
-      pauseClocks: false
-    });
-    if (data.id > this.state.moveList.length) {
-      const moveList = this.state.moveList.map(item => item);
-      moveList.push(data.pgn);
-      this.setState({moveList: moveList});
-    }
-    if (data.clock === null) {
-      return;
-    }
-    let homeClock = duration().add(data.clock[0], 's');
-    let awayClock = duration().add(data.clock[1], 's');
-    this.setState({
-      homeClock: homeClock,
-      homeHours: homeClock.hours(),
-      homeMinutes: homeClock.minutes(),
-      homeSeconds: homeClock.seconds(),
-      awayClock: awayClock,
-      awayHours: awayClock.hours(),
-      awayMinutes: awayClock.minutes(),
-      awaySeconds: awayClock.seconds()
-    });
-  }
-
   goto(data) {
-    const orientation = data.orientation || this.state.orientation;
-    this.cg.set({fen: data.fen, orientation: orientation === 'home' ? 'white' : 'black'});
-    const highlightSquare = (data.pgn || '').match(highlightSquareRegex);
-    this.cg.cancelMove();
-    if (highlightSquare) {
-      this.cg.selectSquare(highlightSquare[1]);
-    }
-    this.cg.setShapes([]);
+    const orientation = getOrientation(data.orientation || this.state.orientation);
     const moveList = data.moveList || [];
+    const currentMove = data.id || moveList.length;
+
+    if (!this.state.viewOnly && moveList.length && moveList.indexOf(null) === -1) {
+      this.cj.reset();
+      for (let i = 0; i < currentMove; ++i) {
+        this.cj.move(moveList[i]);
+      }
+    } else {
+      this.cj.load(data.fen);
+    }
+
+    const newTurnColor = this.cj.turn() === 'w' ? 'white' : 'black';
+    this.cg.set({
+      fen: this.cj.fen(),
+      turnColor: newTurnColor,
+      orientation: orientation,
+      lastMove: data.from ? [data.from, data.to] : undefined,
+      movable: {
+        color: newTurnColor,
+        dests: availableMoves(this.cj)
+      }
+    });
     this.setState({
       moving: data.moving || 'home',
       moveList: moveList,
-      pauseClocks: data.pauseClocks || moveList.length === 0,
+      pauseClocks: data.pauseClocks || !data.clock || moveList.length === 0,
       pausePosition: false,
-      currentMove: data.id || moveList.length,
+      currentMove: currentMove,
       orientation: orientation
     });
-    if (data.clock === null) {
+    if (typeof data.result !== 'undefined' && data.result !== null) {
+      this.setState({
+        hasResult: true
+      });
+      this.result(data);
+    } else {
+      if (this.state.hasResult) {
+        this.result({});
+        this.setState({
+          hasResult: false
+        });
+      }
+    }
+    if (!data.clock) {
       return;
     }
     const homeClock = duration().add(data.clock[0], 's');
@@ -258,7 +243,7 @@ export default class Chessground extends React.PureComponent {
   }
 
   orientation(data) {
-    this.setState({orientation: data.orientation});
+    this.setState({orientation: getOrientation(data.orientation)});
   }
 
   finished(data) {
@@ -267,44 +252,122 @@ export default class Chessground extends React.PureComponent {
       pausePosition: true,
       winner: data.winner
     });
-    this.socket.emit('pairing:list', this.state.matchId);
   }
 
   componentDidMount() {
     this.cg = NativeChessground(this.chessBoard, this.buildConfigFromProps(this.props));
+    this.cj = new Chess();
     this.socket = this.props.socket;
     this.boardName = `${this.props.viewOnly ? 'viewer:' : ''}${this.props.boardName}`;
     this.socket.on(this.boardName, this.handleEvent);
     if (this.props.orientation) {
-      this.setState({orientation: this.props.orientation});
+      this.setState({orientation: getOrientation(this.props.orientation)});
     }
-    if (this.state.viewer) {
-      this.stopUpdatingClocks();
-      this.socket.emit(`${this.boardName}:start`, {
-        orientation: this.state.orientation
+    this.stopUpdatingClocks();
+    this.socket.emit(`${this.boardName}:start`, {
+      orientation: this.state.orientation
+    });
+    this.updateClocks();
+    this.attachMovableConfig();
+  }
+
+  attachMovableConfig() {
+    if (this.props.viewOnly || !this.props.onMoveFen) {
+      return this.cg.set({
+        movable: {
+          free: false
+        }
       });
-      this.updateClocks();
     }
+    this.cg.set({
+      movable: {
+        free: false,
+        turnColor: this.cj.turn() === 'w' ? 'white' : 'black',
+        dests: availableMoves(this.cj),
+        events: {
+          after: (from, to, ...args) => {
+            const move = {from, to};
+            this.checkAndWaitForPromotion(move, (move) => {
+              this.cj.move(move);
+              this.updateAndEmitBoard();
+            });
+          }
+        }
+      }
+    });
+  }
+
+  checkAndWaitForPromotion(move, next) {
+    if (this.props.viewOnly || (this.cj.get(move.from) || {}).type !== 'p') {
+      return setTimeout(() => next(move), 0);
+    }
+    const fromRank = parseInt(move.from[move.from.length - 1]);
+    const toRank = parseInt(move.to[move.to.length - 1]);
+    if (!(fromRank === 2 && toRank === 1) && !(fromRank === 7 && toRank === 8)) {
+      return setTimeout(() => next(move), 0);
+    }
+    this.setState({
+      requestingPromotion: (piece) => {
+        move.promotion = piece || 'q';
+        this.setState({requestingPromotion: false});
+        setTimeout(() => next(move), 0);
+      }
+    });
   }
 
   componentWillReceiveProps(nextProps) {
     this.setState({viewer: nextProps.viewer});
+    const orientation = getOrientation(nextProps.orientation);
     if (nextProps.orientation) {
-      this.setState({orientation: nextProps.orientation});
+      this.setState({orientation: orientation});
     }
     this.stopUpdatingClocks();
     this.socket.emit(`${this.boardName}:start`, {
-      orientation: nextProps.orientation || this.state.orientation
+      orientation: orientation
     });
-    if (nextProps.viewer) {
-      this.updateClocks();
-    }
+    this.updateClocks();
+    this.attachMovableConfig();
   }
 
   componentWillUnmount() {
     this.stopUpdatingClocks();
     this.cg.destroy();
+    this.cj = null;
     this.socket.off(this.boardName, this.handleEvent);
+  }
+
+  updateAndEmitBoard() {
+    const newTurnColor = this.cj.turn() === 'w' ? 'white' : 'black';
+    this.cg.set({
+      fen: this.cj.fen(),
+      turnColor: newTurnColor,
+      movable: {
+        color: newTurnColor,
+        dests: availableMoves(this.cj)
+      }
+    });
+    const moveList = this.cj.history();
+    let newMoveList = [];
+    let overwriteMoveList = false;
+    for (let i = 0, count = moveList.length; i < count; ++i) {
+      if (moveList[i] !== this.state.moveList[i]) {
+        overwriteMoveList = true;
+      }
+      newMoveList.push(moveList[i]);
+    }
+    if (!overwriteMoveList && this.state.moveList.length > moveList.length) {
+      newMoveList = this.state.moveList;
+    }
+    this.setState({
+      currentMove: moveList.length,
+      moveList: newMoveList
+    })
+    this.socket.emit(`${this.boardName}:move`, {
+      id: this.cj.history().length,
+      clock: this.state.clock,
+      fen: this.cj.fen(),
+      moveList: newMoveList
+    });
   }
 
   render() {
@@ -323,27 +386,9 @@ export default class Chessground extends React.PureComponent {
     const homeActive = this.state.moving === 'home' ? ' active' : '';
     const homeFlagged = !this.state.homeClock ? ' flagged' : '';
     const homeClock = parseClock(this.state.homeHours, this.state.homeMinutes, this.state.homeSeconds);
-    const maxMove = this.state.moveList.length - 1;
-    const setCurrentMove = (newCurrentMove, latest) => {
-      this.setState({
-        currentMove: newCurrentMove,
-        pausePosition: !latest,
-        pauseClocks: !latest
-      });
-      this.socket.emit(`${this.boardName}:goto`, {
-        id: newCurrentMove,
-        paused: !latest,
-        stopJumping: !latest
-      });
-    };
-    const changePlayState = (newPlayState) => {
-      if (!newPlayState && !this.state.moveList.length) {
-        this.socket.emit(`${this.boardName}:start`, {orientation: this.state.orientation});
-        return;
-      }
-      this.setState({pausePosition: newPlayState});
-      this.socket.emit(`${this.boardName}:pause`, newPlayState);
-    };
+    const maxMove = this.state.moveList.length;
+    const awayClockHolder = React.createElement('div', {className: `clock awayClock${awayActive}${awayFlagged}`}, awayClock);
+    const homeClockHolder = React.createElement('div', {className: `clock homeClock${homeActive}${homeFlagged}`}, homeClock);
 
     return React.createElement('div', {className: 'board'}, [
       React.createElement('div', {
@@ -351,53 +396,85 @@ export default class Chessground extends React.PureComponent {
         style: {height: this.props.size, width: this.props.size}
       }),
       React.createElement('div', {className: 'eventData'}, [
-        React.createElement('div', {className: `clock homeClock${awayActive}${awayFlagged}`}, awayClock),
+        this.state.orientation === 'home' ? awayClockHolder : homeClockHolder,
         React.createElement('div', {className: 'moveList'},
           this.state.moveList.length
             ? this.state.moveList.map((move, i) => React.createElement('span', {
               className: i + 1 === this.state.currentMove ? 'active' : '',
-              onClick: () => setCurrentMove(i, i + 1 === maxMove)
+              onClick: () => this.setCurrentMove(i + 1, i === maxMove)
             }, move))
             : React.createElement('div', {className: 'waiting'}, 'Waiting to begin...')
         ),
-        React.createElement('div', {className: `clock homeClock${homeActive}${homeFlagged}`}, homeClock),
-        this.props.viewOnly ? '' : React.createElement('div', {className: 'ml-auto actions'}, [
-          React.createElement('button', {
-              className: `btn btn-sm btn-${!this.state.currentMove ? 'secondary' : 'primary'}`,
-              onClick: () => setCurrentMove(0),
-              disabled: !this.state.currentMove
-            },
-            React.createElement('i', {className: 'fas fa-step-backward'})
-          ),
-          React.createElement('button', {
-              className: `btn btn-sm btn-${!this.state.currentMove ? 'secondary' : 'primary'}`,
-              onClick: () => setCurrentMove(this.state.currentMove - 2),
-              disabled: !this.state.currentMove
-            },
-            React.createElement('i', {className: 'fas fa-backward'})
-          ),
-          React.createElement('button', {
-              className: `btn btn-sm btn-${this.state.pausePosition ? 'success' : 'danger'}`,
-              onClick: () => changePlayState(!this.state.pausePosition)
-            },
-            React.createElement('i', {className: `fas fa-${this.state.pausePosition ? 'play' : 'pause'}`})
-          ),
-          React.createElement('button', {
-              className: `btn btn-sm btn-${this.state.currentMove === maxMove ? 'secondary' : 'primary'}`,
-              onClick: () => setCurrentMove(this.state.currentMove),
-              disabled: !this.state.currentMove === maxMove
-            },
-            React.createElement('i', {className: 'fas fa-forward'})
-          ),
-          React.createElement('button', {
-              className: `btn btn-sm btn-${this.state.currentMove === maxMove ? 'secondary' : 'primary'}`,
-              onClick: () => setCurrentMove(maxMove),
-              disabled: !this.state.currentMove === maxMove
-            },
-            React.createElement('i', {className: 'fas fa-forward'})
-          )
+        this.state.orientation === 'home' ? homeClockHolder : awayClockHolder,
+        this.addSeekButtons(maxMove)
+      ]),
+      React.createElement('div', {className: `promotion-selector ${this.state.requestingPromotion ? 'fadeIn' : 'fadeOut'}`}, [
+        React.createElement('div', {}, [
+          React.createElement('div', {className: 'btn-group', role: 'group'}, [
+            React.createElement('button', {
+              className: `btn btn-lg btn-primary`,
+              onClick: () => this.state.requestingPromotion('q')
+            }, React.createElement('strong', {}, ['Queen'])),
+            React.createElement('button', {
+              className: `btn btn-lg btn-secondary`,
+              onClick: () => this.state.requestingPromotion('r')
+            }, React.createElement('strong', {}, ['Rook'])),
+            React.createElement('button', {
+              className: `btn btn-lg btn-secondary`,
+              onClick: () => this.state.requestingPromotion('b')
+            }, React.createElement('strong', {}, ['Bishop'])),
+            React.createElement('button', {
+              className: `btn btn-lg btn-secondary`,
+              onClick: () => this.state.requestingPromotion('n')
+            }, React.createElement('strong', {}, ['Knight']))
+          ])
         ])
       ])
     ]);
+  }
+
+  addSeekButtons(maxMove) {
+    if (this.props.viewOnly) {
+      return '';
+    }
+    return React.createElement('div', {className: 'ml-auto actions'}, [
+      React.createElement('button', {
+          className: `btn btn-sm btn-${this.state.currentMove - 1 <= 0 ? 'secondary' : 'primary'}`,
+          onClick: () => this.setCurrentMove(0),
+          disabled: this.state.currentMove - 1 <= 0
+        },
+        React.createElement('i', {className: 'fas fa-step-backward'})
+      ),
+      React.createElement('button', {
+          className: `btn btn-sm btn-${this.state.currentMove - 1 <= 0 ? 'secondary' : 'primary'}`,
+          onClick: () => this.setCurrentMove(this.state.currentMove - 1),
+          disabled: this.state.currentMove - 1 <= 0
+        },
+        React.createElement('i', {className: 'fas fa-backward'})
+      ),
+      React.createElement('button', {
+          className: `btn btn-sm btn-${this.state.currentMove >= maxMove ? 'secondary' : 'primary'}`,
+          onClick: () => this.setCurrentMove(this.state.currentMove + 1),
+          disabled: this.state.currentMove >= maxMove
+        },
+        React.createElement('i', {className: 'fas fa-forward'})
+      ),
+      React.createElement('button', {
+          className: `btn btn-sm btn-${this.state.currentMove >= maxMove ? 'secondary' : 'primary'}`,
+          onClick: () => this.setCurrentMove(maxMove),
+          disabled: this.state.currentMove >= maxMove
+        },
+        React.createElement('i', {className: 'fas fa-step-forward'})
+      )
+    ])
+  }
+
+  setCurrentMove(newCurrentMove) {
+    this.cj.reset();
+    for (let i = 0; i < newCurrentMove; ++i) {
+      this.cj.move(this.state.moveList[i]);
+    }
+    this.setState({currentMove: newCurrentMove});
+    this.updateAndEmitBoard();
   }
 }

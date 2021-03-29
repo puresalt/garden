@@ -14,22 +14,42 @@
 
 apps:
   - script: node ./observer.js
-    name: 'usate:state:observer:4'
+    name: 'college:state:observer:4'
     env:
       DIRECT_QUEUE: 1
       BOARD_ID: 1
   - script: node ./observer.js
-    name: 'usate:state:observer:2'
+    name: 'college:state:observer:2'
     env:
       DIRECT_QUEUE: 1
       BOARD_ID: 2
   - script: node ./observer.js
-    name: 'usate:state:observer:3'
+    name: 'college:state:observer:3'
     env:
       DIRECT_QUEUE: 1
       BOARD_ID: 3
   - script: node ./observer.js
-    name: 'usate:state:observer:4'
+    name: 'college:state:observer:4'
     env:
       DIRECT_QUEUE: 1
       BOARD_ID: 4
+  - script: node ./observer.js
+    name: 'college:state:observer:5'
+    env:
+      DIRECT_QUEUE: 1
+      BOARD_ID: 5
+  - script: node ./observer.js
+    name: 'college:state:observer:6'
+    env:
+      DIRECT_QUEUE: 1
+      BOARD_ID: 6
+  - script: node ./observer.js
+    name: 'college:state:observer:7'
+    env:
+      DIRECT_QUEUE: 1
+      BOARD_ID: 7
+  - script: node ./observer.js
+    name: 'college:state:observer:8'
+    env:
+      DIRECT_QUEUE: 1
+      BOARD_ID: 8

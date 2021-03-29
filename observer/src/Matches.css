@@ -1,0 +1,165 @@
+.Pairings td,
+.Pairings th {
+    vertical-align: middle;
+}
+
+td.black {
+    background: #111;
+    color: #f1f1f1;
+    font-weight: 700;
+    text-align: center;
+}
+
+td.white {
+    background: #f1f1f1;
+    color: #111;
+    font-weight: 700;
+    text-align: center;
+}
+
+.Board {
+    height: 234px !important;
+    width: 200px !important;
+}
+
+.Board .eventData {
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    width: 200px !important;
+}
+
+.Board .moveList {
+    display: none;
+}
+
+.Board .board {
+    position: relative;
+    width: 200px !important;
+    height: 234px;
+}
+
+.Board .clock {
+    position: absolute;
+    width: 100px !important;
+    line-height: 14px;
+    font-size: 10px !important;
+    right: 0;
+}
+
+.orientation-home .awayClock,
+.orientation-away .homeClock
+{
+    bottom: 17px;
+}
+
+.orientation-home .homeClock,
+.orientation-away .awayClock {
+    bottom: 0;
+}
+
+#board-examine {
+    background: #006747;
+}
+
+#board-examine .clock {
+    display: none;
+}
+
+#board-examine .moveList {
+    display: block;
+}
+
+#board-examine .eventData {
+    left: 0;
+    top: 400px;
+    position: absolute;
+    width: 400px !important;
+}
+
+.col-lg-3 {
+    padding-left: 0 !important;
+}
+
+.match-holder-container {
+    width: 900px;
+}
+
+.match-holder {
+    background: #ddd;
+    border-radius: 1em;
+    margin-bottom: 1em;
+    padding: 1em;
+    width: 100%;
+    position: relative;
+}
+
+.match-holder.watching {
+    background: #006747;
+}
+
+.match-holder .Board {
+    margin-bottom: 0 !important;
+}
+
+.Pairings {
+    position: relative;
+}
+
+.observe-button {
+    position: absolute;
+    top: 16px;
+    right: 8px;
+}
+
+.observe-board-button,
+.examine-board-button {
+    position: absolute;
+    bottom: 0;
+    left: 50px;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 24px;
+    border-radius: 0;
+    width: 50px;
+}
+
+.observe-board-button {
+    left: 0;
+}
+
+.actions {
+    bottom: auto !important;
+}
+
+.Board .eventData .moveList span {
+    font-size: 0.8rem !important;
+}
+
+.Board.visible {
+    opacity: 1;
+    transition: opacity 1s;
+}
+
+.Board.hidden {
+    opacity: 0;
+    transition: opacity 1s;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.player-name {
+    margin: 0 0.25em 0.25em 1em;
+    line-height: 24px;
+    height: 24px;
+    overflow: hidden;
+    width: 200px;
+    text-align: center;
+}
+
+.watching h2,
+.watching .player-name {
+    color: #fff;
+}

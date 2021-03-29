@@ -1,281 +1,390 @@
-const ChessBoard = require('chess.js').Chess;
 const net = require('net');
-const generateGameHash = require('garden-common/src/state').generateGameHash;
+const ChessBoard = require('../node_modules/chess.js/chess').Chess;
 const parseLiveBoard = require('./parse/liveBoard');
 
-const READ_TERMINATE = 'aics%';
+const END_OF_COMMAND = 'aics%';
 
-const loginPromptRegex = /login: $/;
-const passwordPromptRegex = /password: /;
-const observeResponseRegex = /Game ([0-9]+) \(([a-zA-Z0-9_-]+) vs\. ([a-zA-Z0-9_-]+)\)/;
-const pgnResponseRegex = /[\s\S]+\[Site [\s\S]+/;
-const resultsResponseRegex = /^{Game ([0-9]+) \(([a-zA-Z0-9_-]+) vs\. ([a-zA-Z0-9_-]+)\) ([a-zA-Z0-9_-]+) ([a-zA-Z0-9 ]+)} (0|0.5|1)-(0|0.5|1)[\s\S]+/;
-const historyResponseRegex = /^Recent games of ([a-zA-Z0-9_-]+)[\s\S]+/;
-const pgnMovesRegex = /1. ([NBQRKOxa-h0-9=/+#\s\S .-]+)$/;
-const noExaminersRegex = /game [0-9]+ \(which you were observing\) has no examiners./;
-const individualMoveRegex = /([NBQRKOxa-h0-9=/+#-]+)\s/g;
+const matchResults = {
+  '0': 0,
+  '1': 1,
+  '1/2': 0.5,
+  '0.5': 0.5,
+  '.5': 0.5
+};
 
-function ObserverLoop(boardId, redis, config) {
-  const connection = net.createConnection(config.port, config.host);
+const convertToSeconds = (raw) => {
+  const clock = raw.split(':').map(i => i.trim());
+  const fragments = clock.map(i => parseInt(i.trim()));
+  let seconds = fragments.pop();
+  let minutes = (fragments.pop() || 0) * 60;
+  let hours = (fragments.pop() || 0) * 60 * 60;
+  return seconds + minutes + hours;
+};
 
-  let chessBoard = null;
-  let gameHash = null;
-  let loggedIn = false;
+const buildPosition = (moveList, startingClock, increment) => {
+  const chessBoard = new ChessBoard();
+  let move;
+  let lastValidMove;
+  const clock = startingClock || [1500, 1500];
+  increment = increment || 5;
+  const moves = [];
+  for (let i = 0, count = moveList.length; i < count; ++i) {
+    move = chessBoard.move(moveList[i][0]);
+    if (!move) {
+      break;
+    }
+    moves.push(move.san);
+    const time = convertToSeconds(moveList[i][1]);
+    clock[i % 2 === 1 ? 0 : 1] += increment - time;
+    lastValidMove = move;
+  }
+  return lastValidMove
+    ? {
+      id: chessBoard.history().length,
+      pgn: lastValidMove.san,
+      fen: chessBoard.fen(),
+      move: [lastValidMove.from, lastValidMove.to],
+      clock: clock,
+      moveList: moves,
+      moving: lastValidMove.color === 'w' ? 'home' : 'away'
+    }
+    : null;
+};
+
+function ObserverLoop(connection, boardId, redis) {
+  const sendCommand = (command, ...attributes) => {
+    const sending = [command, attributes.join(' ')].join(' ');
+    console.info('CMD:', sending);
+    connection.write(`${sending}\n`);
+  };
+  const boardHash = `college:viewer:game:${boardId}`;
+  const pushPosition = (position, callback) => {
+    redis.rpush(boardHash, JSON.stringify({
+      type: 'goto',
+      data: position
+    }), (err) => {
+      if (err) {
+        console.error('ERROR STORING:', position);
+      }
+      callback && callback(err);
+    });
+  };
+
+  const clearGameHistory = (callback) => {
+    console.info('Clearing history to look for:', observing);
+    process.nextTick(() => pushPosition({
+      fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+      clock: [1500, 1500],
+      moveList: [],
+      moving: 'home',
+      pauseClocks: true
+    }, callback));
+  };
+
   let observing = null;
-  let home = null;
-  let away = null;
-  let gameId = null;
-  let queueMoves = null;
-  let notLoggedIn = null
-  let notPlaying = null;
-  let noHistoryResponse = null;
-  let checkingHistory = false;
-  let checkedHistory = false;
-  let lastMove = 0;
-  let runningMoveList = [];
-  const loopForUsernameChanges = () => {
-    redis.get(`usate:stream:board:${boardId}`, (err, usernames) => {
+  let currentCommand = null;
+  let noGameFound = false;
+  const loopForSeekParameterChanges = () => {
+    redis.get(`college:stream:board:${boardId}`, (err, seekParameters) => {
       if (err) {
         console.warn('Error finding players, will try again in a bit:', err);
       }
-      if (!usernames || observing === usernames) {
+      if (!seekParameters || observing === seekParameters) {
         return;
       }
-      observing = usernames;
-      [home, away] = usernames.split(',');
-      notLoggedIn = `${home} is not logged in.`;
-      notPlaying = `${home} is not playing or examining a game.`;
-      noHistoryResponse = `${home} has no games record.`;
-      connection.write(`unobs\n`);
-      connection.write(`obs ${home}\n`);
-      gameId = null;
-      checkingHistory = false;
-      checkedHistory = false;
-      queueMoves = null;
-      gameHash = generateGameHash(home, away);
-      lastMove = 0;
+      observing = seekParameters;
+      const parameters = seekParameters.split(' ');
+      noGameFound = false;
+      switch (parameters[0]) {
+        case 'find':
+          findGames(parameters[1], parameters[2]);
+          break;
+        case 'smoves':
+          clearGameHistory(() => getSmoves(parameters[1], parameters[2]));
+          break;
+        case 'observe':
+          clearGameHistory(() => observeGame(parameters[1]));
+          break;
+        case 'clear':
+          clearGameHistory(() => console.log('Board cleared'));
+      }
     });
   }
+  process.nextTick(() => setInterval(loopForSeekParameterChanges, 500));
 
-  const parseLiveGameData = (liveGameData, data) => {
-    const boardData = parseLiveBoard(data);
-    const isValidNewGame = gameId !== liveGameData[1]
-      && (liveGameData[2].toLowerCase() === away || liveGameData[3].toLowerCase() === away);
-    if (isValidNewGame) {
-      gameId = liveGameData[1];
-      chessBoard = new ChessBoard();
-      runningMoveList = [];
-      queueMoves = [];
-      if (boardData.pgn) {
-        queueMoves.push(boardData);
-      }
-      redis.del(gameHash, (err) => {
-        if (err) {
-          console.warn('Error deleting:', gameHash, err);
+  let hopefullyGameId = null;
+  let runningMoves = null;
+  let positionIsLive = false;
+  let latestPosition = null;
+  let pgnData = '';
+  let waitingForPgnData = false;
+
+  function observeGame(gameId) {
+    currentCommand = 'observeGame';
+    hopefullyGameId = gameId;
+    pgnData = '';
+    waitingForPgnData = false;
+    runningMoves = null;
+    positionIsLive = false;
+    latestPosition = null;
+    sendCommand('observe', gameId);
+  }
+
+  const liveGameRegex = /<12> [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [W|B] [0-9-]+ [01] [01] [01] [01] [0-9]+ ([0-9]+) ([a-zA-Z0-9-]+) ([a-zA-Z0-9-]+).+[\n\r]/g;
+  const pgnRegexMatch = /[\s\S]+\[Site [\s\S]+/;
+  const pgnMovesRegex = /1. ([NBQRKOxa-h0-9=/+#\s\S .-]+)$/;
+  const individualMoveRegex = /([NBQRKOxa-h0-9=/+#-]+)[\s\r\n]+{([0-9:]+)}/g;
+
+  const gameOverRegex = /{Game ([0-9]+) \([a-zA-Z0-9-]+ vs\. [a-zA-Z0-9-]+\) [a-zA-Z0-9-]+ ([a-z ]+)} ([2/01]+)-[2/01]+/;
+  const getGameOver = data => data.match(gameOverRegex);
+  const isPgn = data => pgnRegexMatch.test(data);
+
+  function gameObserver(data) {
+    if (data.indexOf('There is no such game.') === -1) {
+      const gameOverData = getGameOver(data);
+      const pushGameOverData = gameOverData && gameOverData[1] === hopefullyGameId
+        ? {
+          pauseClocks: true,
+          result: matchResults[gameOverData[3]],
+          by: gameOverData[2]
         }
-        process.nextTick(() => connection.write(`pgn ${liveGameData[1]}\n`));
-      });
-      redis.set(`usate:viewer:game:${boardId}:id`, gameId, (err) => {
-        if (err) {
-          console.warn('Error setting:', gameId, err);
-        }
-        console.info('New gameId:', gameId);
-      });
-    } else if (!gameId) {
-      console.info('nothing yet');
-    } else if (queueMoves !== null) {
-      queueMoves.push(boardData);
-    } else if (!boardData.id || !boardData.pgn) {
-      chessBoard = new ChessBoard();
-      runningMoveList = [];
-      lastMove = 0;
-      redis.del(gameHash, (err) => {
-        if (err) {
-          console.warn('Troubles removing the game hash:', gameHash, err);
-        }
-        redis.rpush(gameHash, JSON.stringify({
-          type: 'goto',
-          data: {
-            fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-            clock: [3600, 3600],
-            moveList: [],
-            moving: 'home'
+        : false;
+      if (waitingForPgnData || isPgn(data)) {
+        waitingForPgnData = data.indexOf(END_OF_COMMAND) === -1;
+        pgnData += data;
+        if (!waitingForPgnData) {
+          const pgnMoves = (pgnData.match(pgnMovesRegex) || [''])[0];
+          const currentPosition = buildPosition([...pgnMoves.matchAll(individualMoveRegex)].map(i => [i[1], i[2]]));
+          const moveList = (currentPosition || {}).moveList || [];
+          for (let i = 0, count = moveList.length; i < count; ++i) {
+            runningMoves[i] = moveList[i];
           }
-        }));
-      });
-    } else if (boardData.id < lastMove) {
-      const diff = lastMove - boardData.id;
-      for (let i = 0; i < diff; ++i) {
-        chessBoard.undo();
-        runningMoveList.pop();
-        redis.rpop(gameHash);
-      }
-      lastMove = boardData.id;
-    } else if (runningMoveList[runningMoveList - 1] !== boardData.pgn) {
-      const move = chessBoard.move(boardData.pgn);
-      runningMoveList.push(boardData.pgn);
-      lastMove = boardData.id;
-      redis.rpush(gameHash, JSON.stringify({
-        type: 'move',
-        data: {
-          id: chessBoard.history().length,
-          pgn: move.san,
-          fen: chessBoard.fen(),
-          move: [move.from, move.to],
-          clock: boardData.clock,
-          moveList: runningMoveList.map(i => i),
-          moving: move.color === 'w' ? 'home' : 'away'
-        }
-      }));
-    }
-  };
-
-  const parseStaleGameData = (staleGameData, data) => {
-    const pgnMoves = (data.match(pgnMovesRegex) || [''])[0];
-    const moveList = [...pgnMoves.matchAll(individualMoveRegex)].map(i => i[1]);
-    redis.rpush(gameHash, JSON.stringify({
-      type: 'goto',
-      data: {
-        fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-        clock: [3600, 3600],
-        moveList: moveList.map(i => i),
-        moving: 'home'
-      }
-    }), (err) => {
-      if (err) {
-        console.warn('Error pushing:', gameHash, err);
-      }
-
-      const firstQueuedMove = ((queueMoves || [])[0] || []).id || null;
-      for (let i = 0, count = moveList.length; i < count; ++i) {
-        if (firstQueuedMove !== null && i >= firstQueuedMove - 1) {
-          break;
-        }
-        const move = chessBoard.move(moveList[i]);
-        runningMoveList.push(moveList[i]);
-        redis.rpush(gameHash, JSON.stringify({
-          type: 'move',
-          data: {
-            id: chessBoard.history().length,
-            pgn: move.san,
-            fen: chessBoard.fen(),
-            move: [move.from, move.to],
-            clock: null,
-            moving: move.color === 'w' ? 'home' : 'away'
+          positionIsLive = true;
+          if (!latestPosition) {
+            latestPosition = currentPosition;
           }
-        }));
-      }
-
-      let nextQueueMove;
-      while ((nextQueueMove = queueMoves.shift())) {
-        if (nextQueueMove.pgn) {
-          const move = chessBoard.move(nextQueueMove.pgn);
-          runningMoveList.push(nextQueueMove.pgn);
-          redis.rpush(gameHash, JSON.stringify({
-            type: 'move',
-            data: {
-              id: chessBoard.history().length,
-              pgn: move.san,
-              fen: chessBoard.fen(),
-              move: [move.from, move.to],
-              clock: nextQueueMove.clock,
-              moving: move.color === 'w' ? 'home' : 'away'
+          if (latestPosition && !gameOverData) {
+            pushPosition({...latestPosition, moveList: runningMoves});
+          }
+        }
+        return;
+      } else {
+        const boardEvents = ([...data.matchAll(liveGameRegex)] || [])
+          .filter(row => row[1] === hopefullyGameId)
+          .map(row => row[0].trim().split('<12>')[1]);
+        if (boardEvents.length) {
+          for (let i = 0, count = boardEvents.length; i < count; ++i) {
+            const boardData = parseLiveBoard(boardEvents[i]);
+            const boardDataId = boardData.id || 0;
+            if (runningMoves === null) {
+              runningMoves = new Array(boardData.id - 1).fill(null);
+              if (!latestPosition || boardDataId > latestPosition.id) {
+                latestPosition = boardData;
+              }
+              if (boardDataId) {
+                runningMoves[boardData.id - 1] = boardData.pgn;
+              }
+              sendCommand('pgn', hopefullyGameId);
+            } else if (boardDataId) {
+              runningMoves[boardData.id - 1] = boardData.pgn;
+              if (!latestPosition || boardDataId > latestPosition.id) {
+                latestPosition = boardData;
+                if (!gameOverData) {
+                  pushPosition({...latestPosition, moveList: runningMoves});
+                }
+              }
             }
-          }));
+          }
         }
       }
-      lastMove = runningMoveList.length;
-      queueMoves = null;
-    });
-  };
+      if (!gameOverData) {
+        return;
+      }
+      if (latestPosition) {
+        if (pushGameOverData.by === 'forfeits on time') {
+          latestPosition.clock[pushGameOverData.result] = 0;
+        }
+        pushPosition({...latestPosition, ...pushGameOverData, moveList: runningMoves});
+      }
+    }
 
-  const parseResultsData = (resultsData, data) => {
-    console.log('parseResultsData', resultsData, data);
-  };
+    console.info('Finished storing game:', observing);
+    currentCommand = null;
+    noGameFound = true;
+  }
 
-  const checkHistory = () => {
-    if (checkingHistory) {
+  let searchingHistoryFor = null;
+  let emptyGameHistoryRegex = null;
+
+  function findHistory(historyFor) {
+    currentCommand = 'findHistory';
+    searchingHistoryFor = historyFor;
+    emptyGameHistoryRegex = new RegExp(`${searchingHistoryFor} has no games record.`, 'i');
+    process.nextTick(() => sendCommand('history', historyFor));
+  }
+
+  const individualGameHistoryRegex = /([0-9]+): [-+=] [0-9]+ [B|W] [0-9]+ ([a-zA-Z0-9_-]+)\s+\[[a-zA-Z0-9 ]+] [a-zA-Z0-9]+ [a-zA-Z0-9]+/g;
+  let white = null;
+  let black = null;
+
+  function findHistoryObserver(data) {
+    currentCommand = null;
+    if (!emptyGameHistoryRegex.test(data)) {
+      const historyList = [...(data.matchAll(individualGameHistoryRegex) || [])];
+      const against = searchingHistoryFor === white
+        ? black
+        : white;
+      if (historyList.length) {
+        const probableGame = historyList.map((row, i) => {
+          return against.indexOf(row[2].toLowerCase()) > -1
+            ? row[1]
+            : null;
+        }).filter(i => i !== null)[0];
+        if (probableGame) {
+          return getSmoves(searchingHistoryFor, probableGame);
+        }
+      }
+    }
+
+    noGameFound = true;
+  }
+
+  let gameListRegex = null;
+  let foundGame = null;
+  let gameListData = '';
+
+  function findGames(findWhite, findBlack) {
+    white = findWhite;
+    black = findBlack;
+    currentCommand = 'findGames';
+    foundGame = null;
+    gameListData = '';
+    gameListRegex = new RegExp(`([0-9]+)[ ]+[0-9]+[ ]+${white}[a-zA-Z0-9() ]+${black}[a-zA-Z0-9() ]+[a-zA-Z]+[ ]+[0-9]+[ ]+[0-9]+[ ]+[W|B]:[ ]+[0-9]+`, 'i');
+    clearGameHistory(() => sendCommand(`games`));
+  }
+
+  function findGameObserver(data) {
+    gameListData += data;
+    if (data.indexOf(END_OF_COMMAND) > -1) {
+      currentCommand = null;
+      foundGame = gameListData.match(gameListRegex);
+      if (foundGame !== null) {
+        return observeGame(foundGame[1]);
+      } else {
+        findHistory(white);
+      }
+    }
+  }
+
+  const smovesListRegex = /\s+([NBQRKOxa-h0-9=/+#-]+)\s+\(([0-9:]+)\)/g;
+  const smovesStartTimeRegex = /initial time: ([0-9]+)/;
+  const smovesIncrementRegex = /increment: ([0-9]+)/;
+  const smovesMatchResultRegex = /[White|Black] ([a-z]+)} ([120/]+)-[120/]+/;
+  const abjournedGamesRegex = /([a-zA-Z0-9_-]+) has no adjourned games./i;
+  const noGameFoundRegex = /([a-zA-Z0-9_-]+) has no game numbered [0-9]+/i;
+
+  let moveListData = null;
+  let smovesPlayer = null;
+  let smovesIndex = null;
+  let smovesWaiting = 0;
+
+  function getSmoves(player, index, incomingSmovesWaiting) {
+    currentCommand = 'smoves';
+    moveListData = '';
+    smovesPlayer = player;
+    smovesIndex = index;
+    smovesWaiting = incomingSmovesWaiting || 0;
+    process.nextTick(() => sendCommand('smoves', player, index));
+  }
+
+  function smovesObserver(data) {
+    if (data.indexOf('You may use "smoves" if you specify an argument.') > -1 || abjournedGamesRegex.test(data) || noGameFoundRegex.test(data)) {
+      noGameFound = true;
+      currentCommand = null;
       return;
     }
-    if (checkedHistory) {
-      return setTimeout(() => connection.write(`obs ${home}\n`), 1000);
+
+    moveListData += data;
+    if (data.indexOf(END_OF_COMMAND) > -1) {
+      if (data.indexOf('Game database temporarily unavailable.') > -1) {
+        if (smovesWaiting > 15) {
+          console.warn('Giving up on:', smovesPlayer, smovesIndex);
+          noGameFound = true;
+          currentCommand = null;
+          smovesPlayer = null;
+          smovesIndex = null;
+          smovesWaiting = 0;
+          return;
+        }
+        return setTimeout(() => {
+          getSmoves(smovesPlayer, smovesIndex, smovesWaiting + 1);
+        }, 500);
+      }
+      const foundMoves = moveListData.matchAll(smovesListRegex);
+      if (!foundMoves) {
+        noGameFound = true;
+      }
+      const startTime = parseInt((moveListData.match(smovesStartTimeRegex) || [null, 5])[1]) * 60;
+      const increment = parseInt((moveListData.match(smovesIncrementRegex) || [null, 5])[1]);
+      const matchResultData = moveListData.match(smovesMatchResultRegex);
+      const finalPosition = buildPosition([...foundMoves].map(i => [i[1], i[2]]), [startTime, startTime], increment);
+      if (finalPosition) {
+        if (matchResultData) {
+          finalPosition.result = matchResults[matchResultData[2]];
+          finalPosition.by = matchResultData[1];
+        }
+        pushPosition({...finalPosition, pauseClocks: true}, (err) => {
+          noGameFound = false;
+          currentCommand = null;
+          smovesPlayer = null;
+          smovesIndex = null;
+          smovesWaiting = 0;
+          console.info('Finished storing game:', observing);
+        });
+      }
     }
-    checkingHistory = true;
-    connection.write(`history ${home}\n`);
-  };
-  const parseHistoryData = (historyData, data) => {
-    checkingHistory = false;
-    checkedHistory = true;
-  };
-  const noHistoryData = () => {
-    checkingHistory = false;
-    checkedHistory = true;
-    setTimeout(() => connection.write(`obs ${home}\n`), 1000);
   }
 
-  const clientOn = (buffer) => {
-    const data = buffer.toString().replace(READ_TERMINATE, '');
-    const lowerCaseData = data.toLowerCase().trim();
-
-    if (
-      lowerCaseData === notLoggedIn
-      || lowerCaseData === notPlaying
-      || noExaminersRegex.test(lowerCaseData)
-    ) {
-      return checkHistory();
-    }
-
-    if (lowerCaseData === noHistoryResponse) {
-      return noHistoryData();
-    }
-
-    const resultsData = data.match(resultsResponseRegex);
-    if (resultsData !== null) {
-      return parseResultsData(resultsData, data);
-    }
-
-    const liveGameData = data.match(observeResponseRegex);
-    if (liveGameData !== null) {
-      return parseLiveGameData(liveGameData, data);
-    }
-
-    const staleGameData = data.match(pgnResponseRegex);
-    if (staleGameData !== null) {
-      return parseStaleGameData(staleGameData, data);
-    }
-
-    const historyData = data.match(historyResponseRegex);
-    if (historyData !== null) {
-      return parseHistoryData(historyData, data);
-    }
-
-    console.log(data);
+  const observerList = {
+    findGames: findGameObserver,
+    findHistory: findHistoryObserver,
+    smoves: smovesObserver,
+    observeGame: gameObserver
   };
+  connection.on('data', (incomingData) => {
+    const data = incomingData.toString();
+    console.info('>', data);
+    if (observing === null || noGameFound) {
+      return console.info('Nothing to observe');
+    }
+    if (observerList[currentCommand]) {
+      observerList[currentCommand](data);
+    }
+  });
+}
 
+module.exports = (boardId, redis, config) => {
+  const loginPromptRegex = /login: $/;
+  const passwordPromptRegex = /password: /;
+
+  const connection = net.createConnection(config.port, config.host);
   const logOn = (buffer) => {
     const data = buffer.toString().toLowerCase();
-    if (loggedIn) {
-      return;
-    }
     if (loginPromptRegex.test(data)) {
       connection.write(`${config.username}\n`);
     } else if (passwordPromptRegex.test(data)) {
       connection.write(`${config.password}\n`);
-      connection.on('data', clientOn);
       connection.off('data', logOn);
-      loggedIn = true;
-      setInterval(loopForUsernameChanges, 1000);
+      process.nextTick(() => ObserverLoop(connection, boardId, redis));
     }
   };
   connection.on('data', logOn);
   connection.on('timeout', () => {
-    console.log('Connection timed out');
+    console.info('Connection timed out');
     process.exit();
   });
   connection.on('end', () => {
-    console.log('Connection ended');
+    console.info('Connection ended');
     process.exit();
   });
-}
-
-module.exports = ObserverLoop;
+};

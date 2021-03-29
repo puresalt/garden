@@ -1,0 +1,88 @@
+* {
+    font-family: antarctican-headline, san serif;
+    font-weight: 700;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+}
+
+span,
+.active {
+    color: #ffca0a;
+}
+
+em {
+    opacity: 0.5;
+}
+
+.Matches {
+    background: url(./background.png) no-repeat;
+    position: absolute;
+    width: 1920px;
+    height: 1080px;
+}
+
+.Matches.Small {
+    background: transparent;
+}
+
+.MatchesResultBar,
+.TitleBar,
+header,
+footer {
+    background: #006747;
+    color: #fff;
+    height: 27px;
+    line-height: 24px;
+    font-size: 22px;
+    text-transform: uppercase;
+}
+
+.TitleBar {
+    height: 39px;
+    line-height: 33px;
+    font-size: 36px;
+}
+
+.MatchesResultBar {
+    position: absolute;
+    right: 7px;
+    text-align: center;
+    top: 7px;
+    width: 517px;
+}
+
+.TitleBar {
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    width: 100%;
+}
+
+.TitleBar .TeamName {
+    position: absolute;
+    left: 8px;
+    top: 0;
+}
+
+.TitleBar .MatchesName {
+    text-align: center;
+    width: 100%;
+}
+
+.TitleBar .Host {
+    position: absolute;
+    top: 0;
+    right: 8px;
+}
+
+.Host i {
+    color: #ffca0a;
+    font-size: 0.8em;
+    margin-right: 6px;
+}

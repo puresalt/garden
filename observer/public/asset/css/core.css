@@ -1,0 +1,14 @@
+body {
+    font-family: Open Sans, sans-serif;
+}
+
+h1 {
+    color: #006747;
+    font-family: antarctican-headline, san serif;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+}
+
+em {
+    margin-right: 0.2em;
+}

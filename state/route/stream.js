@@ -1,56 +1,41 @@
-const BoardEventRoute = require('./board/event');
-const BoardInteractiveRoute = require('./board/interactive');
 const BoardViewerRoute = require('./board/viewer');
+const StreamUtility = require('../src/stream');
 
 function StreamerRoute(db, redis, socketWrapper) {
+  const streamUtility = StreamUtility(redis);
+  let lastState = {};
+  let stopLooping = false;
+
   function updateStreamState(isLive) {
-    redis.hset('usate:stream:state', 'isLive', isLive ? '1' : '0', (err) => {
+    streamUtility.setState({isLive}, (err, data) => {
       if (err) {
         return console.warn('Failed updating stream state:', isLive, err);
       }
-      socketWrapper.broadcast('stream:updated', isLive);
-    });
+      socketWrapper.broadcast('stream:loaded', data);
+    })
   }
 
   function loadStreamState() {
-    let lastState = {
-      isLive: undefined,
-      pairingId: undefined,
-      boardNumber: undefined,
-      home: undefined,
-      away: undefined
-    };
+    stopLooping = false;
+
     const loopForStateChanges = () => {
-      redis.hgetall('usate:stream:state', (err, data) => {
+      if (stopLooping) {
+        return;
+      }
+      streamUtility.getState((err, data) => {
         if (err) {
           return console.warn('Failed getting stream state:', err);
         }
         if (!data) {
           return setTimeout(loopForStateChanges, 250);
         }
-        const isLive = data.isLive === '1';
-        const pairingId = data.pairingId ? parseInt(data.pairingId) : null;
-        const boardNumber = data.boardNumber ? parseInt(data.boardNumber) : null;
-        const home = data.home ? data.home : null;
-        const away = data.away ? data.away : null;
         if (
           lastState.isLive === undefined
-          || lastState.boardNumber === undefined
-          || lastState.pairingId === undefined
-          || lastState.away === undefined
-          || lastState.home === undefined
-          || lastState.isLive !== isLive
-          || lastState.boardNumber !== boardNumber
-          || lastState.pairingId !== pairingId
-          || lastState.home !== home
-          || lastState.away !== away
+          || lastState.gameId === undefined || lastState.gameId !== data.gameId
+          || lastState.examineId === undefined || lastState.examineId !== data.examineId
+          || lastState.matchId === undefined || lastState.matchId !== data.matchId
         ) {
-          lastState.isLive = isLive;
-          lastState.pairingId = pairingId;
-          lastState.boardNumber = boardNumber;
-          lastState.boardNumber = boardNumber;
-          lastState.home = home;
-          lastState.away = away;
+          lastState = data;
           socketWrapper.emit('stream:loaded', lastState);
         }
         setTimeout(loopForStateChanges, 250);
@@ -60,7 +45,7 @@ function StreamerRoute(db, redis, socketWrapper) {
   }
 
   function listBoards() {
-    redis.hgetall('usate:stream:board', (err, data) => {
+    redis.hgetall('college:stream:board', (err, data) => {
       if (err) {
         return console.warn('Failed getting live stream board status:', data, err);
       }
@@ -86,7 +71,11 @@ function StreamerRoute(db, redis, socketWrapper) {
         parsePairing(1),
         parsePairing(2),
         parsePairing(3),
-        parsePairing(4)
+        parsePairing(4),
+        parsePairing(5),
+        parsePairing(6),
+        parsePairing(7),
+        parsePairing(8)
       ];
 
       socketWrapper.emit('stream:board:listed', boardList);
@@ -96,13 +85,14 @@ function StreamerRoute(db, redis, socketWrapper) {
   socketWrapper.on('stream:update', updateStreamState);
   socketWrapper.on('stream:load', loadStreamState);
   socketWrapper.on('stream:board:list', listBoards);
-  const boardSubRoutes = [1, 2, 3, 4].reduce((gathered, i) => {
+  const boardSubRoutes = [1, 2, 3, 4, 5, 6, 7, 8].reduce((gathered, i) => {
     gathered.push(
       BoardViewerRoute(db, redis, socketWrapper, i)
     );
     return gathered;
   }, []);
   return () => {
+    stopLooping = true;
     socketWrapper.off('stream:update', updateStreamState);
     socketWrapper.off('stream:load', loadStreamState);
     socketWrapper.off('stream:board:list', listBoards);

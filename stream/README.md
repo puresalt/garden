@@ -15,14 +15,14 @@ the get go I would have tried to be better in making it easier to skin.
 
 There are two main endpoints, each with an alias to a shorthand for the most recent match.
 
-### Full Match `/match/:matchId`, `/`
+### Full Matches `/match/:matchId`, `/`
 
 Going to just `/` will return the latest non deleted match. Both will return the main overlay which shows all four
 boards along with any other settings. All display information is handled via [Admin](../admin/README.md).
 
 ### Board Highlight `/match/:matchId/board/:boardNumber`, `/board/:boardNumber`
 
-Just like the case with [Full Match](#full-match-matchmatchid-) the shorthand `/board/:boardNumber` will apply to the
+Just like the case with [Full Matches](#full-match-matchmatchid-) the shorthand `/board/:boardNumber` will apply to the
 most recent match. When a `:boardNumber` is supplied it will focus on one of the four boards in full size and hide the
 other three (pending a new design).
 

@@ -2,14 +2,12 @@ import { createBrowserHistory } from 'history';
 import React, { useState, useEffect } from 'react';
 import socketIoClient from 'socket.io-client';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
-import Container from 'react-bootstrap/Container';
 import { Config } from 'garden-common';
-import Header from './Header';
 import './App.css';
-import Dashboard from './Dashboard';
-import Pairings from './Pairings';
-import Boards from './Boards';
+import Header from './Header';
+import Matches from './Matches';
 import Configuration from './Configuration';
+import Observers from './Observers';
 
 export const history = createBrowserHistory({
   basename: process.env.PUBLIC_URL
@@ -22,10 +20,14 @@ const socket = socketIoClient(CONFIG.socketIo.url, {
 
 function App() {
   const [isLive, setIsLive] = useState(false);
-  const [watchedPairing, setWatchedPairing] = useState(0);
+  const [observingMatch, setObservingMatch] = useState(0);
+  const [observingGame, setObservingGame] = useState(0);
+  const [examiningGame, setExaminingGame] = useState(0);
   const updateStreamState = (state) => {
     setIsLive(state.isLive);
-    setWatchedPairing(state.pairingId);
+    setObservingMatch(state.matchId);
+    setObservingGame(state.gameId);
+    setExaminingGame(state.examineId);
   };
 
   const handleSetIsLive = (isLive) => {
@@ -33,9 +35,25 @@ function App() {
     socket.emit('stream:update', isLive);
   };
 
-  const handleWatchedPairing = (pairingId) => {
-    setWatchedPairing(pairingId);
-    socket.emit('pairing:watch', pairingId);
+  const handleObserveMatch = (matchId) => {
+    setObservingMatch(matchId);
+    setObservingGame(0);
+    socket.emit('match:observe', 0, matchId);
+  };
+
+  const handleObserveGame = (gameId) => {
+    const matchId = Math.ceil(gameId / 4);
+    if (gameId === observingGame) {
+      gameId = 0;
+    }
+    setObservingGame(gameId);
+    setObservingMatch(matchId);
+    socket.emit('match:observe', gameId, matchId);
+  };
+
+  const handleExamineGame = (gameId) => {
+    setExaminingGame(gameId);
+    socket.emit('board:examine', gameId);
   };
 
   useEffect(() => {
@@ -53,21 +71,25 @@ function App() {
         isLive={isLive}
         updateSetIsLive={handleSetIsLive}
       />
-      <div className="position-relative">
-        <Container className="p-3">
-          <Switch>
-            <Route exact path="/">
-              <Dashboard socket={socket}/>
-            </Route>
-            <Route path="/pairings">
-              <Pairings socket={socket} watchedPairing={watchedPairing} handleWatchedPairing={handleWatchedPairing}/>
-            </Route>
-            <Route path="/configuration">
-              <Configuration socket={socket}/>
-            </Route>
-          </Switch>
-        </Container>
-      </div>
+      <Switch>
+        <Route exact path="/configuration">
+          <Configuration socket={socket}/>
+        </Route>
+        <Route exact path="/observers">
+          <Observers socket={socket}/>
+        </Route>
+        <Route path="/">
+          <Matches
+            observingMatch={observingMatch}
+            handleObserveMatch={handleObserveMatch}
+            observingGame={observingGame}
+            handleObserveGame={handleObserveGame}
+            examiningGame={examiningGame}
+            handleExamineGame={handleExamineGame}
+            socket={socket}
+          />
+        </Route>
+      </Switch>
     </Router>
   )
 }

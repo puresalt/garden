@@ -3,30 +3,23 @@
     background: rgba(0, 103, 71, 0.75);
     color: #fff;
     position: absolute;
-    height: 507px;
-    width: 687px;
+    height: 510px;
+    width: 456px;
 }
 
-.Board header {
+.Board header,
+.Board footer {
     padding: 0 8px;
-}
-
-.Board .pairings {
-    float: right;
-    font-size: 1.1em;
-}
-
-.Board .pairings tr td:nth-child(n+3):nth-child(-n+4) {
-    text-align: right;
 }
 
 .Board.Large {
     font-size: 2em;
-    height: 1023px;
-    width: 1242px;
+    height: 1026px;
+    width: 920px;
 }
 
-.Board.Large header {
+.Board.Large header,
+.Board.Large footer {
     height: 39px;
     line-height: 33px;
     font-size: 36px;
@@ -35,9 +28,21 @@
 
 .Board.Faded {
     background: rgba(64, 64, 64, 0.75);
+    opacity: 0.75
 }
 
-.Board.Faded header {
+.Board.Faded.fadeIn {
+    opacity: 0.75;
+    transition: all 0.5s ease-in;
+}
+
+.Board.Faded.fadeOut {
+    opacity: 0;
+    transition: all 0.5s ease-out;
+}
+
+.Board.Faded header,
+.Board.Faded footer {
     background: rgb(64, 64, 64);
 }
 
@@ -46,98 +51,112 @@
     opacity: 0.5;
 }
 
-#board-1.Board {
+.board-1.Board {
     left: 7px;
     top: 7px;
 }
 
-#board-1.Board .cg-wrap {
+.Board.Faded .cg-wrap {
+    background-image: url(Board/gray.svg) !important;
+}
+
+.board-1.Board .cg-wrap,
+.scratch-board-1 .cg-wrap {
     background-image: url(Board/brown.svg)
 }
 
-#board-2.Board {
-    left: 702px;
+.board-2.Board {
+    left: 1001px;
     top: 7px;
 }
 
-#board-2.Board.Large {
+.board-2.Board.Large {
     left: 7px;
     top: 7px;
 }
 
-#board-2.Board .cg-wrap {
+.board-2.Board .cg-wrap,
+.scratch-board-2 .cg-wrap {
     background-image: url(Board/purple.svg)
 }
 
-#board-3.Board {
+.board-3.Board {
     left: 7px;
-    top: 523px;
+    bottom: 46px;
 }
 
-#board-3.Board.Large {
+.board-3.Board.Large {
     left: 7px;
-    top: 7px;
+    bottom: 46px;
 }
 
-#board-3.Board .cg-wrap {
+.board-3.Board .cg-wrap,
+.scratch-board-3 .cg-wrap {
     background-image: url(Board/green.svg)
 }
 
-#board-4.Board {
-    left: 702px;
-    top: 523px;
+.board-4.Board {
+    left: 1001px;
+    top: 524px;
 }
 
-#board-4.Board.Large {
+.board-4.Board.Large {
     left: 7px;
     top: 7px;
 }
 
-#board-4.Board .cg-wrap {
+.board-4.Board .cg-wrap,
+.scratch-board-4 .cg-wrap {
     background-image: url(Board/blue.svg)
-}
-
-.Board tfoot tr:nth-child(1) td {
-    border-top: solid 2px #fff;
 }
 
 .Board tfoot td {
     text-align: right;
 }
 
-.Board.Faded tfoot tr:nth-child(2) td {
-    color: #ffca0a;
-    filter: saturate(100%);
-}
-
 .Board .board {
-    position: absolute;
+    position: relative;
     left: 0;
-    top: 27px;
+    top: 0;
     width: 100%;
-}
-
-.Board.Large .board,
-.Board.Large .board-placeholder {
-    top: 53px;
 }
 
 .Board .eventData {
     position: absolute;
-    bottom: 0;
+    top: -27px;
+    height: 510px;
     right: 0;
-    width: 207px;
+    width: 100px;
 }
 
 .Board.Large .eventData {
-    width: 272px;
+    top: -53px;
+    width: 150px;
 }
 
 .Board .eventData .clock {
-    font-size: 1.5em;
+    font-size: 22px;
     text-align: center;
     background: rgba(0, 0, 0, 0.25);
-    padding: 0.1em 0 0.2em;
+    position: absolute;
+    line-height: 24px;
+    height: 27px;
+    width: 100%;
+}
+
+.Board.Large .eventData {
+    height: 1026px;
+}
+.Board.Large .eventData .clock {
+    font-size: 36px;
+    line-height:50px;
+    height: 53px;
+}
+
+.orientation-home .clock.homeClock,
+.orientation-away .clock.awayClock
+{
+    bottom: 0;
 }
 
 .Board .eventData .clock.active {
@@ -150,94 +169,28 @@
 }
 
 .Board .eventData .moveList {
-    background: #fff;
-    max-height: 394px;
-    padding: 0.25em;
-    overflow: hidden;
+    display: none;
 }
 
-.Board.Large .eventData .moveList {
-    max-height: 832px;
-}
-
-.Board .eventData .moveList span {
-    font-size: 12px;
-    font-weight: normal;
-    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
-    color: #006747;
-    margin-right: 0.5em;
-    line-height: 1.25;
-    opacity: 0.8;
-    float: left;
-}
-
-
-.Board.Large .eventData .moveList span {
-    font-size: 16px;
-}
-
-.Board .eventData .moveList span.active {
-    font-weight: 700;
-    opacity: 1;
-}
-
-.Board .eventData .moveList .waiting {
-    color: #006747;
-    opacity: 0.8;
-    text-align: center;
-}
-
-.Board .eventData .moveList {
-    counter-reset: section;
-}
-
-.Board .eventData .moveList span:nth-child(odd)::before {
-    opacity: 1;
-    counter-increment: section;
-    content: counters(section, ".") ". ";
-    color: #000;
-    font-weight: 700;
-}
-
-.Board header {
+.Board header,
+.Board footer {
     display: flex;
     flex-flow: row nowrap;
     align-items: flex-start;
     justify-content: left;
 }
 
-.board-header-home {
-    margin-left: 6px;
-}
-
-.board-header-away {
-    margin-left: 10px;
-}
-
 .board-placeholder {
-    position: absolute;
+    background: #600;
     left: 0;
     top: 33px;
-    height: 474px;
-    width: 474px;
-}
-
-.board-placeholder-info {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    height: 310px;
-    width: 213px;
+    height: 456px;
+    width: 456px;
 }
 
 .Board.Large .board-placeholder {
-    height: 946px;
-    width: 946px;
-}
-
-.Board.Large .board-placeholder-info {
-    height: 660px;
-    width: 446px;
+    height: 920px;
+    width: 920px;
 }
 
 .Board .black-square,
@@ -251,7 +204,6 @@
     top: 3px;
     left: -4px;
     margin-right: 0;
-    margin-left: 10px;
 }
 
 .Board .white-square {
@@ -268,51 +220,53 @@
     top: 0;
 }
 
-.Board.Small.not-automatic {
-    display: none !important;
+.fadeIn {
+    opacity: 1;
+    transition: all 0.5s ease-in;
 }
 
-.Board.Small {
-    opacity: 0.8;
-    border-radius: 0.5em;
-    height: 240px;
-    width: 240px;
-    border: solid 4px #006747;
+.fadeIn .board {
+    display: block;
+    transition: block 0.5s;
 }
 
-.Board.Small .board {
-    top: 0;
+.fadeIn .board-result {
+    display: flex;
+    transition: flex 0.5s;
 }
 
-.Board.Small header {
-    border-radius: 0 0 0.5em 0;
-    padding: 0.25em;
-    line-height: 14px;
-    height: 24px;
+.fadeOut {
+    opacity: 0;
+    transition: all 0.5s ease-out;
+}
+
+.fadeOut .board,
+.fadeOut .board-result {
+    display: none;
+    transition: display 0.5s;
+}
+
+.board-result {
     position: absolute;
-    opacity: 0.5;
-    z-index: 100;
+    text-align: center;
+    width: 100%;
+    top: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    z-index: 10000000000;
+    -webkit-text-stroke: 1px black;
+    text-shadow: #000 1px 0 5px;
 }
 
-.Board.Small .eventData {
-    display: none;
+.board-result div {
+    width: 100%;
 }
 
-.Board.Small .board-header-home,
-.Board.Small .board-header-away,
-.Board.Small span span {
-    display: none;
+.board-result h2 {
+    font-size: 4em;
 }
 
-#board-2.Small {
-    left: 7px; top: 262px;
-}
-
-#board-3.Small {
-    left: 7px; top: 517px;
-}
-
-
-#board-4.Small {
-    left: 7px; top: 771px;
+.board-result h3 {
+    font-size: 2em;
 }

@@ -1,21 +1,25 @@
 {
   "port": {
-    "admin": 5002,
-    "state": 5003,
-    "observer": 5004,
-    "stream": 5005
+    "admin": 5102,
+    "state": 5103,
+    "observer": 5104,
+    "stream": 5105
   },
   "session": {
-    "secret": "usate"
+    "secret": "college"
   },
   "socketIo": {
-    "url": "https://state.usate.passers.gg"
+    "url": "http://127.0.0.1:5103"
   },
   "state": {
     "mysql": {
       "host": "localhost",
       "multipleStatements": true
     }
+  },
+  "observer": {
+    "username": "",
+    "password": ""
   },
   "discord": {
     "guild": {
@@ -24,10 +28,11 @@
     "client": {
       "id": "",
       "secret": "",
-      "redirectUrl": "http://127.0.0.1:5002/callback",
+      "redirectUrl": "https://college.passers.gg/callback",
       "authorizeUrl": "https://discord.com/api/oauth2/authorize",
       "responseType": "code",
       "scope": "guilds identify"
     }
   }
 }
+

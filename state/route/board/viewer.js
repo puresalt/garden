@@ -1,7 +1,5 @@
-const ChessBoard = require('chess.js').Chess;
-
 function BoardViewerRoute(db, redis, socketWrapper, boardId) {
-  const gameHash = `usate:viewer:game:${boardId}`;
+  const gameHash = `college:viewer:game:${boardId}`;
 
   let closed = false;
   let viewing = false;
@@ -15,7 +13,7 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
       if (closed) {
         return finished('Closed');
       }
-      redis.get(`usate:viewer:game:${boardId}:id`, (err, gameId) => {
+      redis.get(`college:viewer:game:${boardId}:id`, (err) => {
         if (err) {
           return finished(err);
         }
@@ -26,7 +24,7 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
 
           const eventList = result.map(JSON.parse);
           if (!eventList.length) {
-            return setTimeout(() => getGameEvents(), 250);
+            return setTimeout(() => getGameEvents(), 60);
           }
 
           const makeNextEvent = (nextEventId) => {
@@ -35,11 +33,11 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
             }
             const currentEvent = eventList[nextEventId];
             if (!currentEvent) {
-              return setTimeout(() => getGameEvents(), 250);
+              return setTimeout(() => getGameEvents(), 60);
             }
             socketWrapper.emit(`viewer:board:${boardId}`, currentEvent);
             ++lastEventId;
-            process.nextTick(() => makeNextEvent(nextEventId + 1));
+            setTimeout(() => makeNextEvent(nextEventId + 1), 60);
           };
           makeNextEvent(0);
         });
@@ -60,47 +58,50 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
       type: 'goto',
       data: {
         fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-        clock: [3600, 3600],
+        clock: [1500, 1500],
         moveList: [],
         moving: 'home'
       }
     });
-    redis.lrange(gameHash, 0, -1, (err, eventList) => {
-      if (err) {
-        return console.warn('Error catching up or nothing in the list to catch up to:', boardId, eventList, err);
-      }
+    const checkForStatus = () => {
+      redis.lrange(gameHash, 0, -1, (err, eventList) => {
+        if (err) {
+          return console.warn('Error catching up or nothing in the list to catch up to:', boardId, eventList, err);
+        }
 
-      lastEventId = eventList.length;
-      let currentEventId;
-      let currentEvent;
-      let resultEvent;
-      for (currentEventId = lastEventId - 1; currentEventId > 0; --currentEventId) {
-        currentEvent = JSON.parse(eventList[currentEventId]);
-        if (currentEvent && currentEvent.type) {
-          if (currentEvent.type === 'goto' || currentEvent.type === 'start') {
-            break;
-          } else if (currentEvent.type === 'result') {
-            resultEvent = currentEvent;
+        lastEventId = eventList.length;
+        let currentEventId;
+        let currentEvent;
+        let resultEvent;
+        for (currentEventId = lastEventId - 1; currentEventId > 0; --currentEventId) {
+          currentEvent = JSON.parse(eventList[currentEventId]);
+          if (currentEvent && currentEvent.type) {
+            if (currentEvent.type === 'goto' || currentEvent.type === 'start') {
+              break;
+            } else if (currentEvent.type === 'result') {
+              resultEvent = currentEvent;
+            }
           }
         }
-      }
 
-      if (!currentEvent || !currentEvent.data || !currentEvent.data.fen) {
-        return setTimeout(readySession, 1000);
-      }
+        if (!currentEvent || !currentEvent.data || !currentEvent.data.fen) {
+          return setTimeout(checkForStatus, 1000);
+        }
 
-      const loop = (err) => {
-        if (err === 'Closed') {
-          return;
-        }
-        if (err) {
-          console.warn('Error starting viewer game:', boardId, err);
-        }
-        viewing = false;
-        setTimeout(() => startGame(null, loop), 1000);
-      };
-      startGame(currentEventId, loop);
-    });
+        const loop = (err) => {
+          if (err === 'Closed') {
+            return;
+          }
+          if (err) {
+            console.warn('Error starting viewer game:', boardId, err);
+          }
+          viewing = false;
+          setTimeout(() => startGame(null, loop), 1000);
+        };
+        startGame(currentEventId, loop);
+      });
+    };
+    checkForStatus();
   }
 
   socketWrapper.on(`viewer:board:${boardId}:start`, readySession);

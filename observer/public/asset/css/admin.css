@@ -1,0 +1,48 @@
+html, body {
+    background-color: #fff;
+    background-image: none;
+}
+
+.navbar {
+    background: #006747;
+    color: #fff;
+    font-family: antarctican-headline, san serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 24px;
+}
+
+.navbar-brand span {
+    color: #ffca66;
+}
+
+.navbar-light .navbar-brand {
+    color: #fff;
+    font-size: 1em;
+    cursor: pointer;
+    pointer-events: none;
+}
+
+.navbar.navbar-light .nav-link {
+    color: #ffca66;
+    opacity: 0.75;
+}
+
+.navbar.navbar-light .nav-link.active {
+    color: #fff;
+    opacity: 1;
+}
+
+.navbar.navbar-light .nav-link:active,
+.navbar.navbar-light .nav-link:hover,
+.navbar.navbar-light .nav-link:focus {
+    color: #ffca66;
+    opacity: 1;
+}
+
+.navbar.navbar-light .nav-link.active:active,
+.navbar.navbar-light .nav-link.active:hover,
+.navbar.navbar-light .nav-link.active:focus {
+    color: #fff;
+    cursor: default;
+}

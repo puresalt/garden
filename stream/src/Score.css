@@ -1,0 +1,28 @@
+.Score .home,
+.Score .away {
+    height: 194px;
+    padding: 0;
+    position: absolute;
+    width: 420px;
+    transition: all 1s ease-in-out;
+}
+
+.Score .away {
+    top: 32px;
+}
+
+.Score .home {
+    top: 814px;
+}
+
+.Score.Center .home,
+.Score.Center .away {
+    left: 522px;
+    transition: left 1s ease;
+}
+
+.Score.Right .home,
+.Score.Right .away {
+    left: 986px;
+    transition: left 1s ease;
+}
