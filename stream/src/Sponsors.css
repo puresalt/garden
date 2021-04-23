@@ -1,8 +1,17 @@
 .Sponsors {
     height: 194px;
-    right: 21px;
     top: 32px;
     position: absolute;
     width: 420px;
     overflow: hidden;
+}
+
+.Sponsors.Center {
+    left: 523px;
+    transition: left 1s ease;
+}
+
+.Sponsors.Right {
+    left: 987px;
+    transition: left 1s ease;
 }

@@ -1,6 +1,6 @@
 /* global __dirname */
 
-const serverPort = 5102;
+const serverPort = 5202;
 
 const fs = require('fs');
 const path = require('path');

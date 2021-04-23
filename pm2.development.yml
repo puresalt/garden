@@ -14,30 +14,30 @@
 
 apps:
   - script: admin/app.js
-    name: 'college:admin'
+    name: 'nosc:admin'
     instances: 2
     exec_mode: cluster
     env:
       NODE_ENV: development
-      PORT: 5102
+      PORT: 5202
   - script: state/app.js
-    name: 'college:state'
+    name: 'nosc:state'
     instances: 2
     exec_mode: cluster
     env:
       NODE_ENV: development
-      PORT: 5103
+      PORT: 5203
   - script: npm
-    name: 'college:stream'
+    name: 'nosc:stream'
     args: run start:stream
     env:
       NODE_ENV: development
-      PORT: 5104
+      PORT: 5204
   - script: observer/app.js
-    name: 'college:observer'
+    name: 'nosc:observer'
     instances: 2
     exec_mode: cluster
     env:
       NODE_ENV: development
-      PORT: 5105
+      PORT: 5205
 

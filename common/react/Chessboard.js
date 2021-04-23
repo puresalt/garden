@@ -48,6 +48,7 @@ const propTypes = {
   coordinates: PropTypes.bool,
   autoCastle: PropTypes.bool,
   viewOnly: PropTypes.bool,
+  captureKeyEvents: PropTypes.bool,
   disableContextMenu: PropTypes.bool,
   resizable: PropTypes.bool,
   addPieceZIndex: PropTypes.bool,
@@ -64,6 +65,7 @@ const propTypes = {
   onDropNewPiece: PropTypes.func,
   onSelect: PropTypes.func,
   onPromotion: PropTypes.func,
+  onLoading: PropTypes.func,
   items: PropTypes.object,
   drawable: PropTypes.object,
   socket: PropTypes.object
@@ -91,7 +93,8 @@ export default class Chessground extends React.PureComponent {
       currentMove: 0,
       viewer: this.props.viewer,
       matchId: this.props.matchId,
-      orientation: getOrientation(this.props.orientation)
+      orientation: getOrientation(this.props.orientation),
+      captureKeyEvents: this.props.captureKeyEvents
     };
     this.handleEvent = this.handleEvent.bind(this);
     this.updateClocks = this.updateClocks.bind(this);
@@ -221,6 +224,15 @@ export default class Chessground extends React.PureComponent {
         });
       }
     }
+    const loading = !!data.loading;
+    if (loading !== this.state.loading) {
+      if (this.props.onLoading) {
+        this.props.onLoading(this.boardName, loading);
+      }
+      this.setState({
+        loading: loading
+      });
+    }
     if (!data.clock) {
       return;
     }
@@ -269,6 +281,7 @@ export default class Chessground extends React.PureComponent {
     });
     this.updateClocks();
     this.attachMovableConfig();
+    this.addCaptureKeyEvents();
   }
 
   attachMovableConfig() {
@@ -315,6 +328,33 @@ export default class Chessground extends React.PureComponent {
     });
   }
 
+  addCaptureKeyEvents() {
+    if (this.state.captureKeyEvents !== true) {
+      return;
+    }
+    const captureKeyEventFunction = (event) => {
+      switch (event.key) {
+        case 'ArrowLeft':
+          this.setCurrentMove(this.state.currentMove - 1);
+          break;
+        case 'ArrowRight':
+          this.setCurrentMove(this.state.currentMove + 1);
+          break;
+        default:
+      }
+    };
+    document.body.addEventListener('keydown', captureKeyEventFunction);
+    this.setState({
+      captureKeyEvents: captureKeyEventFunction
+    });
+  }
+
+  removeCaptureKeyEvents() {
+    if (typeof this.state.captureKeyEvents === 'function' || typeof this.state.captureKeyEvents === 'object') {
+      document.body.removeEventListener('keydown', this.state.captureKeyEvents);
+    }
+  }
+
   componentWillReceiveProps(nextProps) {
     this.setState({viewer: nextProps.viewer});
     const orientation = getOrientation(nextProps.orientation);
@@ -327,6 +367,7 @@ export default class Chessground extends React.PureComponent {
     });
     this.updateClocks();
     this.attachMovableConfig();
+    this.addCaptureKeyEvents();
   }
 
   componentWillUnmount() {
@@ -334,6 +375,7 @@ export default class Chessground extends React.PureComponent {
     this.cg.destroy();
     this.cj = null;
     this.socket.off(this.boardName, this.handleEvent);
+    this.removeCaptureKeyEvents();
   }
 
   updateAndEmitBoard() {
@@ -439,28 +481,28 @@ export default class Chessground extends React.PureComponent {
     }
     return React.createElement('div', {className: 'ml-auto actions'}, [
       React.createElement('button', {
-          className: `btn btn-sm btn-${this.state.currentMove - 1 <= 0 ? 'secondary' : 'primary'}`,
+          className: `btn btn-${this.state.currentMove - 1 <= 0 ? 'secondary' : 'primary'}`,
           onClick: () => this.setCurrentMove(0),
           disabled: this.state.currentMove - 1 <= 0
         },
         React.createElement('i', {className: 'fas fa-step-backward'})
       ),
       React.createElement('button', {
-          className: `btn btn-sm btn-${this.state.currentMove - 1 <= 0 ? 'secondary' : 'primary'}`,
+          className: `btn btn-${this.state.currentMove - 1 <= 0 ? 'secondary' : 'primary'}`,
           onClick: () => this.setCurrentMove(this.state.currentMove - 1),
           disabled: this.state.currentMove - 1 <= 0
         },
         React.createElement('i', {className: 'fas fa-backward'})
       ),
       React.createElement('button', {
-          className: `btn btn-sm btn-${this.state.currentMove >= maxMove ? 'secondary' : 'primary'}`,
+          className: `btn btn-${this.state.currentMove >= maxMove ? 'secondary' : 'primary'}`,
           onClick: () => this.setCurrentMove(this.state.currentMove + 1),
           disabled: this.state.currentMove >= maxMove
         },
         React.createElement('i', {className: 'fas fa-forward'})
       ),
       React.createElement('button', {
-          className: `btn btn-sm btn-${this.state.currentMove >= maxMove ? 'secondary' : 'primary'}`,
+          className: `btn btn-${this.state.currentMove >= maxMove ? 'secondary' : 'primary'}`,
           onClick: () => this.setCurrentMove(maxMove),
           disabled: this.state.currentMove >= maxMove
         },

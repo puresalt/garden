@@ -5,9 +5,9 @@ import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import { Config } from 'garden-common';
 import './App.css';
 import Header from './Header';
-import Matches from './Matches';
 import Configuration from './Configuration';
-import Observers from './Observers';
+import Sections from './Sections';
+import Section from './Section';
 
 export const history = createBrowserHistory({
   basename: process.env.PUBLIC_URL
@@ -75,11 +75,14 @@ function App() {
         <Route exact path="/configuration">
           <Configuration socket={socket}/>
         </Route>
-        <Route exact path="/observers">
-          <Observers socket={socket}/>
+        <Route exact path="/k12">
+          <Section section={1} socket={socket}/>
+        </Route>
+        <Route exact path="/k9">
+          <Section section={2} socket={socket}/>
         </Route>
         <Route path="/">
-          <Matches
+          <Sections
             observingMatch={observingMatch}
             handleObserveMatch={handleObserveMatch}
             observingGame={observingGame}

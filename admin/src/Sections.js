@@ -4,18 +4,13 @@ import LoadingOverlayText from './LoadingOverlayText';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
-import './Matches.css';
+import './Sections.css';
+import './Board.css';
 import Board from './Board';
 import ExamineBoard from './ExamineBoard';
-import './Board.css';
 import Button from 'react-bootstrap/Button';
-import { Table } from 'react-bootstrap';
 
-function isOdd(num) {
-  return num % 2 === 1;
-}
-
-function Matches(props) {
+function Sections(props) {
   const {
     socket,
     observingMatch,
@@ -42,8 +37,6 @@ function Matches(props) {
     }
   }, []);
 
-  const observingPairingList = pairingList[observingMatch - 1];
-
   return <LoadingOverlay active={isLoading} spinner={false} text={<LoadingOverlayText/>}>
     <div className="Pairings">
       <Container fluid className={'p-3'}>
@@ -54,8 +47,7 @@ function Matches(props) {
               {pairingList.map((pairing) => {
                 return <Pairing
                   key={pairing.id}
-                  home={pairing.home.name}
-                  away={pairing.away.name}
+                  section={pairing.section}
                   matchUps={pairing.matchUps}
                   observingMatch={observingMatch === pairing.id}
                   handleObserveMatch={() => handleObserveMatch(pairing.id)}
@@ -66,13 +58,12 @@ function Matches(props) {
                   socket={socket}
                 />;
               })}
-              <PlayerList pairingList={observingPairingList} observingGame={observingGame}/>
             </div>
           </Col>
           <Col lg={4}>
             <ExamineBoard
               examiningGame={examiningGame}
-              orientation={isOdd(examiningGame || 1) ? 'home' : 'away'}
+              orientation="home"
               socket={socket}
             />
           </Col>
@@ -84,8 +75,7 @@ function Matches(props) {
 
 function Pairing(props) {
   const {
-    home,
-    away,
+    section,
     matchUps,
     observingMatch,
     handleObserveMatch,
@@ -104,8 +94,7 @@ function Pairing(props) {
     >
       <i className={'fa fa-eye'}/>
     </Button>
-    <h2><strong>{home || <em>Unnamed Team</em>}</strong> vs <strong>{away || <em>Unnamed Team</em>}</strong>
-    </h2>
+    <h2><strong>{section || <em>Unnamed Section</em>}</strong></h2>
     <Row>
       {matchUps.map((matchUp, i) => <MatchUp
         key={i}
@@ -117,7 +106,7 @@ function Pairing(props) {
         handleExamineGame={handleExamineGame}
         home={matchUp.home}
         away={matchUp.away}
-        orientation={isOdd(i) ? 'away' : 'home'}
+        orientation="home"
         socket={socket}
       />)}
     </Row>
@@ -139,7 +128,8 @@ function MatchUp(props) {
   } = props;
 
   return <Col lg={3}>
-    <div className="player-name away">{away.name}</div>
+    <div className="player-name away">{String(away.name).substring(0, 64)}{' '}
+      <em><small>({away.rating || 'Unrated'})</small></em></div>
     <Board
       pairing={board}
       boardId={boardId}
@@ -151,42 +141,10 @@ function MatchUp(props) {
       orientation={orientation}
       socket={socket}
     />
-    <div className="player-name home">{home.name}</div>
+    <div className="player-name home">{String(home.name).substring(0, 64)}{' '}
+      <em><small>({home.rating || 'Unrated'})</small></em>
+    </div>
   </Col>;
 }
 
-function PlayerList(props) {
-  const {pairingList, observingGame} = props;
-
-  if (!pairingList) {
-    return <></>;
-  }
-
-  return <Table>
-    <thead>
-    <tr>
-      <th/>
-      <th scope="col">{pairingList.home.name}</th>
-      <th scope="col">{pairingList.away.name}</th>
-    </tr>
-    </thead>
-    <tbody>
-    {pairingList.matchUps.map((matchUp, index) => {
-      let homeClassName = 'alert-dark';
-      let awayClassName = '';
-      if (isOdd(matchUp.id)) {
-        homeClassName = '';
-        awayClassName = 'alert-dark';
-      }
-
-      return <tr key={index} className={observingGame === matchUp.id ? 'bold' : ''}>
-        <th scope="row">{matchUp.board}</th>
-        <td className={homeClassName}>{matchUp.home.name}</td>
-        <td className={awayClassName}>{matchUp.away.name}</td>
-      </tr>;
-    })}
-    </tbody>
-  </Table>;
-}
-
-export default Matches;
+export default Sections;

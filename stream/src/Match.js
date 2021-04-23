@@ -1,16 +1,10 @@
 import React from 'react';
 import Board from './Board';
-import Score from './Score';
 
 function Match(props) {
   const {socket, observingGame, matchData, showProgrammaticBoards, small} = props;
 
   return <>
-    <Score
-      homeTeamId={matchData.home.id}
-      awayTeamId={matchData.away.id}
-      observingGame={observingGame}
-    />
     {matchData.matchUps.map((item, i) => {
       return <Board
         key={i + 1}

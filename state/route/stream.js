@@ -44,47 +44,8 @@ function StreamerRoute(db, redis, socketWrapper) {
     loopForStateChanges();
   }
 
-  function listBoards() {
-    redis.hgetall('college:stream:board', (err, data) => {
-      if (err) {
-        return console.warn('Failed getting live stream board status:', data, err);
-      }
-
-      if (!data) {
-        return socketWrapper.emit('stream:board:listed', []);
-      }
-      const parsePairing = (board) => {
-        const parsePlayer = (team) => {
-          return {
-            name: data[`${board}:${team}:name`],
-            handle: data[`${board}:${team}:handle`],
-            rating: data[`${board}:${team}:rating`] ? parseInt(data[`${board}:${team}:rating`]) : null
-          }
-        };
-        return {
-          board: board,
-          home: parsePlayer('home'),
-          away: parsePlayer('away')
-        };
-      };
-      const boardList = [
-        parsePairing(1),
-        parsePairing(2),
-        parsePairing(3),
-        parsePairing(4),
-        parsePairing(5),
-        parsePairing(6),
-        parsePairing(7),
-        parsePairing(8)
-      ];
-
-      socketWrapper.emit('stream:board:listed', boardList);
-    });
-  }
-
   socketWrapper.on('stream:update', updateStreamState);
   socketWrapper.on('stream:load', loadStreamState);
-  socketWrapper.on('stream:board:list', listBoards);
   const boardSubRoutes = [1, 2, 3, 4, 5, 6, 7, 8].reduce((gathered, i) => {
     gathered.push(
       BoardViewerRoute(db, redis, socketWrapper, i)
@@ -95,7 +56,6 @@ function StreamerRoute(db, redis, socketWrapper) {
     stopLooping = true;
     socketWrapper.off('stream:update', updateStreamState);
     socketWrapper.off('stream:load', loadStreamState);
-    socketWrapper.off('stream:board:list', listBoards);
     boardSubRoutes.forEach(i => i());
   };
 }

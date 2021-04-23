@@ -1,89 +1,52 @@
 const StreamUtility = require('../src/stream');
-
-function isOdd(num) {
-  return num % 2 === 1;
-}
+const playerData = require('../src/playerData');
 
 function matchRoute(db, redis, socketWrapper) {
   const streamUtility = StreamUtility(redis);
 
-  function matchList(global) {
+  function matchList() {
     db.query(
-      `SELECT college_player.team_id AS playerTeamId,
-              college_player.name,
-              college_player.handle,
-              college_player.rating,
-              home_pairing.id        AS homeTeamPairingId,
-              home_team.id           AS homeTeamId,
-              home_team.name         AS homeTeamName,
-              away_pairing.id        AS awayTeamPairingId,
-              away_team.id           AS awayTeamId,
-              away_team.name         AS awayTeamName
-       FROM college_player
-                LEFT JOIN college_pairing home_pairing ON (college_player.team_id = home_pairing.home_id)
-                LEFT JOIN college_team home_team ON (home_pairing.home_id = home_team.id)
-                LEFT JOIN college_pairing away_pairing ON (college_player.team_id = away_pairing.away_id)
-                LEFT JOIN college_team away_team ON (away_pairing.away_id = away_team.id)
-       ORDER BY college_player.id;`,
-      (err, playerList) => {
+      `SELECT nosc_pairing.id,
+              nosc_pairing.section,
+              home.id                 AS homeId,
+              home.name               AS homeName,
+              home.handle             AS homeHandle,
+              home.rating             AS homeRating,
+              nosc_pairing.home_score AS homeScore,
+              away.id                 AS awayId,
+              away.name               AS awayName,
+              away.handle             AS awayHandle,
+              away.rating             AS awayRating,
+              nosc_pairing.away_score AS awayScore
+       FROM nosc_pairing
+                INNER JOIN nosc_player home ON (home.id = nosc_pairing.home_id)
+                INNER JOIN nosc_player away ON (away.id = nosc_pairing.away_id)
+       WHERE nosc_pairing.observer_board_id IS NOT NULL
+       ORDER BY nosc_pairing.observer_board_id;`,
+      (err, pairingList) => {
         if (err) {
           console.warn('Error retrieving match list:', err);
           socketWrapper.emit('match:listed', []);
           return;
         }
 
-        const matchList = playerList.reduce((gathered, player) => {
-          const matchId = (player.homeTeamPairingId || player.awayTeamPairingId);
-          if (!gathered[matchId - 1]) {
-            const matchIdOffset = (matchId * 4) - 4;
-            gathered[matchId - 1] = {
-              id: matchId,
-              home: {id: player.homeTeamId, name: player.homeTeamName},
-              away: {id: player.awayTeamId, name: player.awayTeamName},
-              matchUps: [
-                {id: matchIdOffset + 1, board: 1, home: null, away: null},
-                {id: matchIdOffset + 2, board: 2, home: null, away: null},
-                {id: matchIdOffset + 3, board: 3, home: null, away: null},
-                {id: matchIdOffset + 4, board: 4, home: null, away: null}
-              ]
-            };
-          }
+        const matchData = [
+          {id: 1, section: 'K-12 Section', matchUps: []},
+          {id: 2, section: 'K-9 Section', matchUps: []}
+        ];
 
-          const isHome = player.homeTeamId !== null;
-          if (isHome) {
-            if (!gathered[matchId - 1].home.id) {
-              gathered[matchId - 1].home = {id: player.homeTeamId, name: player.homeTeamName};
-            }
-            for (let i = 0, count = gathered[matchId - 1].matchUps.length; i < count; ++i) {
-              if (gathered[matchId - 1].matchUps[i].home === null) {
-                gathered[matchId - 1].matchUps[i].home = {
-                  name: player.name,
-                  handle: player.handle,
-                  rating: player.rating
-                };
-                break;
-              }
-            }
-          } else {
-            if (!gathered[matchId - 1].away.id) {
-              gathered[matchId - 1].away = {id: player.awayTeamId, name: player.awayTeamName};
-            }
-            for (let i = 0, count = gathered[matchId - 1].matchUps.length; i < count; ++i) {
-              if (gathered[matchId - 1].matchUps[i].away === null) {
-                gathered[matchId - 1].matchUps[i].away = {
-                  name: player.name,
-                  handle: player.handle,
-                  rating: player.rating
-                };
-                break;
-              }
-            }
-          }
+        pairingList.forEach((pairing) => {
+          const matchId = pairing.section === 'K12' ? 0 : 1;
+          const matchIdOffset = ((matchId + 1) * 4) - 4;
+          matchData[matchId].matchUps.push({
+            id: matchData[matchId].matchUps.length + 1 + matchIdOffset,
+            board: matchData[matchId].matchUps.length + 1,
+            home: playerData(pairing.homeId, pairing.homeName, pairing.homeHandle, pairing.homeRating, pairing.homeScore),
+            away: playerData(pairing.awayId, pairing.awayName, pairing.awayHandle, pairing.awayRating, pairing.awayScore)
+          });
+        });
 
-          return gathered;
-        }, []).filter(item => item.home !== null && item.away !== null);
-
-        socketWrapper[global ? 'broadcastAll' : 'emit']('match:listed', matchList);
+        socketWrapper[global ? 'broadcastAll' : 'emit']('match:listed', matchData);
       }
     );
   }
@@ -102,7 +65,7 @@ function matchRoute(db, redis, socketWrapper) {
       if (err) {
         console.error('Error setting the pair state data:', err);
       }
-      redis.lrange(`college:viewer:game:${id}`, 0, -1, (err, eventList) => {
+      redis.lrange(`nosc:viewer:game:${id}`, 0, -1, (err, eventList) => {
         if (err) {
           return console.warn('Error catching up or nothing in the list to catch up to:', id, eventList, err);
         }
@@ -133,10 +96,10 @@ function matchRoute(db, redis, socketWrapper) {
           };
         }
 
-        currentEvent.data.orientation = currentEvent.data.orientation || isOdd(id) ? 'home' : 'away';
+        currentEvent.data.orientation = currentEvent.data.orientation || 'home';
         currentEvent.data.clock = null;
 
-        redis.rpush(`college:viewer:game:examine`, JSON.stringify(currentEvent), (err) => {
+        redis.rpush(`nosc:viewer:game:examine`, JSON.stringify(currentEvent), (err) => {
           if (err) {
             console.error('Error setting the stream state data:', err);
           }
@@ -146,7 +109,7 @@ function matchRoute(db, redis, socketWrapper) {
               draw: []
             }
           };
-          redis.rpush(`college:viewer:game:examine`, JSON.stringify(draw), (err) => {
+          redis.rpush(`nosc:viewer:game:examine`, JSON.stringify(draw), (err) => {
             if (err) {
               console.error('Error setting the stream state data:', err);
             }
@@ -166,7 +129,7 @@ function matchRoute(db, redis, socketWrapper) {
   }
 
   function drawShape(data) {
-    redis.rpush(`college:viewer:game:examine`, JSON.stringify({
+    redis.rpush(`nosc:viewer:game:examine`, JSON.stringify({
       type: 'draw',
       data: data
     }), (err) => {
@@ -178,7 +141,7 @@ function matchRoute(db, redis, socketWrapper) {
   }
 
   function movePiece(data) {
-    redis.rpush(`college:viewer:game:examine`, JSON.stringify({
+    redis.rpush(`nosc:viewer:game:examine`, JSON.stringify({
       type: 'goto',
       data: data
     }), (err) => {
@@ -191,7 +154,7 @@ function matchRoute(db, redis, socketWrapper) {
 
   function startExamineSession(emitExamineEvent) {
     return () => {
-      redis.lrange(`college:viewer:game:examine`, 0, -1, (err, eventList) => {
+      redis.lrange(`nosc:viewer:game:examine`, 0, -1, (err, eventList) => {
         if (err) {
           return console.warn('Error catching up or nothing in the list to catch up to:', eventList, err);
         }

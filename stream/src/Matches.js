@@ -46,7 +46,8 @@ function Matches(props) {
         bottomMiddleText={configurationData.bottomMiddleText}
         bottomRightText={configurationData.bottomRightText}
       />
-      <Sponsors showSponsorUnit={configurationData.showSponsorUnit}/>
+      <Sponsors observingGame={observingGame} showSponsorUnit={configurationData.showSponsorUnit}/>
+      <div className={`Logo ${observingGame ? 'Right' : 'Center'}`}/>
       <ScratchBoard
         showScratchBoard={configurationData.showScratchBoard}
         observingGame={observingGame}

@@ -4,7 +4,7 @@ import { Fade } from 'react-slideshow-image';
 import 'react-slideshow-image/dist/styles.css';
 
 function Sponsors(props) {
-  const {showSponsorUnit} = props;
+  const {showSponsorUnit, observingGame} = props;
 
   const [images, setImages] = useState([]);
   useEffect(() => {
@@ -17,7 +17,7 @@ function Sponsors(props) {
     return <></>;
   }
 
-  return <div className="Sponsors">
+  return <div className={`Sponsors ${observingGame ? 'Right' : 'Center'}`}>
     {
       images.length === 1
         ? <img alt="ad #1" src={images[0]}/>

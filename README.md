@@ -27,7 +27,7 @@ little bit for a game to start as well as the on stream clock freezing until the
 
 ## Structure
 
-There are three main components to this project (potentially a fourth, `Observer`). Flow goes from `Admin` to `State` to
+There are three main components to this project (potentially a fourth, `Sections`). Flow goes from `Admin` to `State` to
 `Stream` where all data is updated on the `Admin` side, pushed to `State` which stores data as necessary, and then
 pushes relevant data to `Stream`.
 

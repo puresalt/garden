@@ -15,6 +15,11 @@ function Board(props) {
     });
   };
 
+  const [isLoading, setIsLoading] = useState(true);
+  const handleLoading = (board, loading) => {
+    setIsLoading(loading);
+  };
+
   let boardSize = ' fadeIn';
   let size = 456;
   if (observingGame) {
@@ -30,9 +35,7 @@ function Board(props) {
     boardSize += ' not-automatic';
   }
 
-  const orientation = board % 2 === 1
-    ? 'home'
-    : 'away';
+  const orientation = 'home';
 
   let resultClassName = '';
   let resultContent = '';
@@ -45,7 +48,7 @@ function Board(props) {
     let awayScore = 0.5;
     let loser = '';
     if (result.result !== 0.5) {
-      if ((orientation === 'home' && result.result === 1) || (orientation !== 'home' && result.result === 0)) {
+      if (result.result === 1) {
         homeScore = 1;
         awayScore = 0;
         loser = away.name;
@@ -60,6 +63,13 @@ function Board(props) {
       <div>
         <h2>{homeScore} - {awayScore}</h2>
         <h3>{loser} {result.by}</h3>
+      </div>
+    </div>;
+  } else if (isLoading) {
+    resultContent = <div className="board-result">
+      <div>
+        <h2>Loading</h2>
+        <h3>Please wait a moment...</h3>
       </div>
     </div>;
   }
@@ -80,6 +90,7 @@ function Board(props) {
           coordinates={false}
           orientation={orientation}
           onResult={handleResult}
+          onLoading={handleLoading}
           socket={socket}
         />
         : <div className="board-placeholder"/>

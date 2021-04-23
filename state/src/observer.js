@@ -57,7 +57,7 @@ function ObserverLoop(connection, boardId, redis) {
     console.info('CMD:', sending);
     connection.write(`${sending}\n`);
   };
-  const boardHash = `college:viewer:game:${boardId}`;
+  const boardHash = `nosc:viewer:game:${boardId}`;
   const pushPosition = (position, callback) => {
     redis.rpush(boardHash, JSON.stringify({
       type: 'goto',
@@ -77,7 +77,8 @@ function ObserverLoop(connection, boardId, redis) {
       clock: [1500, 1500],
       moveList: [],
       moving: 'home',
-      pauseClocks: true
+      pauseClocks: true,
+      loading: true,
     }, callback));
   };
 
@@ -85,7 +86,7 @@ function ObserverLoop(connection, boardId, redis) {
   let currentCommand = null;
   let noGameFound = false;
   const loopForSeekParameterChanges = () => {
-    redis.get(`college:stream:board:${boardId}`, (err, seekParameters) => {
+    redis.get(`nosc:stream:board:${boardId}`, (err, seekParameters) => {
       if (err) {
         console.warn('Error finding players, will try again in a bit:', err);
       }

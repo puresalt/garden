@@ -34,7 +34,7 @@
     "build": "react-scripts build",
     "eject": "react-scripts eject",
     "install": "npm run build",
-    "start": "PORT=5102 react-scripts start",
+    "start": "PORT=5202 react-scripts start",
     "start:server": "node app.js",
     "test": "react-scripts test"
   },

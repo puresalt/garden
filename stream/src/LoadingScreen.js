@@ -25,7 +25,7 @@ function LoadingScreen(props) {
   return <div className={`LoadingScreen ${isLive ? 'fadeOut' : 'fadeIn'}`}>
     <div className="bar">
       <div className="left"><Countdown date={new Date(nextRoundStart)} renderer={countdownRenderer}/></div>
-      <div className="right"><span>Date:</span> April 3rd & 4th</div>
+      <div className="right"><span>Date:</span> April 24th & 25th</div>
     </div>
     <div className="hide-middle"/>
   </div>;

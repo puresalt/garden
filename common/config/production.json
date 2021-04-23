@@ -1,8 +1,8 @@
 {
   "discord": {
-    "redirectUrl": "https://college.passers.gg/callback"
+    "redirectUrl": "https://nosc.passers.gg/callback"
   },
   "socketIo": {
-    "url": "https://state.college.passers.gg"
+    "url": "https://state.nosc.passers.gg"
   }
 }

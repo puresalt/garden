@@ -1,5 +1,5 @@
 function BoardViewerRoute(db, redis, socketWrapper, boardId) {
-  const gameHash = `college:viewer:game:${boardId}`;
+  const gameHash = `nosc:viewer:game:${boardId}`;
 
   let closed = false;
   let viewing = false;
@@ -13,7 +13,7 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
       if (closed) {
         return finished('Closed');
       }
-      redis.get(`college:viewer:game:${boardId}:id`, (err) => {
+      redis.get(`nosc:viewer:game:${boardId}:id`, (err) => {
         if (err) {
           return finished(err);
         }

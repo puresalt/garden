@@ -1,15 +1,15 @@
 {
   "port": {
-    "admin": 5102,
-    "state": 5103,
-    "observer": 5104,
-    "stream": 5105
+    "admin": 5202,
+    "state": 5203,
+    "observer": 5204,
+    "stream": 5205
   },
   "session": {
-    "secret": "college"
+    "secret": "nosc"
   },
   "socketIo": {
-    "url": "http://127.0.0.1:5103"
+    "url": "http://127.0.0.1:5203"
   },
   "state": {
     "mysql": {
@@ -28,7 +28,7 @@
     "client": {
       "id": "",
       "secret": "",
-      "redirectUrl": "https://college.passers.gg/callback",
+      "redirectUrl": "https://nosc.passers.gg/callback",
       "authorizeUrl": "https://discord.com/api/oauth2/authorize",
       "responseType": "code",
       "scope": "guilds identify"

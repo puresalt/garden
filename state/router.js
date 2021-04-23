@@ -7,6 +7,7 @@ const socketIo = require('socket.io');
 const routes = [
   require('./route/configuration'),
   require('./route/match'),
+  require('./route/pairing'),
   require('./route/stream'),
   require('./route/observer')
 ];

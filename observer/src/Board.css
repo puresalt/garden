@@ -249,42 +249,42 @@
 
 #board-examine.board-2 .ranks coord,
 #board-examine.board-6 .ranks coord {
-    color: #8777b6;
+    color: #efefef;
 }
 
-#board-examine.board-2 .ranks coord:nth-child(even),
-#board-examine.board-6 .ranks coord:nth-child(even) {
-    color: #efefef;
+#board-examine.board-2 .ranks coord:nth-child(odd),
+#board-examine.board-6 .ranks coord:nth-child(odd) {
+    color: #8777b6;
 }
 
 #board-examine.board-2 .files coord,
 #board-examine.board-6 .files coord {
-    color: #efefef;
+    color: #8777b6;
 }
 
-#board-examine.board-2 .files coord:nth-child(even),
-#board-examine.board-6 .files coord:nth-child(even) {
-    color: #8777b6;
+#board-examine.board-2 .files coord:nth-child(odd),
+#board-examine.board-6 .files coord:nth-child(odd) {
+    color: #efefef;
 }
 
 #board-examine.board-3 .ranks coord,
 #board-examine.board-7 .ranks coord {
-    color: #769655;
+    color: #eeeed2;
 }
 
-#board-examine.board-3 .ranks coord:nth-child(even),
-#board-examine.board-7 .ranks coord:nth-child(even) {
-    color: #eeeed2;
+#board-examine.board-3 .ranks coord:nth-child(odd),
+#board-examine.board-7 .ranks coord:nth-child(odd) {
+    color: #769655;
 }
 
 #board-examine.board-3 .files coord,
 #board-examine.board-7 .files coord {
-    color: #eeeed2;
+    color: #769655;
 }
 
-#board-examine.board-3 .files coord:nth-child(even),
-#board-examine.board-7 .files coord:nth-child(even) {
-    color: #769655;
+#board-examine.board-3 .files coord:nth-child(odd),
+#board-examine.board-7 .files coord:nth-child(odd) {
+    color: #eeeed2;
 }
 
 #board-examine.board-4 .ranks coord,
@@ -292,8 +292,8 @@
     color: #eaead2;
 }
 
-#board-examine.board-4 .ranks coord:nth-child(even),
-#board-examine.board-8 .ranks coord:nth-child(even) {
+#board-examine.board-4 .ranks coord:nth-child(odd),
+#board-examine.board-8 .ranks coord:nth-child(odd) {
     color: #4b7299;
 }
 
@@ -302,7 +302,7 @@
     color: #4b7299;
 }
 
-#board-examine.board-4 .files coord:nth-child(even),
-#board-examine.board-8 .files coord:nth-child(even) {
+#board-examine.board-4 .files coord:nth-child(odd),
+#board-examine.board-8 .files coord:nth-child(odd) {
     color: #eaead2;
 }

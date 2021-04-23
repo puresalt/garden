@@ -26,6 +26,7 @@ function ExamineBoard(props) {
         viewOnly={false}
         coordinates={true}
         drawable={{onChange: handleDraw}}
+        captureKeyEvents={true}
         socket={socket}
       />
     </div>

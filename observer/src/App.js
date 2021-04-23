@@ -3,7 +3,7 @@ import socketIoClient from 'socket.io-client';
 import { Config } from 'garden-common';
 import Header from './Header';
 import './App.css';
-import Matches from './Matches';
+import Sections from './Sections';
 
 const CONFIG = Config(process.env);
 const socket = socketIoClient(CONFIG.socketIo.url, {
@@ -52,7 +52,7 @@ function App() {
   return (
     <>
       <Header/>
-      <Matches
+      <Sections
         observingMatch={observingMatch}
         handleObserveMatch={handleObserveMatch}
         observingGame={observingGame}

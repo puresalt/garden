@@ -17,7 +17,7 @@ function ScratchBoard(props) {
           viewOnly={true}
           viewer={true}
           coordinates={false}
-          orientation={!examiningGame || (examiningGame % 2 === 1) ? 'home' : 'away'}
+          orientation={'home'}
           socket={socket}
         />
       </div>

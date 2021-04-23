@@ -1,5 +1,5 @@
 module.exports = (redis) => {
-  const STATE_KEY = 'college:stream:state';
+  const STATE_KEY = 'nosc:stream:state';
   const STATE_KEYS = ['examineId', 'gameId', 'matchId'];
   const getState = (callback) => {
     redis.hgetall(STATE_KEY, (err, data) => {
@@ -23,6 +23,9 @@ module.exports = (redis) => {
     getState((err, data) => {
       const saveData = Object.assign({}, data, newData);
       const hset = STATE_KEYS.reduce((gathered, key) => {
+        if (!saveData[key]) {
+          saveData[key] = 0;
+        }
         gathered.push(key, saveData[key]);
         return gathered;
       }, []);

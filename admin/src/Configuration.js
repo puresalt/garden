@@ -100,11 +100,6 @@ function Settings(props) {
                   checked={configurationData.showSponsorUnit}
                   onChange={(value) => updateConfiguration('showSponsorUnit', value)}
                 />
-                <ToggleOption
-                  name="Ad Block Unit"
-                  checked={configurationData.showAdUnit}
-                  onChange={(value) => updateConfiguration('showAdUnit', value)}
-                />
               </fieldset>
               <hr/>
               <Form.Group controlId="bottom-right-text">

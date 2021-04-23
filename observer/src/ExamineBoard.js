@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Chessboard from 'garden-common/react/Chessboard';
 
 function ExamineBoard(props) {
@@ -26,6 +26,7 @@ function ExamineBoard(props) {
         viewOnly={false}
         coordinates={true}
         drawable={{onChange: handleDraw}}
+        captureKeyEvents={true}
         socket={socket}
       />
     </div>
