@@ -78,7 +78,7 @@ function Board(props) {
     <div className={`Board${boardSize} board-${board} orientation-${orientation}${resultClassName}`} key={board}>
       <header>
         <div className="board-header-away">
-          <OrDefault value={away.name}/> <em><OrDefault value={away.rating}/></em>
+          <OrDefault value={away.name}/> <em><OrDefault value={away.section}/></em>
         </div>
       </header>
       {showProgrammaticBoards
@@ -97,7 +97,7 @@ function Board(props) {
       }
       <footer>
         <div className="board-header-home">
-          <OrDefault value={home.name}/> <em><OrDefault value={home.rating}/></em>
+          <OrDefault value={home.name}/> <em><OrDefault value={home.section}/></em>
         </div>
       </footer>
       {resultContent}

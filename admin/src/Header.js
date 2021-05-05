@@ -50,9 +50,11 @@ function Navigation(props) {
     <Container>
       <Nav className="mr-auto">
         <Nav.Link href="/"
-                  active={pathname !== '/configuration' && pathname !== '/k12' && pathname !== '/k9'}>Observer</Nav.Link>
-        <Nav.Link href="/k12" active={pathname === '/k12'}>K-12 Pairings</Nav.Link>
-        <Nav.Link href="/k9" active={pathname === '/k9'}>K-9 Pairings</Nav.Link>
+                  active={pathname !== '/configuration' && pathname.substring(0, 2) !== '/k'}>Observer</Nav.Link>
+        <Nav.Link href="/k6" active={pathname === '/k6'}>K-6 Pairings</Nav.Link>
+        <Nav.Link href="/k5" active={pathname === '/k5'}>K-5 Pairings</Nav.Link>
+        <Nav.Link href="/k3" active={pathname === '/k3'}>K-3 Pairings</Nav.Link>
+        <Nav.Link href="/k1" active={pathname === '/k1'}>K-1 Pairings</Nav.Link>
         <Nav.Link href="/configuration" active={pathname === '/configuration'}>Configuration</Nav.Link>
       </Nav>
       <LiveButton socket={socket} isLive={isLive} updateSetIsLive={updateSetIsLive}/>

@@ -75,11 +75,17 @@ function App() {
         <Route exact path="/configuration">
           <Configuration socket={socket}/>
         </Route>
-        <Route exact path="/k12">
-          <Section section={1} socket={socket}/>
+        <Route exact path="/k6">
+          <Section section="K-6" socket={socket}/>
         </Route>
-        <Route exact path="/k9">
-          <Section section={2} socket={socket}/>
+        <Route exact path="/k5">
+          <Section section="K-5" socket={socket}/>
+        </Route>
+        <Route exact path="/k3">
+          <Section section="K-3" socket={socket}/>
+        </Route>
+        <Route exact path="/k1">
+          <Section section="K-1" socket={socket}/>
         </Route>
         <Route path="/">
           <Sections

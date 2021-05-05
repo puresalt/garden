@@ -4,16 +4,15 @@ function observerRoute(db, redis, socketWrapper) {
   function observerList(global) {
     db.query(
       `SELECT nosc_pairing.observer_board_id AS id,
+              nosc_pairing.section,
               home.id                        AS homeId,
               home.name                      AS homeName,
               home.handle                    AS homeHandle,
               home.rating                    AS homeRating,
-              nosc_pairing.home_score        AS homeScore,
               away.id                        AS awayId,
               away.name                      AS awayName,
               away.handle                    AS awayHandle,
-              away.rating                    AS awayRating,
-              nosc_pairing.away_score        AS awayScore
+              away.rating                    AS awayRating
        FROM nosc_pairing
                 INNER JOIN nosc_player home ON (home.id = nosc_pairing.home_id)
                 INNER JOIN nosc_player away ON (away.id = nosc_pairing.away_id)
@@ -29,8 +28,8 @@ function observerRoute(db, redis, socketWrapper) {
         const matchList = playerList.map((pairing) => {
           return {
             id: pairing.id,
-            home: playerData(pairing.homeId, pairing.homeName, pairing.homeHandle, pairing.homeRating),
-            away: playerData(pairing.awayId, pairing.awayName, pairing.awayHandle, pairing.awayRating)
+            home: playerData(pairing.homeId, pairing.homeName, pairing.homeHandle, pairing.homeRating, pairing.section),
+            away: playerData(pairing.awayId, pairing.awayName, pairing.awayHandle, pairing.awayRating, pairing.section)
           };
         });
 
@@ -48,17 +47,26 @@ function observerRoute(db, redis, socketWrapper) {
               return console.error('Error getting observer data:', err);
             }
             for (let i = 0, count = data.length; i < count; ++i) {
+              if (!matchList[i]) {
+                matchList[i] = {
+                  id: null,
+                  home: playerData(null, '', '', null, null),
+                  away: playerData(null, '', '', null, null)
+                };
+              }
               if (data[i]) {
                 matchList[i].seek = data[i];
               } else {
                 let white = matchList[i].away.handle.toLowerCase();
                 let black = matchList[i].home.handle.toLowerCase();
-                matchList[i].seek = `find ${white} ${black}`;
-                redis.set(`nosc:stream:board:${matchList[i].id}`, matchList[i].seek, ((id) => (err) => {
-                  if (err) {
-                    console.warn('Error saving the empty game state for:', id, err);
-                  }
-                })(matchList[i].id));
+                if (white && black) {
+                  matchList[i].seek = `find ${white} ${black}`;
+                  redis.set(`nosc:stream:board:${matchList[i].id}`, matchList[i].seek, ((id) => (err) => {
+                    if (err) {
+                      console.warn('Error saving the empty game state for:', id, err);
+                    }
+                  })(matchList[i].id));
+                }
               }
             }
             socketWrapper[global ? 'broadcastAll' : 'emit']('observer:listed', matchList);
@@ -132,16 +140,15 @@ function observerRoute(db, redis, socketWrapper) {
                   db.query(
                     `SELECT nosc_pairing.id,
                             nosc_pairing.section,
-                            home.id                 AS homeId,
-                            home.name               AS homeName,
-                            home.handle             AS homeHandle,
-                            home.rating             AS homeRating,
-                            nosc_pairing.home_score AS homeScore,
-                            away.id                 AS awayId,
-                            away.name               AS awayName,
-                            away.handle             AS awayHandle,
-                            away.rating             AS awayRating,
-                            nosc_pairing.away_score AS awayScore
+                            nosc_pairing.observer_board_id AS observerBoardId,
+                            home.id                        AS homeId,
+                            home.name                      AS homeName,
+                            home.handle                    AS homeHandle,
+                            home.rating                    AS homeRating,
+                            away.id                        AS awayId,
+                            away.name                      AS awayName,
+                            away.handle                    AS awayHandle,
+                            away.rating                    AS awayRating
                      FROM nosc_pairing
                               INNER JOIN nosc_player home ON (home.id = nosc_pairing.home_id)
                               INNER JOIN nosc_player away ON (away.id = nosc_pairing.away_id)
@@ -155,18 +162,18 @@ function observerRoute(db, redis, socketWrapper) {
                       }
 
                       const matchData = [
-                        {id: 1, section: 'K-12 Section', matchUps: []},
-                        {id: 2, section: 'K-9 Section', matchUps: []}
+                        {id: 1, section: 'Live Boards', matchUps: []},
+                        {id: 2, section: 'Viewer Analysis', matchUps: []}
                       ];
 
                       pairingList.forEach((pairing) => {
-                        const matchId = pairing.section === 'K12' ? 0 : 1;
+                        const matchId = pairing.observerBoardId > 0 && pairing.observerBoardId < 5 ? 0 : 1;
                         const matchIdOffset = ((matchId + 1) * 4) - 4;
                         matchData[matchId].matchUps.push({
                           id: matchData[matchId].matchUps.length + 1 + matchIdOffset,
                           board: matchData[matchId].matchUps.length + 1,
-                          home: playerData(pairing.homeId, pairing.homeName, pairing.homeHandle, pairing.homeRating, pairing.homeScore),
-                          away: playerData(pairing.awayId, pairing.awayName, pairing.awayHandle, pairing.awayRating, pairing.awayScore)
+                          home: playerData(pairing.homeId, pairing.homeName, pairing.homeHandle, pairing.homeRating, pairing.section),
+                          away: playerData(pairing.awayId, pairing.awayName, pairing.awayHandle, pairing.awayRating, pairing.section)
                         });
                       });
 

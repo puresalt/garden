@@ -9,35 +9,55 @@ import Button from 'react-bootstrap/Button';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 
+const sections = {
+  'K-6': 1,
+  'K-5': 2,
+  'K-3': 3,
+  'K-1': 4
+};
+
 function Observers(props) {
   const {socket, section} = props;
-
-  const start = (section * 4) - 4;
-  const end = start + 4;
+  const sectionId = sections[section];
 
   const [observerList, setObserverList] = useState([]);
   const updateObserverList = (incomingObserverList) => {
-    setObserverList(incomingObserverList.slice(start, end));
+    setObserverList([incomingObserverList[sectionId - 1], ...(incomingObserverList.slice(4, 8))]);
+  };
+
+  const [analysisBoard1, setAnalysisBoard1] = useState(0);
+  const [analysisBoard2, setAnalysisBoard2] = useState(0);
+  const [analysisBoard3, setAnalysisBoard3] = useState(0);
+  const [analysisBoard4, setAnalysisBoard4] = useState(0);
+  const setAnalysisBoard = [setAnalysisBoard1, setAnalysisBoard2, setAnalysisBoard3, setAnalysisBoard4];
+  const updateAnalysisBoard = (id, pairingId) => {
+    setAnalysisBoard[id - 5](pairingId);
+    socket.emit('observer:pick', id, pairingId);
+  };
+
+  const [observingPairingId, setObservingPairingId] = useState(0);
+  const updateBoard = (pairingId) => {
+    setObservingPairingId(pairingId);
+    socket.emit('observer:pick', sectionId, pairingId);
   };
 
   const updateSeek = (id, seek) => {
-    console.log('huh?', id, seek);
     socket.emit('observer:update', id, seek);
-  };
-  const [board1, setBoard1] = useState(0);
-  const [board2, setBoard2] = useState(0);
-  const [board3, setBoard3] = useState(0);
-  const [board4, setBoard4] = useState(0);
-  const setBoard = [setBoard1, setBoard2, setBoard3, setBoard4];
-  const updateBoard = (id, pairingId) => {
-    setBoard[id - 1](pairingId);
-    socket.emit('observer:pick', id + start, pairingId);
   };
 
   const [pairingList, setPairingList] = useState([]);
   const updatePairingList = (incomingPairingList) => {
     setPairingList(incomingPairingList);
-    incomingPairingList.forEach((pairing) => pairing.observerBoardId && setBoard[pairing.observerBoardId - 1 - start](pairing.id));
+    incomingPairingList.forEach((pairing) => {
+      if (!pairing.observerBoardId) {
+        return;
+      }
+      if (pairing.observerBoardId < 5) {
+        setObservingPairingId(pairing.id)
+      } else {
+        setAnalysisBoard[pairing.observerBoardId - 5](pairing.id);
+      }
+    });
   };
 
   useEffect(() => {
@@ -57,16 +77,16 @@ function Observers(props) {
         <Col lg={3}>
           <Table size="sm">
             <thead>
-            <tr >
+            <tr>
               <th scope="col">#</th>
               <th scope="col">Seeking</th>
             </tr>
             </thead>
             <tbody>
             {observerList.length
-              ? observerList.map((observer) => {
+              ? observerList.map((observer, index) => {
                 return <Observer
-                  key={observer.id}
+                  key={index}
                   id={observer.id}
                   seek={observer.seek}
                   updateSeek={updateSeek}
@@ -138,7 +158,8 @@ function Observers(props) {
             <th scope="col">#</th>
             <th scope="col">White</th>
             <th scope="col">Black</th>
-            <th scope="col">Live Stream</th>
+            <th scope="col">Live Board</th>
+            <th scope="col">Analysis Board</th>
           </tr>
           </thead>
           <tbody>
@@ -146,23 +167,24 @@ function Observers(props) {
             ? pairingList.map((pairing) => {
               return <Pairing
                 key={pairing.id}
-                start={start}
                 id={pairing.id}
                 boardId={pairing.boardId}
-                board1={board1}
-                board2={board2}
-                board3={board3}
-                board4={board4}
+                observingPairingId={observingPairingId}
                 home={pairing.home}
                 away={pairing.away}
                 seek={pairing.seek}
+                analysisBoard1={analysisBoard1}
+                analysisBoard2={analysisBoard2}
+                analysisBoard3={analysisBoard3}
+                analysisBoard4={analysisBoard4}
                 updateBoard={updateBoard}
+                updateAnalysisBoard={updateAnalysisBoard}
                 pairingId={pairing.pairingId}
                 socket={socket}
               />;
             })
             : <tr className="text-center table-warning">
-              <td colSpan={4}><em>No pairings yet.</em></td>
+              <td colSpan={5}><em>No pairings yet.</em></td>
             </tr>
           }
           </tbody>
@@ -173,9 +195,21 @@ function Observers(props) {
 }
 
 function Pairing(props) {
-  const {start, id, boardId, home, away, board1, board2, board3, board4, updateBoard} = props;
+  const {
+    id,
+    boardId,
+    home,
+    away,
+    observingPairingId,
+    updateBoard,
+    analysisBoard1,
+    analysisBoard2,
+    analysisBoard3,
+    analysisBoard4,
+    updateAnalysisBoard
+  } = props;
 
-  const handleUpdateBoard = (observerBoardId) => updateBoard(observerBoardId, id);
+  const isActive = id === observingPairingId || id === analysisBoard1 || id === analysisBoard2 || id === analysisBoard3 || id === analysisBoard4;
 
   return <tr>
     <th scope="row">{boardId}</th>
@@ -183,58 +217,83 @@ function Pairing(props) {
     <td>{away.name} <em><small>({away.rating})</small></em></td>
     <td>
       <ObserversBoardPicker
-        start={start}
         pairingId={id}
-        board1={board1}
-        board2={board2}
-        board3={board3}
-        board4={board4}
-        handleUpdateBoard={handleUpdateBoard}
+        isActive={isActive}
+        observingPairingId={observingPairingId}
+        updateBoard={updateBoard}
+      />
+    </td>
+    <td>
+      <AnalysisBoardPicker
+        pairingId={id}
+        analysisBoard1={analysisBoard1}
+        analysisBoard2={analysisBoard2}
+        analysisBoard3={analysisBoard3}
+        analysisBoard4={analysisBoard4}
+        observingPairingId={observingPairingId}
+        isActive={isActive}
+        updateAnalysisBoard={updateAnalysisBoard}
       />
     </td>
   </tr>;
 }
 
 function ObserversBoardPicker(props) {
-  const {start, board1, board2, board3, board4, pairingId, handleUpdateBoard} = props;
+  const {isActive, observingPairingId, pairingId, updateBoard} = props;
+
+  return <Button
+    disabled={isActive}
+    onClick={() => updateBoard(pairingId)}
+    variant={pairingId === observingPairingId ? "success" : "primary"}><i className="fa fa-eye"/></Button>;
+}
+
+function AnalysisBoardPicker(props) {
+  const {
+    isActive,
+    analysisBoard1,
+    analysisBoard2,
+    analysisBoard3,
+    analysisBoard4,
+    pairingId,
+    updateAnalysisBoard
+  } = props;
 
   const handleChange = (event) => {
-    handleUpdateBoard(Number(event.target.value), pairingId);
+    updateAnalysisBoard(Number(event.target.value), pairingId);
   };
-
-  const isActive = pairingId === board1 || pairingId === board2 || pairingId === board3 || pairingId === board4;
 
   return <ButtonGroup toggle>
     <ToggleButton
-      checked={pairingId === board1}
+      checked={pairingId === analysisBoard1}
       disabled={isActive}
       type="radio"
-      value={1}
+      value={5}
       onChange={handleChange}
-      variant={pairingId === board1 ? "success" : "secondary"}>{1 + start}</ToggleButton>
+      variant={pairingId === analysisBoard1 ? "success" : "secondary"}>1</ToggleButton>
     <ToggleButton
-      checked={pairingId === board2}
+      checked={pairingId === analysisBoard2}
       disabled={isActive}
       type="radio"
-      value={2}
+      value={6}
       onChange={handleChange}
-      variant={pairingId === board2 ? "success" : "secondary"}>{2 + start}</ToggleButton>
+      variant={pairingId === analysisBoard2 ? "success" : "secondary"}>2</ToggleButton>
     <ToggleButton
-      checked={pairingId === board3}
+      checked={pairingId === analysisBoard3}
       disabled={isActive}
       type="radio"
-      value={3}
+      value={7}
       onChange={handleChange}
-      variant={pairingId === board3 ? "success" : "secondary"}>{3 + start}</ToggleButton>
+      variant={pairingId === analysisBoard3 ? "success" : "secondary"}>3</ToggleButton>
     <ToggleButton
-      checked={pairingId === board4}
+      checked={pairingId === analysisBoard4}
       disabled={isActive}
       type="radio"
-      value={4}
+      value={8}
       onChange={handleChange}
-      variant={pairingId === board4 ? "success" : "secondary"}>{4 + start}</ToggleButton>
+      variant={pairingId === analysisBoard4 ? "success" : "secondary"}>4</ToggleButton>
   </ButtonGroup>;
 }
+
 
 function Observer(props) {
   const {id, seek, updateSeek} = props;

@@ -1,10 +1,10 @@
-function playerData(id, name, handle, rating, score) {
+function playerData(id, name, handle, rating, section) {
   return {
     id,
     name,
     handle,
     rating,
-    score
+    section
   }
 }
 

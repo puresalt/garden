@@ -232,9 +232,9 @@ function ObserverLoop(connection, boardId, redis) {
     currentCommand = null;
     if (!emptyGameHistoryRegex.test(data)) {
       const historyList = [...(data.matchAll(individualGameHistoryRegex) || [])];
-      const against = searchingHistoryFor === white
+      const against = String(searchingHistoryFor === white
         ? black
-        : white;
+        : white).toLowerCase();
       if (historyList.length) {
         const probableGame = historyList.map((row, i) => {
           return against.indexOf(row[2].toLowerCase()) > -1
@@ -321,7 +321,7 @@ function ObserverLoop(connection, boardId, redis) {
           getSmoves(smovesPlayer, smovesIndex, smovesWaiting + 1);
         }, 500);
       }
-      const foundMoves = moveListData.matchAll(smovesListRegex);
+      const foundMoves = (moveListData.split('----  ----------------   ----------------')[1] || '').matchAll(smovesListRegex);
       if (!foundMoves) {
         noGameFound = true;
       }

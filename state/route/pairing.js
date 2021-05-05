@@ -4,6 +4,7 @@ function pairingRoute(db, redis, socketWrapper) {
   function pairingList(section) {
     db.query(
       `SELECT nosc_pairing.id,
+              nosc_pairing.section,
               nosc_pairing.board_id          AS boardId,
               nosc_pairing.observer_board_id AS observerBoardId,
               home.id                        AS homeId,
@@ -19,7 +20,7 @@ function pairingRoute(db, redis, socketWrapper) {
                 INNER JOIN nosc_player away ON (away.id = nosc_pairing.away_id)
        WHERE nosc_pairing.section = ?
        ORDER BY board_id ASC;`,
-      [section === 1 ? 'K12' : 'K9'],
+      [section],
       (err, pairingList) => {
         if (err) {
           console.warn('Error retrieving match list:', err);
@@ -31,8 +32,8 @@ function pairingRoute(db, redis, socketWrapper) {
           return {
             id: pairing.id,
             boardId: pairing.boardId,
-            home: playerData(pairing.homeId, pairing.homeName, pairing.homeHandle, pairing.homeRating),
-            away: playerData(pairing.awayId, pairing.awayName, pairing.awayHandle, pairing.awayRating),
+            home: playerData(pairing.homeId, pairing.homeName, pairing.homeHandle, pairing.homeRating, pairing.section),
+            away: playerData(pairing.awayId, pairing.awayName, pairing.awayHandle, pairing.awayRating, pairing.section),
             observerBoardId: pairing.observerBoardId
           };
         }, []).filter(item => item.home !== null && item.away !== null));

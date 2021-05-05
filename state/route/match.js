@@ -8,16 +8,15 @@ function matchRoute(db, redis, socketWrapper) {
     db.query(
       `SELECT nosc_pairing.id,
               nosc_pairing.section,
-              home.id                 AS homeId,
-              home.name               AS homeName,
-              home.handle             AS homeHandle,
-              home.rating             AS homeRating,
-              nosc_pairing.home_score AS homeScore,
-              away.id                 AS awayId,
-              away.name               AS awayName,
-              away.handle             AS awayHandle,
-              away.rating             AS awayRating,
-              nosc_pairing.away_score AS awayScore
+              nosc_pairing.observer_board_id AS observerBoardId,
+              home.id                        AS homeId,
+              home.name                      AS homeName,
+              home.handle                    AS homeHandle,
+              home.rating                    AS homeRating,
+              away.id                        AS awayId,
+              away.name                      AS awayName,
+              away.handle                    AS awayHandle,
+              away.rating                    AS awayRating
        FROM nosc_pairing
                 INNER JOIN nosc_player home ON (home.id = nosc_pairing.home_id)
                 INNER JOIN nosc_player away ON (away.id = nosc_pairing.away_id)
@@ -31,18 +30,19 @@ function matchRoute(db, redis, socketWrapper) {
         }
 
         const matchData = [
-          {id: 1, section: 'K-12 Section', matchUps: []},
-          {id: 2, section: 'K-9 Section', matchUps: []}
+          {id: 1, section: 'Live Boards', matchUps: []},
+          {id: 2, section: 'Viewer Analysis', matchUps: []}
         ];
 
         pairingList.forEach((pairing) => {
-          const matchId = pairing.section === 'K12' ? 0 : 1;
+          const matchId = pairing.observerBoardId > 0 && pairing.observerBoardId < 5 ? 0 : 1;
+          console.log(matchId);
           const matchIdOffset = ((matchId + 1) * 4) - 4;
           matchData[matchId].matchUps.push({
             id: matchData[matchId].matchUps.length + 1 + matchIdOffset,
             board: matchData[matchId].matchUps.length + 1,
-            home: playerData(pairing.homeId, pairing.homeName, pairing.homeHandle, pairing.homeRating, pairing.homeScore),
-            away: playerData(pairing.awayId, pairing.awayName, pairing.awayHandle, pairing.awayRating, pairing.awayScore)
+            home: playerData(pairing.homeId, pairing.homeName, pairing.homeHandle, pairing.homeRating, pairing.section),
+            away: playerData(pairing.awayId, pairing.awayName, pairing.awayHandle, pairing.awayRating, pairing.section)
           });
         });
 
