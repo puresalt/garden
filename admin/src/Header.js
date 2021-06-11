@@ -51,6 +51,8 @@ function Navigation(props) {
       <Nav className="mr-auto">
         <Nav.Link href="/"
                   active={pathname !== '/configuration' && pathname.substring(0, 2) !== '/k'}>Observer</Nav.Link>
+        <Nav.Link href="/k12" active={pathname === '/k12'}>K-12 Pairings</Nav.Link>
+        <Nav.Link href="/k9" active={pathname === '/k9'}>K-9 Pairings</Nav.Link>
         <Nav.Link href="/k6" active={pathname === '/k6'}>K-6 Pairings</Nav.Link>
         <Nav.Link href="/k5" active={pathname === '/k5'}>K-5 Pairings</Nav.Link>
         <Nav.Link href="/k3" active={pathname === '/k3'}>K-3 Pairings</Nav.Link>

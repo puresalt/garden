@@ -10,10 +10,12 @@ import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 
 const sections = {
-  'K-6': 1,
-  'K-5': 2,
-  'K-3': 3,
-  'K-1': 4
+  'K-12': 1,
+  'K-9': 2,
+  'K-6': 3,
+  'K-5': 4,
+  'K-3': 5,
+  'K-1': 6
 };
 
 function Observers(props) {
@@ -27,11 +29,9 @@ function Observers(props) {
 
   const [analysisBoard1, setAnalysisBoard1] = useState(0);
   const [analysisBoard2, setAnalysisBoard2] = useState(0);
-  const [analysisBoard3, setAnalysisBoard3] = useState(0);
-  const [analysisBoard4, setAnalysisBoard4] = useState(0);
-  const setAnalysisBoard = [setAnalysisBoard1, setAnalysisBoard2, setAnalysisBoard3, setAnalysisBoard4];
+  const setAnalysisBoard = [setAnalysisBoard1, setAnalysisBoard2];
   const updateAnalysisBoard = (id, pairingId) => {
-    setAnalysisBoard[id - 5](pairingId);
+    setAnalysisBoard[id - 7](pairingId);
     socket.emit('observer:pick', id, pairingId);
   };
 
@@ -52,10 +52,10 @@ function Observers(props) {
       if (!pairing.observerBoardId) {
         return;
       }
-      if (pairing.observerBoardId < 5) {
+      if (pairing.observerBoardId < 7) {
         setObservingPairingId(pairing.id)
       } else {
-        setAnalysisBoard[pairing.observerBoardId - 5](pairing.id);
+        setAnalysisBoard[pairing.observerBoardId - 7](pairing.id);
       }
     });
   };
@@ -175,8 +175,6 @@ function Observers(props) {
                 seek={pairing.seek}
                 analysisBoard1={analysisBoard1}
                 analysisBoard2={analysisBoard2}
-                analysisBoard3={analysisBoard3}
-                analysisBoard4={analysisBoard4}
                 updateBoard={updateBoard}
                 updateAnalysisBoard={updateAnalysisBoard}
                 pairingId={pairing.pairingId}
@@ -204,12 +202,10 @@ function Pairing(props) {
     updateBoard,
     analysisBoard1,
     analysisBoard2,
-    analysisBoard3,
-    analysisBoard4,
     updateAnalysisBoard
   } = props;
 
-  const isActive = id === observingPairingId || id === analysisBoard1 || id === analysisBoard2 || id === analysisBoard3 || id === analysisBoard4;
+  const isActive = id === observingPairingId || id === analysisBoard1 || id === analysisBoard2;
 
   return <tr>
     <th scope="row">{boardId}</th>
@@ -228,8 +224,6 @@ function Pairing(props) {
         pairingId={id}
         analysisBoard1={analysisBoard1}
         analysisBoard2={analysisBoard2}
-        analysisBoard3={analysisBoard3}
-        analysisBoard4={analysisBoard4}
         observingPairingId={observingPairingId}
         isActive={isActive}
         updateAnalysisBoard={updateAnalysisBoard}
@@ -252,8 +246,6 @@ function AnalysisBoardPicker(props) {
     isActive,
     analysisBoard1,
     analysisBoard2,
-    analysisBoard3,
-    analysisBoard4,
     pairingId,
     updateAnalysisBoard
   } = props;
@@ -267,30 +259,16 @@ function AnalysisBoardPicker(props) {
       checked={pairingId === analysisBoard1}
       disabled={isActive}
       type="radio"
-      value={5}
+      value={7}
       onChange={handleChange}
       variant={pairingId === analysisBoard1 ? "success" : "secondary"}>1</ToggleButton>
     <ToggleButton
       checked={pairingId === analysisBoard2}
       disabled={isActive}
       type="radio"
-      value={6}
-      onChange={handleChange}
-      variant={pairingId === analysisBoard2 ? "success" : "secondary"}>2</ToggleButton>
-    <ToggleButton
-      checked={pairingId === analysisBoard3}
-      disabled={isActive}
-      type="radio"
-      value={7}
-      onChange={handleChange}
-      variant={pairingId === analysisBoard3 ? "success" : "secondary"}>3</ToggleButton>
-    <ToggleButton
-      checked={pairingId === analysisBoard4}
-      disabled={isActive}
-      type="radio"
       value={8}
       onChange={handleChange}
-      variant={pairingId === analysisBoard4 ? "success" : "secondary"}>4</ToggleButton>
+      variant={pairingId === analysisBoard2 ? "success" : "secondary"}>2</ToggleButton>
   </ButtonGroup>;
 }
 

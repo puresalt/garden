@@ -75,6 +75,12 @@ function App() {
         <Route exact path="/configuration">
           <Configuration socket={socket}/>
         </Route>
+        <Route exact path="/k12">
+          <Section section="K-12" socket={socket}/>
+        </Route>
+        <Route exact path="/k9">
+          <Section section="K-9" socket={socket}/>
+        </Route>
         <Route exact path="/k6">
           <Section section="K-6" socket={socket}/>
         </Route>
