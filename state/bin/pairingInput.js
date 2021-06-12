@@ -3,7 +3,7 @@ const PAIRING_TABLE_NAME = 'nosc_pairing';
 const SECTIONS = ['K-12', 'K-9', 'K-6', 'K-5', 'K-3', 'K-1'];
 
 const ROUND = process.env.ROUND || 1;
-const MAX_ROUNDS = process.env.MAX_ROUNDS || 8;
+const MAX_ROUNDS = process.env.MAX_ROUNDS || 6;
 
 const fs = require('fs');
 const path = require('path');
