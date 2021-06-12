@@ -18,24 +18,32 @@ const readFile = (section) => {
 };
 const playerLookup = require('../data/lookup');
 
-let observerBoardId = 0;
+let observerBoardId = {
+  'K-12': 1,
+  'K-9': 2,
+  'K-6': 3,
+  'K-5': 5,
+  'K-3': 6,
+  'K-1': 7
+};
+let auxiliaryObserverBoardId = {
+  'K-12': 4,
+  'K-9': 8
+};
 const DATA = SECTIONS.reduce((gathered, section) => {
-  gathered[section] = {
-    pairings: readFile(section),
-    observerBoardId: ++observerBoardId
-  };
+  gathered[section] = readFile(section);
   return gathered;
 }, {});
 
 let globalId = 0;
 const usedIds = [];
 const convertPairingDataToSql = (section) => {
-  if (!DATA[section].pairings) {
+  if (!DATA[section]) {
     return '';
   }
 
   const players = playerLookup[section].split('\n');
-  const pairings = DATA[section].pairings.split('\n');
+  const pairings = DATA[section].split('\n');
   const sql = [];
   const c = players.length;
   let boardId = 0;
@@ -59,7 +67,7 @@ const convertPairingDataToSql = (section) => {
     }
     if (homeId && awayId) {
       usedIds.push(homeId, awayId);
-      sql.push(`(${++globalId}, ${++boardId}, ${homeId}, ${awayId}, '${section}', ${boardId === 1 ? DATA[section].observerBoardId : 'NULL'})`);
+      sql.push(`(${++globalId}, ${++boardId}, ${homeId}, ${awayId}, '${section}', ${boardId === 1 ? observerBoardId[section] : (boardId === 2 && auxiliaryObserverBoardId[section] ? auxiliaryObserverBoardId[section] : 'NULL')})`);
     }
   }
 
