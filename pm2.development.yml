@@ -13,31 +13,17 @@
 #
 
 apps:
-  - script: admin/app.js
-    name: 'nosc:admin'
-    instances: 2
-    exec_mode: cluster
-    env:
-      NODE_ENV: development
-      PORT: 5202
   - script: state/app.js
-    name: 'nosc:state'
+    name: 'rapid:state'
     instances: 2
     exec_mode: cluster
     env:
       NODE_ENV: development
-      PORT: 5203
+      PORT: 5303
   - script: npm
-    name: 'nosc:stream'
-    args: run start:stream
+    name: 'rapid:stream'
+    args: run start:ui
     env:
       NODE_ENV: development
-      PORT: 5204
-  - script: observer/app.js
-    name: 'nosc:observer'
-    instances: 2
-    exec_mode: cluster
-    env:
-      NODE_ENV: development
-      PORT: 5205
+      PORT: 5304
 

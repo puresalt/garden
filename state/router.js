@@ -5,14 +5,10 @@ const express = require('express');
 const socketIo = require('socket.io');
 
 const routes = [
-  require('./route/configuration'),
-  require('./route/match'),
-  require('./route/pairing'),
-  require('./route/stream'),
-  require('./route/observer')
+  require('./route/stream')
 ];
 
-function Router(db, redis, config) {
+function Router(redis, config) {
   const app = express();
   app.use(express.static(path.join(__dirname, 'public')));
   app.get('/', (req, res) => res.status(403).send(''));
@@ -56,7 +52,7 @@ function Router(db, redis, config) {
       }
     };
 
-    const disconnectCallbacks = routes.map(route => route(db, redis, socketWrapper));
+    const disconnectCallbacks = routes.map(route => route(redis, socketWrapper));
     socket.on('disconnect', () => {
       disconnectCallbacks.forEach(c => c());
       const remainingCallbacks = Object.keys(callbacks);

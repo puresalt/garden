@@ -1,38 +1,48 @@
 {
   "port": {
-    "admin": 5202,
     "state": 5203,
-    "observer": 5204,
-    "stream": 5205
+    "ui": 5304
   },
   "session": {
-    "secret": "nosc"
+    "secret": "rapid"
   },
   "socketIo": {
     "url": "http://127.0.0.1:5203"
   },
-  "state": {
-    "mysql": {
-      "host": "localhost",
-      "multipleStatements": true
-    }
-  },
   "observer": {
-    "username": "",
-    "password": ""
-  },
-  "discord": {
-    "guild": {
-      "id": ""
-    },
-    "client": {
-      "id": "",
-      "secret": "",
-      "redirectUrl": "https://nosc.passers.gg/callback",
-      "authorizeUrl": "https://discord.com/api/oauth2/authorize",
-      "responseType": "code",
-      "scope": "guilds identify"
+    "telnet": {
+      "1": {
+        "username": "",
+        "password": ""
+      },
+      "2": {
+        "username": "",
+        "password": ""
+      },
+      "3": {
+        "username": "",
+        "password": ""
+      },
+      "4": {
+        "username": "",
+        "password": ""
+      },
+      "5": {
+        "username": "",
+        "password": ""
+      },
+      "6": {
+        "username": "",
+        "password": ""
+      },
+      "7": {
+        "username": "",
+        "password": ""
+      },
+      "8": {
+        "username": "",
+        "password": ""
+      }
     }
   }
 }
-

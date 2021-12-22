@@ -1,5 +1,5 @@
-function BoardViewerRoute(db, redis, socketWrapper, boardId) {
-  const gameHash = `nosc:viewer:game:${boardId}`;
+function BoardViewerRoute(redis, socketWrapper, boardId) {
+  const gameHash = `rapid:viewer:game:${boardId}`;
 
   let closed = false;
   let viewing = false;
@@ -43,7 +43,9 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
         fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
         clock: [1500, 1500],
         moveList: [],
-        moving: 'home'
+        moving: 'home',
+        home: {name: 'LOADING', rating: 'N/A'},
+        away: {name: 'LOADING', rating: 'N/A'}
       }
     });
     const checkForStatus = () => {
@@ -69,13 +71,12 @@ function BoardViewerRoute(db, redis, socketWrapper, boardId) {
         }
 
         if (!currentEvent || !currentEvent.data || !currentEvent.data.fen) {
-		console.log('DEBUGGING:', 'why?');
           return setTimeout(checkForStatus, 1000);
         }
 
         const loop = (err) => {
           if (err === 'Closed') {
-		  checking = false;
+            checking = false;
             return;
           }
           if (err) {

@@ -1,5 +1,5 @@
 module.exports = (redis) => {
-  const STATE_KEY = 'nosc:stream:state';
+  const STATE_KEY = 'rapid:stream:state';
   const STATE_KEYS = ['examineId', 'gameId', 'matchId'];
   const getState = (callback) => {
     redis.hgetall(STATE_KEY, (err, data) => {

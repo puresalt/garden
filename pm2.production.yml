@@ -13,24 +13,13 @@
 #
 
 apps:
-  - script: node ./admin/app.js
-    name: 'nosc:admin'
-    env:
-      NODE_ENV: production
-      PORT: 5202
   - script: node ./state/app.js
-    name: 'nosc:state'
+    name: 'rapid:state'
     env:
       NODE_ENV: production
-      PORT: 5203
+      PORT: 5303
   - script: ./node_modules/.bin/serve -s stream/build
-    name: 'nosc:stream'
+    name: 'rapid:ui'
     env:
       NODE_ENV: production
-      PORT: 5204
-  - script: node ./observer/app.js
-    name: 'nosc:observer'
-    env:
-      NODE_ENV: production
-      PORT: 5205
-
+      PORT: 5304

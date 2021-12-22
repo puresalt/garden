@@ -2,6 +2,18 @@ const COLORS = {
   w: 'home',
   b: 'away'
 }
+Object.freeze(COLORS);
+
+const UNKNOWN_PLAYER = {
+  name: 'Unknown',
+  rating: 'N/A'
+};
+Object.freeze(UNKNOWN_PLAYER);
+
+const PLAYERS = {
+  'MAGNUS_CARLSON': {name: 'GM Magnus Carlson', rating: 2800}
+};
+Object.freeze(PLAYERS);
 
 const buildFenBoard = (board, flipped) => {
   const fen = board.map((row) => {
@@ -77,6 +89,8 @@ const extractCoordinates = (movement) => {
 module.exports = (data) => {
   const columns = data.split(' ');
 
+  const home = PLAYERS[columns[16]] || UNKNOWN_PLAYER;
+  const away = PLAYERS[columns[17]] || UNKNOWN_PLAYER;
   const flippedBoard = columns[30] === '1';
   const color = columns[9].toLowerCase();
   const fiftyMoveCount = parseInt(columns[15]);
@@ -101,6 +115,8 @@ module.exports = (data) => {
     to,
     clock,
     fen,
+    home,
+    away,
     moving: COLORS[color]
   };
 };

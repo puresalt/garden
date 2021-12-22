@@ -1,20 +1,19 @@
 {
   "name": "garden",
-  "version": "1.0.0",
+  "version": "1.0.0-rapid",
   "private": true,
   "dependencies": {
     "pm2": "^4.4.1",
     "serve": "^11.3.2"
   },
   "scripts": {
-    "build": "cd admin && npm run build;cd ../observer && npm run build;cd ../stream && npm run build",
-    "install": "cd admin && npm install;cd ../common && npm install;cd ../observer && npm install;cd ../state && npm install;cd ../stream && npm install",
+    "build": "cd ui && npm run build",
+    "install": "cd common && npm install;cd ../state && npm install;cd ../ui && npm install",
     "restart": "./node_modules/.bin/pm2 restart pm2.production.yml",
     "start": "./node_modules/.bin/pm2 startOrRestart pm2.production.yml",
     "start:development": "npm run build;./node_modules/.bin/pm2 startOrRestart pm2.development.yml",
-    "start:admin": "cd admin && npm start",
     "start:state": "cd state && npm start",
-    "start:stream": "cd stream && npm start",
+    "start:ui": "cd ui && npm start",
     "stop": "./node_modules/.bin/pm2 stop pm2.production.yml",
     "stop:development": "./node_modules/.bin/pm2 stop pm2.development.yml"
   }
