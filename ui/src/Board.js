@@ -1,11 +1,28 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import OrDefault from 'garden-common/react/OrDefault';
 import Chessboard from 'garden-common/react/Chessboard';
 import './Board.css';
 
 function Board(props) {
-  const {board, pairing, showProgrammaticBoards, observingGame, socket} = props;
-  const {id, home, away} = pairing;
+  const {board, socket} = props;
+
+  const [home, setHome] = useState({name: 'LOADING', rating: 'N/A'});
+  const updateHome = (home) => {
+    setHome(home);
+  }
+  const [away, setAway] = useState({name: 'LOADING', rating: 'N/A'});
+  const updateAway = (away) => {
+    setAway(away);
+  }
+
+  useEffect(() => {
+    socket.on(`viewer:board:${board}:home`, updateHome);
+    socket.on(`viewer:board:${board}:away`, updateAway);
+    return () => {
+      socket.on(`viewer:board:${board}:home`, updateHome);
+      socket.on(`viewer:board:${board}:away`, updateAway);
+    };
+  });
 
   const [result, setResult] = useState({});
   const handleResult = (board, data) => {
@@ -22,19 +39,6 @@ function Board(props) {
 
   let boardSize = ' fadeIn';
   let size = 456;
-  if (observingGame) {
-    if (observingGame === id) {
-      boardSize = ' fadeIn Large';
-      size = 920;
-    } else {
-      boardSize = ' fadeOut';
-    }
-  }
-
-  if (!showProgrammaticBoards) {
-    boardSize += ' not-automatic';
-  }
-
   const orientation = 'home';
 
   let resultClassName = '';
@@ -81,19 +85,17 @@ function Board(props) {
           <OrDefault value={away.name}/> <em><OrDefault value={away.rating}/></em>
         </div>
       </header>
-      {showProgrammaticBoards
-        ? <Chessboard
-          boardName={'board:' + id}
-          size={size}
-          viewOnly={true}
-          viewer={true}
-          coordinates={false}
-          orientation={orientation}
-          onResult={handleResult}
-          onLoading={handleLoading}
-          socket={socket}
-        />
-        : <div className="board-placeholder"/>
+      <Chessboard
+        boardName={`board:${board}`}
+        size={size}
+        viewOnly={true}
+        viewer={true}
+        coordinates={false}
+        orientation={orientation}
+        onResult={handleResult}
+        onLoading={handleLoading}
+        socket={socket}
+      />
       }
       <footer>
         <div className="board-header-home">

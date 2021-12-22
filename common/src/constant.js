@@ -1,21 +1,20 @@
 const COLOR_WHITE = 'WHITE';
 const COLOR_BLACK = 'BLACK';
 
-const VENUE = {
-  ICC: 'ICC',
-  LICHESS: 'LICHESS',
-  FICS: 'FICS'
+const PLAYERS = {
+  '': {
+    name: 'Unknown',
+    rating: 'N/A'
+  },
+  '*MAGNUS_CARLSON': {
+    name: 'GM Magnus Carlsen',
+    rating: 2842
+  }
 };
-Object.freeze(VENUE);
-
-const EVENT_TYPE = {
-  BUGHOUSE: 'BUGHOUSE'
-};
-Object.freeze(EVENT_TYPE);
+Object.freeze(PLAYERS);
 
 module.exports = {
   COLOR_WHITE,
   COLOR_BLACK,
-  VENUE,
-  EVENT_TYPE
+  PLAYERS
 };

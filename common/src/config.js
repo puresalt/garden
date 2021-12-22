@@ -9,12 +9,15 @@ function Config(environment, runtimeConfig) {
     ? JSON.parse(process.env.GARDEN_CONFIG)
     : {};
 
-  return _.defaultsDeep(
+  const config = _.defaultsDeep(
     processConfig,
     runtimeConfig || {},
     environmentConfig,
     defaultConfig
   );
+  Object.freeze(config);
+
+  return config;
 }
 
 module.exports = Config;

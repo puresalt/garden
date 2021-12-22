@@ -1,5 +1,24 @@
+const PLAYERS = require('garden-common/src/constant').PLAYERS;
+
 function BoardViewerRoute(redis, socketWrapper, boardId) {
   const gameHash = `rapid:viewer:game:${boardId}`;
+
+  let home = null;
+  let away = null;
+  const checkForNameChanges = () => {
+    redis.get(`${gameHash}:home`, (name) => {
+      if (name !== home) {
+        home = name;
+        socketWrapper.emit(`viewer:board:${boardId}:home`, PLAYERS[home]);
+      }
+    });
+    redis.get(`${gameHash}:away`, (name) => {
+      if (name !== away) {
+        away = name;
+        socketWrapper.emit(`viewer:board:${boardId}:away`, PLAYERS[away]);
+      }
+    });
+  };
 
   let closed = false;
   let viewing = false;
@@ -23,6 +42,7 @@ function BoardViewerRoute(redis, socketWrapper, boardId) {
           socketWrapper.emit(`viewer:board:${boardId}`, currentEvent);
           lastEventId = lastEventId + result.length;
         }
+        checkForNameChanges();
         return setTimeout(() => getGameEvents(), 60);
       });
     };
@@ -43,9 +63,7 @@ function BoardViewerRoute(redis, socketWrapper, boardId) {
         fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
         clock: [1500, 1500],
         moveList: [],
-        moving: 'home',
-        home: {name: 'LOADING', rating: 'N/A'},
-        away: {name: 'LOADING', rating: 'N/A'}
+        moving: 'home'
       }
     });
     const checkForStatus = () => {
@@ -88,6 +106,7 @@ function BoardViewerRoute(redis, socketWrapper, boardId) {
         startGame(currentEventId, loop);
       });
     };
+    checkForNameChanges();
     checkForStatus();
   }
 

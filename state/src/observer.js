@@ -1,4 +1,5 @@
 const net = require('net');
+const PLAYERS = require('garden-common/src/constant').PLAYERS;
 const parseLiveBoard = require('./parse/liveBoard');
 
 const matchResults = {
@@ -27,6 +28,9 @@ function ObserverLoop(connection, boardId, redis) {
       callback && callback(err);
     });
   };
+  const nameChange = (position, name) => {
+    redis.set(`${boardHash}:${position}`, name);
+  };
 
   const clearGameHistory = (callback) => {
     console.info('Clearing history to look for:', observing);
@@ -37,8 +41,8 @@ function ObserverLoop(connection, boardId, redis) {
       moving: 'home',
       pauseClocks: true,
       loading: true,
-      home: {name: 'LOADING', rating: 'N/A'},
-      away: {name: 'LOADING', rating: 'N/A'}
+      home: PLAYERS[''],
+      away: PLAYERS['']
     }, callback));
   };
 
@@ -47,10 +51,14 @@ function ObserverLoop(connection, boardId, redis) {
   process.nextTick(() => clearGameHistory(() => observeGame()));
 
   let latestPosition = null;
+  let home = '';
+  let away = '';
 
   function observeGame() {
     currentCommand = 'observeGame';
     latestPosition = null;
+    away = '';
+    home = '';
     sendCommand('observe', boardId);
   }
 
@@ -75,6 +83,14 @@ function ObserverLoop(connection, boardId, redis) {
           .map(row => row[0].trim().split('<12>')[1]);
         if (boardEvents.length) {
           latestPosition = parseLiveBoard(boardEvents[boardEvents.length - 1]);
+          if (latestPosition.away !== away) {
+            home = latestPosition.home;
+            nameChange('home', home);
+          }
+          if (latestPosition.away !== away) {
+            away = latestPosition.away;
+            nameChange('away', away);
+          }
           pushPosition({...latestPosition});
         }
         return;
