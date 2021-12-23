@@ -31,3 +31,7 @@ em {
     text-decoration: none;
 }
 
+.logo,
+.event-logo {
+    padding: 0.5em 0;
+}

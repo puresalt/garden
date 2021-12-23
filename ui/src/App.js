@@ -8,6 +8,7 @@ import Board from './Board';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import logo from './logo.png';
+import eventLogo from './eventLogo.jpg';
 
 const CONFIG = Config(process.env);
 const socket = socketIoClient(CONFIG.socketIo.url, {
@@ -18,8 +19,11 @@ function App() {
   return <div className="App">
     <Container fluid className="boards">
       <Row>
-        <Col sm={6}>
+        <Col className="logo align-middle">
           <a href="https://chessclub.com"><img src={logo}/></a>
+        </Col>
+        <Col className="event-logo align-middle">
+          <img src={eventLogo}/>
         </Col>
       </Row>
     </Container>
