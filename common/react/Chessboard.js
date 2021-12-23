@@ -270,6 +270,7 @@ export default class Chessground extends React.PureComponent {
       this.setState({orientation: getOrientation(this.props.orientation)});
     }
     this.stopUpdatingClocks();
+    this.setState({loading: true});
     this.updateClocks();
     this.attachMovableConfig();
   }
@@ -282,24 +283,6 @@ export default class Chessground extends React.PureComponent {
     });
   }
 
-  checkAndWaitForPromotion(move, next) {
-    if (this.props.viewOnly || (this.cj.get(move.from) || {}).type !== 'p') {
-      return setTimeout(() => next(move), 0);
-    }
-    const fromRank = parseInt(move.from[move.from.length - 1]);
-    const toRank = parseInt(move.to[move.to.length - 1]);
-    if (!(fromRank === 2 && toRank === 1) && !(fromRank === 7 && toRank === 8)) {
-      return setTimeout(() => next(move), 0);
-    }
-    this.setState({
-      requestingPromotion: (piece) => {
-        move.promotion = piece || 'q';
-        this.setState({requestingPromotion: false});
-        setTimeout(() => next(move), 0);
-      }
-    });
-  }
-
   componentWillReceiveProps(nextProps) {
     this.setState({viewer: nextProps.viewer});
     const orientation = getOrientation(nextProps.orientation);
@@ -307,6 +290,7 @@ export default class Chessground extends React.PureComponent {
       this.setState({orientation: orientation});
     }
     this.stopUpdatingClocks();
+    this.setState({loading: true});
     this.updateClocks();
     this.attachMovableConfig();
   }
