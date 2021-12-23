@@ -94,7 +94,8 @@ export default class Chessground extends React.PureComponent {
       viewer: this.props.viewer,
       matchId: this.props.matchId,
       orientation: getOrientation(this.props.orientation),
-      captureKeyEvents: this.props.captureKeyEvents
+      captureKeyEvents: this.props.captureKeyEvents,
+      loading: true
     };
     this.handleEvent = this.handleEvent.bind(this);
     this.updateClocks = this.updateClocks.bind(this);
