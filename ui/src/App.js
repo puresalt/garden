@@ -10,7 +10,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import logo from './logo.png';
 import eventLogo from './eventLogo.jpg';
 
-const CONFIG = Config(process.env);
+const CONFIG = Config(process.env.NODE_ENV);
 const socket = socketIoClient(CONFIG.socketIo.url, {
   path: '/viewer'
 });

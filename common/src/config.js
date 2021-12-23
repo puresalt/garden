@@ -10,6 +10,7 @@ function Config(environment, runtimeConfig) {
     : {};
 
   const config = _.defaultsDeep(
+    {},
     processConfig,
     runtimeConfig || {},
     environmentConfig,
