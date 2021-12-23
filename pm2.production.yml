@@ -18,7 +18,7 @@ apps:
     env:
       NODE_ENV: production
       PORT: 5303
-  - script: ./node_modules/.bin/serve -s stream/build
+  - script: ./node_modules/.bin/serve -s ui/build
     name: 'rapid:ui'
     env:
       NODE_ENV: production

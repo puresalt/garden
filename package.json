@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "cd ui && npm run build",
+    "log": "./node_modules/.bin/pm2 logs",
     "install": "cd common && npm install;cd ../state && npm install;cd ../ui && npm install",
     "restart": "./node_modules/.bin/pm2 restart pm2.production.yml",
     "observer:restart": "cd state && npm run observer:restart",
