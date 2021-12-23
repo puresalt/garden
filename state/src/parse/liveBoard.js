@@ -83,7 +83,12 @@ module.exports = (data) => {
   const flippedBoard = columns[30] === '1';
   const color = columns[9].toLowerCase();
   const fiftyMoveCount = parseInt(columns[15]);
-  const clock = columns.slice(24, 26).map(item => parseInt(item));
+  const clock = columns.slice(24, 26).map((item) => {
+    const timeRemaining = parseInt(item);
+    return timeRemaining > 0
+      ? timeRemaining
+      : 0;
+  });
   const moveNumber = parseInt(columns[26]);
   const pgn = columns[29];
   const [from, to, piece] = extractCoordinates(columns[27]);
