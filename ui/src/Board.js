@@ -4,7 +4,8 @@ import Chessboard from 'garden-common/react/Chessboard';
 import './Board.css';
 
 function Board(props) {
-  const {board, socket} = props;
+  const {boardId, socket} = props;
+  const gameHash = `rapid:viewer:board:${boardId}`;
 
   const [home, setHome] = useState({name: 'LOADING', rating: 'N/A'});
   const updateHome = (home) => {
@@ -16,13 +17,14 @@ function Board(props) {
   }
 
   useEffect(() => {
-    socket.on(`viewer:board:${board}:home`, updateHome);
-    socket.on(`viewer:board:${board}:away`, updateAway);
+    socket.on(`${gameHash}:home`, updateHome);
+    socket.on(`${gameHash}:away`, updateAway);
+    socket.emit(`${gameHash}:start`);
     return () => {
-      socket.on(`viewer:board:${board}:home`, updateHome);
-      socket.on(`viewer:board:${board}:away`, updateAway);
+      socket.off(`${gameHash}:home`, updateHome);
+      socket.off(`${gameHash}:away`, updateAway);
     };
-  });
+  }, []);
 
   const [result, setResult] = useState({});
   const handleResult = (board, data) => {
@@ -38,7 +40,6 @@ function Board(props) {
   };
 
   let boardSize = ' fadeIn';
-  let size = 456;
   const orientation = 'home';
 
   let resultClassName = '';
@@ -79,15 +80,15 @@ function Board(props) {
   }
 
   return (
-    <div className={`Board${boardSize} board-${board} orientation-${orientation}${resultClassName}`} key={board}>
+    <div className={`Board${boardSize} board-${boardId} orientation-${orientation}${resultClassName}`} key={boardId}>
       <header>
         <div className="board-header-away">
           <OrDefault value={away.name}/> <em><OrDefault value={away.rating}/></em>
         </div>
       </header>
       <Chessboard
-        boardName={`board:${board}`}
-        size={size}
+        boardId={boardId}
+        size={291}
         viewOnly={true}
         viewer={true}
         coordinates={false}
@@ -96,7 +97,6 @@ function Board(props) {
         onLoading={handleLoading}
         socket={socket}
       />
-      }
       <footer>
         <div className="board-header-home">
           <OrDefault value={home.name}/> <em><OrDefault value={home.rating}/></em>

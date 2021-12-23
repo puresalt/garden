@@ -4,9 +4,11 @@ const crypto = require('crypto');
 const express = require('express');
 const socketIo = require('socket.io');
 
-const routes = [
-  require('./route/stream')
-];
+const Broadcaster = require('./src/broadcaster');
+const BoardRoute = require('./src/boardRoute');
+
+const BOARDS = [1, 2, 3, 4, 5, 6, 7, 8];
+Object.freeze(BOARDS);
 
 function Router(redis, config) {
   const app = express();
@@ -16,11 +18,20 @@ function Router(redis, config) {
   const server = http.createServer(app);
   const io = socketIo(server, {
     cors: false,
-    path: '/admin'
+    path: '/viewer'
   });
   if (config.socketIo.allowedOrigins) {
     io.origins(config.socketIo.allowedOrigins);
   }
+
+  process.nextTick(() => {
+    const broadcastAll = (name, ...args) => {
+      console.info('broadcastAll', name, JSON.stringify(...args, null, '\t'));
+      io.sockets.emit(name, ...args);
+    };
+    BOARDS.forEach(i => Broadcaster(redis, broadcastAll, i));
+  });
+
   io.on('connection', (socket) => {
     const callbacks = {};
     const socketWrapper = {
@@ -52,9 +63,9 @@ function Router(redis, config) {
       }
     };
 
-    const disconnectCallbacks = routes.map(route => route(redis, socketWrapper));
+    const disconnectCallbacks = BOARDS.map(i => BoardRoute(redis, socketWrapper, i));
     socket.on('disconnect', () => {
-      disconnectCallbacks.forEach(c => c());
+      disconnectCallbacks.forEach(callback => callback());
       const remainingCallbacks = Object.keys(callbacks);
       if (remainingCallbacks.length) {
         console.warn('Callbacks missing cleanup statements:', remainingCallbacks);

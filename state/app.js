@@ -9,4 +9,3 @@ client.on('connect', () => {
   console.log('Connected to Redis!');
   router(client, config);
 });
-

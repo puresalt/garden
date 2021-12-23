@@ -16,7 +16,7 @@ function ObserverLoop(connection, boardId, redis) {
     console.info('CMD:', sending);
     connection.write(`${sending}\n`);
   };
-  const boardHash = `rapid:viewer:game:${boardId}`;
+  const boardHash = `rapid:viewer:board:${boardId}`;
   const pushPosition = (position, callback) => {
     redis.rpush(boardHash, JSON.stringify({
       type: 'goto',
@@ -36,7 +36,7 @@ function ObserverLoop(connection, boardId, redis) {
     console.info('Clearing history to look for:', observing);
     process.nextTick(() => pushPosition({
       fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-      clock: [1500, 1500],
+      clock: [900, 900],
       moveList: [],
       moving: 'home',
       pauseClocks: true,

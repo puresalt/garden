@@ -1,10 +1,12 @@
-.Board,
-.Board.Large {
+.Board {
     background: rgba(0, 103, 71, 0.75);
+    font-family: antarctican-headline, san serif;
+    font-weight: 700;
     color: #fff;
-    position: absolute;
-    height: 510px;
-    width: 456px;
+    height: 343px;
+    position: relative;
+    width: 291px;
+    margin-bottom: 0.75em;
 }
 
 .Board header,
@@ -12,27 +14,16 @@
     padding: 0 8px;
 }
 
-.Board.Large {
-    font-size: 2em;
-    height: 1026px;
-    width: 920px;
-}
-
-.Board.Large header,
-.Board.Large footer {
-    height: 39px;
-    line-height: 33px;
-    font-size: 36px;
-    padding: 8px 16px 6px 8px;
+.Board footer div {
+    position: relative;
+    top: 2px;
 }
 
 .Board.Faded {
-    background: rgba(64, 64, 64, 0.75);
-    opacity: 0.75
+    background: rgba(64, 64, 64, 1);
 }
 
 .Board.Faded.fadeIn {
-    opacity: 0.75;
     transition: all 0.5s ease-in;
 }
 
@@ -51,63 +42,28 @@
     opacity: 0.5;
 }
 
-.board-1.Board {
-    left: 7px;
-    top: 7px;
-}
-
 .Board.Faded .cg-wrap {
     background-image: url(Board/gray.svg) !important;
 }
 
 .board-1.Board .cg-wrap,
-.scratch-board-1 .cg-wrap {
-    background-image: url(Board/brown.svg)
-}
-
-.board-2.Board {
-    left: 1001px;
-    top: 7px;
-}
-
-.board-2.Board.Large {
-    left: 7px;
-    top: 7px;
+.board-5.Board .cg-wrap {
+    background-image: url(Board/brown.svg);
 }
 
 .board-2.Board .cg-wrap,
-.scratch-board-2 .cg-wrap {
-    background-image: url(Board/purple.svg)
-}
-
-.board-3.Board {
-    left: 7px;
-    bottom: 46px;
-}
-
-.board-3.Board.Large {
-    left: 7px;
-    bottom: 46px;
+.board-6.Board .cg-wrap {
+    background-image: url(Board/purple.svg);
 }
 
 .board-3.Board .cg-wrap,
-.scratch-board-3 .cg-wrap {
-    background-image: url(Board/green.svg)
-}
-
-.board-4.Board {
-    left: 1001px;
-    top: 524px;
-}
-
-.board-4.Board.Large {
-    left: 7px;
-    top: 7px;
+.board-7.Board .cg-wrap {
+    background-image: url(Board/green.svg);
 }
 
 .board-4.Board .cg-wrap,
-.scratch-board-4 .cg-wrap {
-    background-image: url(Board/blue.svg)
+.board-8.Board .cg-wrap {
+    background-image: url(Board/blue.svg);
 }
 
 .Board tfoot td {
@@ -115,23 +71,19 @@
 }
 
 .Board .board {
+    pointer-events: none;
     position: relative;
     left: 0;
-    top: 0;
+    top: 2px;
     width: 100%;
 }
 
 .Board .eventData {
     position: absolute;
-    top: -27px;
-    height: 510px;
+    top: -26px;
+    height: 343px;
     right: 0;
     width: 100px;
-}
-
-.Board.Large .eventData {
-    top: -53px;
-    width: 150px;
 }
 
 .Board .eventData .clock {
@@ -140,22 +92,22 @@
     background: rgba(0, 0, 0, 0.25);
     position: absolute;
     line-height: 24px;
-    height: 27px;
+    height: 26px;
     width: 100%;
 }
 
 .Board.Large .eventData {
     height: 1026px;
 }
+
 .Board.Large .eventData .clock {
     font-size: 36px;
-    line-height:50px;
+    line-height: 50px;
     height: 53px;
 }
 
 .orientation-home .clock.homeClock,
-.orientation-away .clock.awayClock
-{
+.orientation-away .clock.awayClock {
     bottom: 0;
 }
 

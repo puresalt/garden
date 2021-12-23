@@ -1,14 +1,11 @@
 * {
-    font-family: antarctican-headline, san serif;
-    font-weight: 700;
     margin: 0;
     padding: 0;
 }
 
 html, body {
-    width: 1920px;
-    height: 1080px;
-    overflow: hidden;
+    min-height: 100%;
+    min-width: 100%;
 }
 
 span,
@@ -20,87 +17,17 @@ em {
     opacity: 0.5;
 }
 
-.Matches {
-    background: #fec66d;
-    position: absolute;
-    width: 1920px;
-    height: 1080px;
+.boards {
+    max-width: 1200px;
 }
 
-.Matches.Small {
-    background: transparent;
-}
-
-.MatchesResultBar,
-.TitleBar,
-header,
-footer {
-    background: #006747;
-    color: #fff;
-    height: 27px;
-    line-height: 24px;
-    font-size: 22px;
-    text-transform: uppercase;
-}
-
-.TitleBar {
-    height: 39px;
-    line-height: 33px;
-    font-size: 36px;
-}
-
-.MatchesResultBar {
-    position: absolute;
-    right: 7px;
+.App > .footer {
+    color: #666;
     text-align: center;
-    top: 7px;
-    width: 517px;
 }
 
-.TitleBar {
-    bottom: 0;
-    left: 0;
-    position: absolute;
-    width: 100%;
+.App > .footer a {
+    font-weight: 700;
+    text-decoration: none;
 }
 
-.TitleBar .TeamName {
-    position: absolute;
-    left: 8px;
-    top: 0;
-}
-
-.TitleBar .MatchesName {
-    text-align: center;
-    width: 100%;
-}
-
-.TitleBar .Host {
-    position: absolute;
-    top: 0;
-    right: 8px;
-}
-
-.Host i {
-    color: #ffca0a;
-    font-size: 0.8em;
-    margin-right: 6px;
-}
-
-.Logo {
-    background: url(./live.png) no-repeat;
-    position: absolute;
-    top: 789px;
-    width: 318px;
-    height: 245px;
-}
-
-.Logo.Center {
-    left: 574px;
-    transition: left 1s ease;
-}
-
-.Logo.Right {
-    left: 1040px;
-    transition: left 1s ease;
-}

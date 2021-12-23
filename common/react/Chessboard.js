@@ -36,7 +36,7 @@ const availableMoves = (chess) => {
 }
 
 const propTypes = {
-  boardName: PropTypes.string,
+  boardId: PropTypes.number,
   width: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   height: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   fen: PropTypes.string,
@@ -74,8 +74,8 @@ const propTypes = {
 export default class Chessground extends React.PureComponent {
   constructor(props) {
     super(props);
-    const homeClock = duration().add(this.props.timeLimt || 1500, 's');
-    const awayClock = duration().add(this.props.timeLimt || 1500, 's');
+    const homeClock = duration().add(this.props.timeLimt || 900, 's');
+    const awayClock = duration().add(this.props.timeLimt || 900, 's');
     this.state = {
       requestingPromotion: false,
       moveList: [],
@@ -263,15 +263,12 @@ export default class Chessground extends React.PureComponent {
     this.cg = NativeChessground(this.chessBoard, this.buildConfigFromProps(this.props));
     this.cj = new Chess();
     this.socket = this.props.socket;
-    this.boardName = `viewer:${this.props.boardName}`;
+    this.boardName = `rapid:viewer:board:${this.props.boardId}`;
     this.socket.on(this.boardName, this.handleEvent);
     if (this.props.orientation) {
       this.setState({orientation: getOrientation(this.props.orientation)});
     }
     this.stopUpdatingClocks();
-    this.socket.emit(`${this.boardName}:start`, {
-      orientation: this.state.orientation
-    });
     this.updateClocks();
     this.attachMovableConfig();
   }
@@ -309,9 +306,6 @@ export default class Chessground extends React.PureComponent {
       this.setState({orientation: orientation});
     }
     this.stopUpdatingClocks();
-    this.socket.emit(`${this.boardName}:start`, {
-      orientation: orientation
-    });
     this.updateClocks();
     this.attachMovableConfig();
   }
