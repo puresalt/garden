@@ -10,12 +10,20 @@ const matchResults = {
 };
 
 function ObserverLoop(connection, boardId, redis) {
+  const boardHash = `rapid:viewer:board:${boardId}`;
+
+  connection.on('data', (incomingData) => {
+    const data = incomingData.toString();
+    console.info('>', data);
+    parseIncomingData(data);
+  });
+
   const sendCommand = (command, ...attributes) => {
     const sending = [command, attributes.join(' ')].join(' ');
     console.info('CMD:', sending);
     connection.write(`${sending}\n`);
   };
-  const boardHash = `rapid:viewer:board:${boardId}`;
+
   const pushPosition = (position, callback) => {
     redis.rpush(boardHash, JSON.stringify({
       type: 'goto',
@@ -27,12 +35,12 @@ function ObserverLoop(connection, boardId, redis) {
       callback && callback(err);
     });
   };
+
   const nameChange = (position, name) => {
     redis.set(`${boardHash}:${position}`, name);
   };
 
   const clearGameHistory = (callback) => {
-    console.info('Clearing history to look for:', observing);
     process.nextTick(() => pushPosition({
       fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
       clock: [900, 900],
@@ -43,8 +51,6 @@ function ObserverLoop(connection, boardId, redis) {
     }, callback));
   };
 
-  let observing = null;
-  let currentCommand = null;
   process.nextTick(() => clearGameHistory(() => observeGame()));
 
   let latestPosition = null;
@@ -52,7 +58,6 @@ function ObserverLoop(connection, boardId, redis) {
   let away = '';
 
   function observeGame() {
-    currentCommand = 'observeGame';
     latestPosition = null;
     away = '';
     home = '';
@@ -63,9 +68,13 @@ function ObserverLoop(connection, boardId, redis) {
   const gameOverRegex = /{Game ([0-9]+) \([a-zA-Z0-9-]+ vs\. [a-zA-Z0-9-]+\) [a-zA-Z0-9-]+ ([a-z ]+)} ([2/01]+)-[2/01]+/;
   const getGameOver = data => data.match(gameOverRegex);
 
-  function gameObserver(data) {
-    if (data.indexOf('There is no such game.') === -1) {
-      const gameOverData = getGameOver(data);
+  function parseIncomingData(data) {
+    if (data.indexOf('There is no such game.') > -1) {
+      return;
+    }
+
+    const gameOverData = getGameOver(data);
+    if (gameOverData) {
       const pushGameOverData = gameOverData && gameOverData[1] === boardId
         ? {
           pauseClocks: true,
@@ -73,51 +82,31 @@ function ObserverLoop(connection, boardId, redis) {
           by: gameOverData[2]
         }
         : false;
-
-      if (!gameOverData) {
-        const boardEvents = ([...data.matchAll(liveGameRegex)] || [])
-          .filter(row => row[1] === boardId)
-          .map(row => row[0].trim().split('<12>')[1]);
-        if (boardEvents.length) {
-          latestPosition = parseLiveBoard(boardEvents[boardEvents.length - 1]);
-          if (latestPosition.away !== away) {
-            home = latestPosition.home;
-            nameChange('home', home);
-          }
-          if (latestPosition.away !== away) {
-            away = latestPosition.away;
-            nameChange('away', away);
-          }
-          pushPosition({...latestPosition});
-        }
-        return;
-      }
-
-      if (latestPosition) {
+      if (pushGameOverData && latestPosition) {
         if (pushGameOverData.by === 'forfeits on time') {
           latestPosition.clock[pushGameOverData.result] = 0;
         }
         pushPosition({...latestPosition, ...pushGameOverData});
       }
+      return;
     }
 
-    console.info('Finished storing game:', observing);
-    currentCommand = null;
+    const boardEvents = ([...data.matchAll(liveGameRegex)] || [])
+      .filter(row => row[1] === boardId)
+      .map(row => row[0].trim().split('<12>')[1]);
+    if (boardEvents.length) {
+      latestPosition = parseLiveBoard(boardEvents[boardEvents.length - 1]);
+      if (latestPosition.away !== away) {
+        home = latestPosition.home;
+        nameChange('home', home);
+      }
+      if (latestPosition.away !== away) {
+        away = latestPosition.away;
+        nameChange('away', away);
+      }
+      pushPosition({...latestPosition});
+    }
   }
-
-  const observerList = {
-    observeGame: gameObserver
-  };
-  connection.on('data', (incomingData) => {
-    const data = incomingData.toString();
-    console.info('>', data);
-    if (observing === null || noGameFound) {
-      return console.info('Nothing to observe');
-    }
-    if (observerList[currentCommand]) {
-      observerList[currentCommand](data);
-    }
-  });
 }
 
 module.exports = (boardId, redis, config) => {
