@@ -1,6 +1,8 @@
 const net = require('net');
 const parseLiveBoard = require('./parse/liveBoard');
 
+const WAIT_TO_FIND_GAME_AGAIN = 5000;
+
 const matchResults = {
   '0': 0,
   '1': 1,
@@ -9,7 +11,7 @@ const matchResults = {
   '.5': 0.5
 };
 
-function ObserverLoop(connection, boardId, redis) {
+function ObserverLoop(redis, connection, boardId) {
   const boardHash = `rapid:viewer:board:${boardId}`;
 
   connection.on('data', (incomingData) => {
@@ -17,6 +19,8 @@ function ObserverLoop(connection, boardId, redis) {
     console.info('>', data);
     parseIncomingData(data);
   });
+
+  process.nextTick(() => observeGame());
 
   const sendCommand = (command, ...attributes) => {
     const sending = [command, attributes.join(' ')].join(' ');
@@ -40,27 +44,16 @@ function ObserverLoop(connection, boardId, redis) {
     redis.set(`${boardHash}:${position}`, name);
   };
 
-  const clearGameHistory = (callback) => {
-    process.nextTick(() => pushPosition({
-      fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-      clock: [900, 900],
-      moveList: [],
-      moving: 'home',
-      pauseClocks: true,
-      loading: true
-    }, callback));
-  };
-
-  process.nextTick(() => clearGameHistory(() => observeGame()));
-
   let latestPosition = null;
   let home = '';
   let away = '';
+  let sleeping = false;
 
   function observeGame() {
     latestPosition = null;
     away = '';
     home = '';
+    sleeping = false;
     sendCommand('observe', boardId);
   }
 
@@ -69,7 +62,13 @@ function ObserverLoop(connection, boardId, redis) {
   const getGameOver = data => data.match(gameOverRegex);
 
   function parseIncomingData(data) {
+    if (sleeping) {
+      return;
+    }
+
     if (data.indexOf('There is no such game.') > -1) {
+      sleeping = true;
+      setTimeout(() => observeGame(), WAIT_TO_FIND_GAME_AGAIN);
       return;
     }
 
@@ -109,7 +108,7 @@ function ObserverLoop(connection, boardId, redis) {
   }
 }
 
-module.exports = (boardId, redis, config) => {
+module.exports = (redis, boardId, config) => {
   const loginPromptRegex = /login: $/;
   const passwordPromptRegex = /password: /;
 
@@ -121,7 +120,7 @@ module.exports = (boardId, redis, config) => {
     } else if (passwordPromptRegex.test(data)) {
       connection.write(`${config.password}\n`);
       connection.off('data', logOn);
-      process.nextTick(() => ObserverLoop(connection, boardId, redis));
+      process.nextTick(() => ObserverLoop(redis, connection, boardId));
     }
   };
   connection.on('data', logOn);

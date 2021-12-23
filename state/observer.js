@@ -7,5 +7,5 @@ const observerLoop = require('./src/observer');
 const client = redis.createClient();
 client.on('connect', () => {
   console.log('Connected to Redis!');
-  observerLoop(process.env.BOARD_ID, client, config.telnet[process.env.BOARD_ID]);
+  observerLoop(client, process.env.BOARD_ID, config.telnet[process.env.BOARD_ID]);
 });
