@@ -1,5 +1,4 @@
 const net = require('net');
-const PLAYERS = require('garden-common/src/constant').PLAYERS;
 const parseLiveBoard = require('./parse/liveBoard');
 
 const matchResults = {
@@ -40,9 +39,7 @@ function ObserverLoop(connection, boardId, redis) {
       moveList: [],
       moving: 'home',
       pauseClocks: true,
-      loading: true,
-      home: PLAYERS[''],
-      away: PLAYERS['']
+      loading: true
     }, callback));
   };
 

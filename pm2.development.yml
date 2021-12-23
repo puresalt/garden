@@ -14,14 +14,14 @@
 
 apps:
   - script: state/app.js
-    name: 'rapid:state'
+    name: 'rapid:state:dev'
     instances: 2
     exec_mode: cluster
     env:
       NODE_ENV: development
       PORT: 5303
   - script: npm
-    name: 'rapid:stream'
+    name: 'rapid:stream:dev'
     args: run start:ui
     env:
       NODE_ENV: development
