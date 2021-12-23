@@ -57,7 +57,7 @@ function ObserverLoop(redis, connection, boardId) {
     sendCommand('observe', boardId);
   }
 
-  const liveGameRegex = /<12> [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [W|B] [0-9-]+ [01] [01] [01] [01] [0-9]+ ([0-9]+) ([a-zA-Z0-9-*_]+) ([a-zA-Z0-9-*_]+).+[\n\r]/g;
+  const liveGameRegex = /<12> [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [W|B] [0-9-]+ [01] [01] [01] [01] [0-9]+ ([0-9]+) ([-a-zA-Z0-9-*_]+) ([-a-zA-Z0-9-*_]+).+[\n\r]/g;
   const gameOverRegex = /{Game ([0-9]+) \([a-zA-Z0-9-]+ vs\. [a-zA-Z0-9-]+\) [a-zA-Z0-9-]+ ([a-z ]+)} ([2/01]+)-[2/01]+/;
   const getGameOver = data => data.match(gameOverRegex);
 
