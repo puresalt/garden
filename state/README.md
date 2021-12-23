@@ -8,7 +8,7 @@ This is what will pull the data via `telnet` and relay it to the [UI](../ui/READ
 
 ## Requirements
 
-Not an exact science yet this originally ran in productio with:
+Not an exact science yet this originally ran in production with:
 
 * Debian 10 (Buster)
 * Redis 5.0.3
