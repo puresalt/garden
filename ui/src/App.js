@@ -79,11 +79,6 @@ function App() {
         </Col>
       </Row>
     </Container>
-    <Container className="footer">
-      <Row>
-        <Col>Powered by <a href="https://passers.gg">Garden State Passers</a></Col>
-      </Row>
-    </Container>
   </div>;
 }
 
