@@ -4,7 +4,7 @@ import Chessboard from 'garden-common/react/Chessboard';
 import './Board.css';
 
 function Board(props) {
-  const {boardId, socket} = props;
+  const {boardId, appendClassName, size, socket} = props;
   const gameHash = `rapid:viewer:board:${boardId}`;
 
   const [home, setHome] = useState({name: 'LOADING', rating: 'N/A'});
@@ -80,7 +80,7 @@ function Board(props) {
   }
 
   return (
-    <div className={`Board${boardSize} board-${boardId} orientation-${orientation}${resultClassName}`} key={boardId}>
+    <div className={`Board${boardSize} board-${boardId} orientation-${orientation}${resultClassName} size-${appendClassName}`} key={boardId}>
       <header>
         <div className="board-header-away">
           <OrDefault value={away.name}/> <em><OrDefault value={away.rating}/></em>
@@ -88,7 +88,7 @@ function Board(props) {
       </header>
       <Chessboard
         boardId={boardId}
-        size={291}
+        size={size}
         viewOnly={true}
         viewer={true}
         coordinates={false}

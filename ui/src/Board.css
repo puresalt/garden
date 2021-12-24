@@ -1,12 +1,12 @@
 .Board {
-    background: rgba(0, 103, 71, 0.75);
+    background: rgba(4, 100, 196, 1);
     font-family: antarctican-headline, san serif;
     font-weight: 700;
     color: #fff;
-    height: 343px;
     position: relative;
+    margin: 0 auto 0.5em auto;
+    height: 343px;
     width: 291px;
-    margin-bottom: 0.75em;
 }
 
 .Board header,
@@ -42,28 +42,12 @@
     opacity: 0.5;
 }
 
-.Board.Faded .cg-wrap {
-    background-image: url(Board/gray.svg) !important;
-}
-
-.board-1.Board .cg-wrap,
-.board-5.Board .cg-wrap {
+.cg-wrap {
     background-image: url(Board/brown.svg);
 }
 
-.board-2.Board .cg-wrap,
-.board-6.Board .cg-wrap {
-    background-image: url(Board/purple.svg);
-}
-
-.board-3.Board .cg-wrap,
-.board-7.Board .cg-wrap {
-    background-image: url(Board/green.svg);
-}
-
-.board-4.Board .cg-wrap,
-.board-8.Board .cg-wrap {
-    background-image: url(Board/blue.svg);
+.Board.Faded .cg-wrap {
+    background-image: url(Board/brown.svg) !important;
 }
 
 .Board tfoot td {
@@ -80,9 +64,9 @@
 
 .Board .eventData {
     position: absolute;
+    right: 0;
     top: -26px;
     height: 343px;
-    right: 0;
     width: 100px;
 }
 
@@ -94,16 +78,6 @@
     line-height: 24px;
     height: 26px;
     width: 100%;
-}
-
-.Board.Large .eventData {
-    height: 1026px;
-}
-
-.Board.Large .eventData .clock {
-    font-size: 36px;
-    line-height: 50px;
-    height: 53px;
 }
 
 .orientation-home .clock.homeClock,
@@ -132,19 +106,6 @@
     justify-content: left;
 }
 
-.board-placeholder {
-    background: #600;
-    left: 0;
-    top: 33px;
-    height: 456px;
-    width: 456px;
-}
-
-.Board.Large .board-placeholder {
-    height: 920px;
-    width: 920px;
-}
-
 .Board .black-square,
 .Board .white-square {
     background: #000;
@@ -160,16 +121,6 @@
 
 .Board .white-square {
     background: #fff;
-}
-
-.Board.Large .black-square,
-.Board.Large .white-square {
-    height: 37px;
-    width: 22px;
-    left: 10px;
-    margin-right: 16px;
-    margin-left: 0px;
-    top: 0;
 }
 
 .fadeIn {
@@ -222,3 +173,55 @@
 .board-result h3 {
     font-size: 2em;
 }
+
+.Board.size-individual {
+    height: 510px !important;
+    width: 456px !important;
+}
+
+.Board.size-individual .black-square,
+.Board.size-individual .white-square {
+    height: 37px !important;
+    width: 22px !important;
+    left: 10px !important;
+    margin-right: 16px !important;
+    margin-left: 0 !important;
+    top: 0 !important;
+}
+
+.Board.size-individual .eventData {
+    top: -27px !important;
+    height: 510px !important;
+}
+
+.Board.size-individual .eventData .clock {
+    height: 27px !important;
+}
+
+.Board.size-stream {
+    font-size: 26px;
+    height: 432px !important;
+    width: 350px !important;
+}
+
+.Board.size-stream .black-square,
+.Board.size-stream .white-square {
+    height: 37px !important;
+    width: 22px !important;
+    left: 10px !important;
+    margin-right: 16px !important;
+    margin-left: 0 !important;
+    top: 0 !important;
+}
+
+.Board.size-stream .eventData {
+    top: -40px !important;
+    height: 431px !important;
+}
+
+.Board.size-stream .eventData .clock {
+    font-size: 30px;
+    line-height: 36px !important;
+    height: 40px !important;
+}
+
