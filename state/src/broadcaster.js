@@ -6,14 +6,14 @@ function Broadcaster(redis, broadcastAll, boardId) {
   let home = null;
   let away = null;
   const checkForNameChanges = () => {
-    redis.get(`${gameHash}:home`, (name) => {
-      if (name !== home) {
+    redis.get(`${gameHash}:home`, (err, name) => {
+      if (!err && name !== home) {
         home = name;
         broadcastAll(`${gameHash}:home`, PLAYERS[home]);
       }
     });
-    redis.get(`${gameHash}:away`, (name) => {
-      if (name !== away) {
+    redis.get(`${gameHash}:away`, (err, name) => {
+      if (!err && name !== away) {
         away = name;
         broadcastAll(`${gameHash}:away`, PLAYERS[away]);
       }

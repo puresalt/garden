@@ -26,8 +26,6 @@ function Layout(props) {
     ? parseInt(requestedBoardId)
     : 0;
 
-  console.log(boardId, requestedBoardId);
-
   let size = 291;
   let appendClassName = '';
 
