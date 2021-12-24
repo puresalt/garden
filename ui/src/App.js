@@ -30,9 +30,6 @@ function Layout(props) {
 
   let size = 291;
   let appendClassName = '';
-  let md = 6;
-  let lg = 4;
-  let xl = 3;
 
   if (boardId) {
     size = 456;
@@ -77,11 +74,11 @@ function Layout(props) {
               />
             </Col>
             : BOARDS.map((boardId) => {
-              return <Col sm={12} md={md} lg={lg} xl={xl} key={`board-${boardId}`}>
+              return <Col sm={12} md={6} lg={4} xl={3} key={`board-${boardId}`}>
                 <Board
                   appendClassName={appendClassName}
                   size={size}
-                  boardId={2}
+                  boardId={boardId}
                   socket={socket}
                 />
               </Col>
