@@ -28,13 +28,30 @@ function ObserverLoop(redis, connection, boardId) {
     connection.write(`${sending}\n`);
   };
 
+  const pushStartPosition = (callback) => {
+    redis.rpush(boardHash, JSON.stringify({
+      type: 'goto',
+      data: {
+        fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+        clock: [900, 900],
+        moveList: [],
+        moving: 'home'
+      }
+    }), (err) => {
+      if (err) {
+        console.error('ERROR STORING START POSITION', err);
+      }
+      callback && callback(err);
+    });
+  };
+
   const pushPosition = (position, callback) => {
     redis.rpush(boardHash, JSON.stringify({
       type: 'goto',
       data: {...position, moveList: []}
     }), (err) => {
       if (err) {
-        console.error('ERROR STORING:', position);
+        console.error('ERROR STORING:', position, err);
       }
       callback && callback(err);
     });
@@ -58,8 +75,6 @@ function ObserverLoop(redis, connection, boardId) {
   }
 
   const liveGameRegex = /<12> [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [W|B] [0-9-]+ [01] [01] [01] [01] [0-9]+ ([0-9]+) ([-a-zA-Z0-9-*_]+) ([-a-zA-Z0-9-*_]+).+[\n\r]/g;
-  const gameOverRegex = /{Game ([0-9]+) \([a-zA-Z0-9-]+ vs\. [a-zA-Z0-9-]+\) [a-zA-Z0-9-]+ ([a-z ]+)} ([2/01]+)-[2/01]+/;
-  const getGameOver = data => data.match(gameOverRegex);
 
   function parseIncomingData(data) {
     if (sleeping) {
@@ -69,24 +84,6 @@ function ObserverLoop(redis, connection, boardId) {
     if (data.indexOf('There is no such game.') > -1) {
       sleeping = true;
       setTimeout(() => observeGame(), WAIT_TO_FIND_GAME_AGAIN);
-      return;
-    }
-
-    const gameOverData = getGameOver(data);
-    if (gameOverData) {
-      const pushGameOverData = gameOverData && gameOverData[1] === boardId
-        ? {
-          pauseClocks: true,
-          result: matchResults[gameOverData[3]],
-          by: gameOverData[2]
-        }
-        : false;
-      if (pushGameOverData && latestPosition) {
-        if (pushGameOverData.by === 'forfeits on time') {
-          latestPosition.clock[pushGameOverData.result] = 0;
-        }
-        pushPosition({...latestPosition, ...pushGameOverData});
-      }
       return;
     }
 
@@ -103,7 +100,11 @@ function ObserverLoop(redis, connection, boardId) {
         away = latestPosition.away;
         nameChange('away', away);
       }
-      pushPosition({...latestPosition});
+      if (latestPosition.id === 0) {
+        pushStartPosition();
+      } else {
+        pushPosition({...latestPosition});
+      }
     }
   }
 }
