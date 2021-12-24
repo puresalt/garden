@@ -92,14 +92,6 @@ module.exports = (data) => {
   const moveNumber = parseInt(columns[26]);
   const pgn = columns[29];
 
-  if (pgn === 'none') {
-    return {
-      id: 0,
-      home,
-      away
-    };
-  }
-
   const [from, to, piece] = extractCoordinates(columns[27]);
   const fen = [
     buildFenBoard(columns.slice(1, 9), flippedBoard),
