@@ -90,21 +90,26 @@ function ObserverLoop(redis, connection, boardId) {
     const boardEvents = ([...data.matchAll(liveGameRegex)] || [])
       .filter(row => row[1] === boardId)
       .map(row => row[0].trim().split('<12>')[1]);
-    if (boardEvents.length) {
-      latestPosition = parseLiveBoard(boardEvents[boardEvents.length - 1]);
-      if (latestPosition.away !== away) {
-        home = latestPosition.home;
-        nameChange('home', home);
-      }
-      if (latestPosition.away !== away) {
-        away = latestPosition.away;
-        nameChange('away', away);
-      }
-      if (latestPosition.id === 0) {
-        pushStartPosition();
-      } else {
-        pushPosition({...latestPosition});
-      }
+
+    if (!boardEvents.length) {
+      return;
+    }
+
+    latestPosition = parseLiveBoard(boardEvents[boardEvents.length - 1]);
+    if (latestPosition.home !== home) {
+      home = latestPosition.home;
+      nameChange('home', home);
+    }
+
+    if (latestPosition.away !== away) {
+      away = latestPosition.away;
+      nameChange('away', away);
+    }
+
+    if (latestPosition.id === 0) {
+      pushStartPosition();
+    } else {
+      pushPosition({...latestPosition});
     }
   }
 }
