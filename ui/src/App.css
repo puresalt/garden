@@ -17,7 +17,8 @@ em {
     opacity: 0.5;
 }
 
-.boards {
+.boards,
+.logos {
     max-width: 1200px;
 }
 
@@ -34,4 +35,56 @@ em {
 .logo,
 .event-logo {
     padding: 0.5em 0;
+}
+
+html.fixed, body.fixed {
+    width: 1920px !important;
+    height: 1080px !important;
+    min-height: 1080px !important;
+    min-width: 1920px !important;
+    max-width: 1080px !important;
+    max-height: 1920px !important;
+    overflow: hidden;
+}
+
+.fixed-holder {
+    background: #fff;
+    width: 1920px !important;
+    height: 1080px !important;
+    position: relative;
+    overflow: hidden;
+}
+
+body.fixed.stream {
+    background: #03a9f4;
+}
+
+.fixed .logos {
+    position: absolute;
+    left: 10px;
+    top: 10px;
+}
+
+.fixed .logos div {
+    position: absolute;
+}
+
+.fixed .logos div:first-child {
+    left: 10px;
+    top: 0;
+}
+
+.fixed .logos div:last-child {
+    left: 10px;
+    top: 856px;
+}
+
+.fixed-holder .boards {
+    position: absolute;
+    left: 445px;
+    top: 103px;
+}
+
+.fixed-holder .row {
+    width: 1446px !important;
 }
