@@ -7,11 +7,11 @@ function Board(props) {
   const {boardId, appendClassName, size, socket} = props;
   const gameHash = `rapid:viewer:board:${boardId}`;
 
-  const [home, setHome] = useState({name: 'LOADING', rating: 'N/A'});
+  const [home, setHome] = useState({name: 'Unknown', rating: 'N/A'});
   const updateHome = (home) => {
     setHome(home);
   }
-  const [away, setAway] = useState({name: 'LOADING', rating: 'N/A'});
+  const [away, setAway] = useState({name: 'Unknown', rating: 'N/A'});
   const updateAway = (away) => {
     setAway(away);
   }
@@ -79,11 +79,25 @@ function Board(props) {
     </div>;
   }
 
+  let awayName = 'Unknown';
+  let awayRating = 'N/A';
+  if (away && away.name) {
+    awayName = away.name;
+    awayRating = away.rating;
+  }
+
+  let homeName = 'Unknown';
+  let homeRating = 'N/A';
+  if (home && home.name) {
+    homeName = home.name;
+    homeRating = home.rating;
+  }
+
   return (
     <div className={`Board${boardSize} board-${boardId} orientation-${orientation}${resultClassName} size-${appendClassName}`} key={boardId}>
       <header>
         <div className="board-header-away">
-          <OrDefault value={away.name}/> <em><OrDefault value={away.rating}/></em>
+          <OrDefault value={awayName}/> <em><OrDefault value={awayRating}/></em>
         </div>
       </header>
       <Chessboard
@@ -99,7 +113,7 @@ function Board(props) {
       />
       <footer>
         <div className="board-header-home">
-          <OrDefault value={home.name}/> <em><OrDefault value={home.rating}/></em>
+          <OrDefault value={homeName}/> <em><OrDefault value={homeRating}/></em>
         </div>
       </footer>
       {resultContent}
