@@ -94,11 +94,11 @@ function ObserverLoop(redis, connection, boardId) {
       return;
     }
 
-    if (data.indexOf(homeWins)) {
+    if (data.indexOf(homeWins) > -1) {
       return pushResult(1);
-    } else if (data.indexOf(awayWins)) {
+    } else if (data.indexOf(awayWins) > -1) {
       return pushResult(0);
-    } else if (data.indexOf(itsDraw)) {
+    } else if (data.indexOf(itsDraw) > -1) {
       return pushResult(0.5);
     }
 
