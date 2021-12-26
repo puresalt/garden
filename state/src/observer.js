@@ -1,7 +1,7 @@
 const net = require('net');
 const parseLiveBoard = require('./parse/liveBoard');
 
-const WAIT_TO_FIND_GAME_AGAIN = 5000;
+const WAIT_TO_FIND_GAME_AGAIN = 30000;
 
 const matchResults = {
   '0': 0,
@@ -75,13 +75,14 @@ function ObserverLoop(redis, connection, boardId) {
   }
 
   const liveGameRegex = /<12> [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [W|B] [0-9-]+ [01] [01] [01] [01] [0-9]+ ([0-9]+) ([-a-zA-Z0-9-*_]+) ([-a-zA-Z0-9-*_]+).+[\n\r]/g;
+  const noLongerExaminingGame = `has stopped examining game ${boardId}.`;
 
   function parseIncomingData(data) {
     if (sleeping) {
       return;
     }
 
-    if (data.indexOf('There is no such game.') > -1) {
+    if (data.indexOf('There is no such game.') > -1 || data.indexOf(noLongerExaminingGame) > -1) {
       sleeping = true;
       setTimeout(() => observeGame(), WAIT_TO_FIND_GAME_AGAIN);
       return;
