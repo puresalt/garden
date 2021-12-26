@@ -45,7 +45,7 @@ function Board(props) {
   if (typeof result === 'number') {
     resultClassName = result !== 0.5
       ? ` Faded winner-${result === 1 ? 'white' : (result === 0 ? 'black' : 'none')}`
-      : '';
+      : ' Faded';
 
     let homeScore = 0.5;
     let awayScore = 0.5;
