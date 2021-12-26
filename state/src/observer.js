@@ -3,14 +3,6 @@ const parseLiveBoard = require('./parse/liveBoard');
 
 const WAIT_TO_FIND_GAME_AGAIN = 30000;
 
-const matchResults = {
-  '0': 0,
-  '1': 1,
-  '1/2': 0.5,
-  '0.5': 0.5,
-  '.5': 0.5
-};
-
 function ObserverLoop(redis, connection, boardId) {
   const boardHash = `rapid:viewer:board:${boardId}`;
 
@@ -57,7 +49,7 @@ function ObserverLoop(redis, connection, boardId) {
     });
   };
 
-  const pushResult = (result, by) => {
+  const pushResult = (result) => {
     redis.rpush(boardHash, JSON.stringify({
       type: 'result',
       data: {result}
@@ -65,7 +57,6 @@ function ObserverLoop(redis, connection, boardId) {
       if (err) {
         console.error('ERROR STORING:', position, err);
       }
-      callback && callback(err);
     });
   };
 
@@ -104,18 +95,11 @@ function ObserverLoop(redis, connection, boardId) {
     }
 
     if (data.indexOf(homeWins)) {
-      pushResult(1);
-      return;
-    }
-
-    if (data.indexOf(awayWins)) {
-      pushResult(0);
-      return;
-    }
-
-    if (data.indexOf(itsDraw)) {
-      pushResult(0.5);
-      return;
+      return pushResult(1);
+    } else if (data.indexOf(awayWins)) {
+      return pushResult(0);
+    } else if (data.indexOf(itsDraw)) {
+      return pushResult(0.5);
     }
 
     const boardEvents = ([...data.matchAll(liveGameRegex)] || [])
