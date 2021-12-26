@@ -14,7 +14,7 @@
 
 apps:
   - script: node ./observer.js
-    name: 'rapid:state:observer:4'
+    name: 'rapid:state:observer:1'
     env:
       DIRECT_QUEUE: 1
       BOARD_ID: 1
