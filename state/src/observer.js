@@ -79,6 +79,7 @@ function ObserverLoop(redis, connection, boardId) {
 
   const liveGameRegex = /<12> [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [W|B] [0-9-]+ [01] [01] [01] [01] [0-9]+ ([0-9]+) ([-a-zA-Z0-9-*_]+) ([-a-zA-Z0-9-*_]+).+[\n\r]/g;
   const noLongerExaminingGame = `has stopped examining game ${boardId}.`;
+  const noOneIsExaminingAnymore = `Game ${boardId} (which you were observing) has no examiners.`;
   const awayWins = `Game ${boardId}: Black wins`;
   const homeWins = `Game ${boardId}: White wins`;
   const itsDraw = `Game ${boardId}: Game drawn`;
@@ -88,7 +89,7 @@ function ObserverLoop(redis, connection, boardId) {
       return;
     }
 
-    if (data.indexOf('There is no such game.') > -1 || data.indexOf(noLongerExaminingGame) > -1) {
+    if (data.indexOf('There is no such game.') > -1 || data.indexOf(noLongerExaminingGame) > -1 || data.indexOf(noOneIsExaminingAnymore) > -1) {
       sleeping = true;
       setTimeout(() => observeGame(), WAIT_TO_FIND_GAME_AGAIN);
       return;
