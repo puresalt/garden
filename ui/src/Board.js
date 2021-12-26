@@ -26,12 +26,9 @@ function Board(props) {
     };
   }, []);
 
-  const [result, setResult] = useState({});
+  const [result, setResult] = useState(null);
   const handleResult = (board, data) => {
-    setResult({
-      by: data.by,
-      result: data.result
-    });
+    setResult(data.result);
   };
 
   const [isLoading, setIsLoading] = useState(true);
@@ -44,30 +41,31 @@ function Board(props) {
 
   let resultClassName = '';
   let resultContent = '';
-  if (result.by) {
-    resultClassName = result.by
-      ? ` Faded winner-${result.result === 1 ? 'white' : (result.result === 0 ? 'black' : 'none')}`
+
+  if (typeof result === 'number') {
+    resultClassName = result !== 0.5
+      ? ` Faded winner-${result === 1 ? 'white' : (result === 0 ? 'black' : 'none')}`
       : '';
 
     let homeScore = 0.5;
     let awayScore = 0.5;
-    let loser = '';
-    if (result.result !== 0.5) {
-      if (result.result === 1) {
+    let winner = '';
+    if (result !== 0.5) {
+      if (result === 1) {
         homeScore = 1;
         awayScore = 0;
-        loser = away.name;
+        winner = home.name;
       } else {
         homeScore = 0;
         awayScore = 1;
-        loser = home.name;
+        winner = away.name;
       }
     }
 
     resultContent = <div className="board-result">
       <div>
         <h2>{homeScore} - {awayScore}</h2>
-        <h3>{loser} {result.by}</h3>
+        <h3>{winner ? `${winner} wins` : 'Game Drawn'}</h3>
       </div>
     </div>;
   } else if (isLoading) {
@@ -94,7 +92,9 @@ function Board(props) {
   }
 
   return (
-    <div className={`Board${boardSize} board-${boardId} orientation-${orientation}${resultClassName} size-${appendClassName}`} key={boardId}>
+    <div
+      className={`Board${boardSize} board-${boardId} orientation-${orientation}${resultClassName} size-${appendClassName}`}
+      key={boardId}>
       <header>
         <div className="board-header-away">
           <OrDefault value={awayName}/> <em><OrDefault value={awayRating}/></em>

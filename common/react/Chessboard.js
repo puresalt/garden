@@ -89,7 +89,6 @@ export default class Chessground extends React.PureComponent {
       awaySeconds: awayClock.seconds(),
       moving: 'home',
       pauseClocks: true,
-      pausePosition: true,
       currentMove: 0,
       viewer: this.props.viewer,
       matchId: this.props.matchId,
@@ -119,9 +118,9 @@ export default class Chessground extends React.PureComponent {
 
   updateClocks() {
     this.clockInterval = setInterval(() => {
-      let {pauseClocks, pausePosition, homeClock, awayClock, moving} = this.state;
+      let {pauseClocks, hasResult, homeClock, awayClock, moving} = this.state;
 
-      if (pauseClocks || pausePosition) {
+      if (pauseClocks || hasResult) {
         return;
       }
 
@@ -174,8 +173,7 @@ export default class Chessground extends React.PureComponent {
       this.props.onResult(this.boardName, data);
     }
     this.setState({
-      pauseClocks: true,
-      pausePosition: true
+      hasResult: true
     });
   }
 
@@ -197,14 +195,15 @@ export default class Chessground extends React.PureComponent {
         dests: availableMoves(this.cj)
       }
     });
+
     this.setState({
       moving: data.moving || 'home',
       moveList: moveList,
-      pauseClocks: data.pauseClocks || !data.clock || this.state.loading,
-      pausePosition: false,
+      pauseClocks: !data.clock || data.id === 0,
       currentMove: currentMove,
       orientation: orientation
     });
+
     if (typeof data.result !== 'undefined' && data.result !== null) {
       this.setState({
         hasResult: true
@@ -218,6 +217,7 @@ export default class Chessground extends React.PureComponent {
         });
       }
     }
+
     const loading = !!data.loading;
     if (loading !== this.state.loading) {
       if (this.props.onLoading) {
@@ -227,9 +227,11 @@ export default class Chessground extends React.PureComponent {
         loading: loading
       });
     }
+
     if (!data.clock) {
       return;
     }
+
     const homeClock = duration().add(data.clock[0], 's');
     const awayClock = duration().add(data.clock[1], 's');
     this.setState({

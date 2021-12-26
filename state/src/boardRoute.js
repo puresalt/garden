@@ -30,9 +30,14 @@ function BoardViewerRoute(redis, socketWrapper, boardId) {
       if (err) {
         return finished(err);
       }
-      const currentEvent = JSON.parse(result[result.length - 1] || 'false');
-      if (currentEvent) {
-        socketWrapper.emit(gameHash, currentEvent);
+      try {
+        console.log(result, result[result.length - 1])
+        const currentEvent = JSON.parse(result[result.length - 1] || 'false');
+        if (currentEvent) {
+          socketWrapper.emit(gameHash, currentEvent);
+        }
+      } catch (e) {
+        console.log('Error parsing:', e);
       }
     });
   }

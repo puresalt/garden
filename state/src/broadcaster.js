@@ -37,10 +37,14 @@ function Broadcaster(redis, broadcastAll, boardId) {
         if (err) {
           return finished(err);
         }
-        const currentEvent = JSON.parse(result[result.length - 1] || 'false');
-        if (currentEvent) {
-          broadcastAll(gameHash, currentEvent);
-          lastEventId = lastEventId + result.length;
+        try {
+          const currentEvent = JSON.parse(result[result.length - 1] || 'false');
+          if (currentEvent) {
+            broadcastAll(gameHash, currentEvent);
+            lastEventId = lastEventId + result.length;
+          }
+        } catch (e) {
+          console.log('Error parsing:', e);
         }
         checkForNameChanges();
         return setTimeout(() => getGameEvents(), 60);
@@ -55,7 +59,8 @@ function Broadcaster(redis, broadcastAll, boardId) {
       fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
       clock: [900, 900],
       moveList: [],
-      moving: 'home'
+      moving: 'home',
+      result: null
     }
   });
 
@@ -71,13 +76,17 @@ function Broadcaster(redis, broadcastAll, boardId) {
       let currentEvent;
       let resultEvent;
       for (currentEventId = lastEventId - 1; currentEventId > 0; --currentEventId) {
-        currentEvent = JSON.parse(eventList[currentEventId]);
-        if (currentEvent && currentEvent.type) {
-          if (currentEvent.type === 'goto' || currentEvent.type === 'start') {
-            break;
-          } else if (currentEvent.type === 'result') {
-            resultEvent = currentEvent;
+        try {
+          currentEvent = JSON.parse(eventList[currentEventId]);
+          if (currentEvent && currentEvent.type) {
+            if (currentEvent.type === 'goto' || currentEvent.type === 'start') {
+              break;
+            } else if (currentEvent.type === 'result') {
+              resultEvent = currentEvent;
+            }
           }
+        } catch (e) {
+          console.log('Error parsing:', e);
         }
       }
 

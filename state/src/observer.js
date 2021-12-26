@@ -57,6 +57,18 @@ function ObserverLoop(redis, connection, boardId) {
     });
   };
 
+  const pushResult = (result, by) => {
+    redis.rpush(boardHash, JSON.stringify({
+      type: 'result',
+      data: {result}
+    }), (err) => {
+      if (err) {
+        console.error('ERROR STORING:', position, err);
+      }
+      callback && callback(err);
+    });
+  };
+
   const nameChange = (position, name) => {
     redis.set(`${boardHash}:${position}`, name);
   };
@@ -76,6 +88,9 @@ function ObserverLoop(redis, connection, boardId) {
 
   const liveGameRegex = /<12> [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [W|B] [0-9-]+ [01] [01] [01] [01] [0-9]+ ([0-9]+) ([-a-zA-Z0-9-*_]+) ([-a-zA-Z0-9-*_]+).+[\n\r]/g;
   const noLongerExaminingGame = `has stopped examining game ${boardId}.`;
+  const awayWins = `Game ${boardId}: Black wins`;
+  const homeWins = `Game ${boardId}: White wins`;
+  const itsDraw = `Game ${boardId}: Game drawn`;
 
   function parseIncomingData(data) {
     if (sleeping) {
@@ -85,6 +100,21 @@ function ObserverLoop(redis, connection, boardId) {
     if (data.indexOf('There is no such game.') > -1 || data.indexOf(noLongerExaminingGame) > -1) {
       sleeping = true;
       setTimeout(() => observeGame(), WAIT_TO_FIND_GAME_AGAIN);
+      return;
+    }
+
+    if (data.indexOf(homeWins)) {
+      pushResult(1);
+      return;
+    }
+
+    if (data.indexOf(awayWins)) {
+      pushResult(0);
+      return;
+    }
+
+    if (data.indexOf(itsDraw)) {
+      pushResult(0.5);
       return;
     }
 
