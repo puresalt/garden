@@ -62,7 +62,7 @@ function ObserverLoop(redis, connection, boardId) {
   };
 
   const nameChange = (position, name) => {
-    redis.set(`${boardHash}:${position}`, name);
+    redis.set(`${boardHash}:${position}`, name.split('(')[0]);
   };
 
   let latestPosition = null;
@@ -78,7 +78,7 @@ function ObserverLoop(redis, connection, boardId) {
     sendCommand('observe', boardId);
   }
 
-  const liveGameRegex = /<12> [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [W|B] [0-9-]+ [01] [01] [01] [01] [0-9]+ ([0-9]+) ([-a-zA-Z0-9-*_]+) ([-a-zA-Z0-9-*_]+).+[\n\r]/g;
+  const liveGameRegex = /<12> [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [a-zA-Z-]+ [W|B] [0-9-]+ [01] [01] [01] [01] [0-9]+ ([0-9]+) ([-a-zA-Z0-9-*_(]+) ([-a-zA-Z0-9-*_(]+).+[\n\r]/g;
   const noLongerExaminingGame = `has stopped examining game ${boardId}.`;
   const noOneIsExaminingAnymore = `Game ${boardId} (which you were observing) has no examiners.`;
   const awayWins = `Game ${boardId}: Black wins`;
