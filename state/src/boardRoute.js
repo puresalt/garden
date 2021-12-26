@@ -26,18 +26,32 @@ function BoardViewerRoute(redis, socketWrapper, boardId) {
     redis.get(`${gameHash}:home`, emitName('home'));
     redis.get(`${gameHash}:away`, emitName('away'));
 
-    redis.lrange(gameHash, 0, -1, (err, result) => {
+    redis.lrange(gameHash, 0, -1, (err, eventList) => {
       if (err) {
-        return finished(err);
+        return console.warn('Error catching up or nothing in the list to catch up to:', boardId, eventList, err);
       }
-      try {
-        console.log(result, result[result.length - 1])
-        const currentEvent = JSON.parse(result[result.length - 1] || 'false');
-        if (currentEvent) {
-          socketWrapper.emit(gameHash, currentEvent);
+
+      let lastEventId = eventList.length;
+      let currentEventId;
+      let currentEvent;
+      let resultEvent;
+      for (currentEventId = lastEventId - 1; currentEventId > 0; --currentEventId) {
+        try {
+          currentEvent = JSON.parse(eventList[currentEventId]);
+          if (currentEvent && currentEvent.type) {
+            if (currentEvent.type === 'goto' || currentEvent.type === 'start') {
+              socketWrapper.emit(gameHash, currentEvent);
+              if (resultEvent) {
+                process.nextTick(() => socketWrapper.emit(gameHash, resultEvent));
+              }
+              break;
+            } else if (currentEvent.type === 'result') {
+              resultEvent = currentEvent;
+            }
+          }
+        } catch (e) {
+          console.log('Error parsing:', e);
         }
-      } catch (e) {
-        console.log('Error parsing:', e);
       }
     });
   }
