@@ -257,7 +257,6 @@ export default class Chessground extends React.PureComponent {
   finished(data) {
     this.setState({
       pauseClock: true,
-      pausePosition: true,
       winner: data.winner
     });
   }
