@@ -1,4 +1,4 @@
-const PLAYERS = require('garden-common/src/constant').PLAYERS;
+const playerLookup = require('garden-common/src/constant').playerLookup;
 
 function BoardViewerRoute(redis, socketWrapper, boardId) {
   const gameHash = `rapid:viewer:board:${boardId}`;
@@ -17,11 +17,10 @@ function BoardViewerRoute(redis, socketWrapper, boardId) {
 
     const emitName = (position) => {
       return (err, name) => {
-        if (err || !name) {
-          socketWrapper.emit(`${gameHash}:${position}`, PLAYERS['']);
-          return;
+        if (err) {
+          console.warn('Error emitting a specific players name:', position, err, name);
         }
-        socketWrapper.emit(`${gameHash}:${position}`, PLAYERS[name] || PLAYERS['']);
+        socketWrapper.emit(`${gameHash}:${position}`, playerLookup(name));
       }
     };
     redis.get(`${gameHash}:home`, emitName('home'));

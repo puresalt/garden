@@ -182,8 +182,30 @@ const PLAYERS = {
 };
 Object.freeze(PLAYERS);
 
+const regex = /(?=[A-Z])/;
+const playerLookup = (player) => {
+  if (PLAYERS[player]) {
+    return PLAYERS[player];
+  }
+
+  if (typeof player !== 'string') {
+    return PLAYERS[''];
+  }
+
+  const parts = player.replace('*', '').split('(')[0].split('_');
+  const returnal = [];
+  if (parts.length > 1) {
+    returnal.push(parts.shift());
+  }
+  const name = parts.shift();
+  returnal.push(name.split(regex)[0].replace('-', ''));
+
+  return {name: returnal.join(' '), rating: null};
+};
+
 module.exports = {
   COLOR_WHITE,
   COLOR_BLACK,
-  PLAYERS
+  PLAYERS,
+  playerLookup
 };

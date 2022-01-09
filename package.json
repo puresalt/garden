@@ -4,7 +4,8 @@
   "private": true,
   "dependencies": {
     "pm2": "^4.4.1",
-    "serve": "^11.3.2"
+    "serve": "^11.3.2",
+    "stockfish": "^14.1.0"
   },
   "scripts": {
     "build": "cd ui && npm run build",

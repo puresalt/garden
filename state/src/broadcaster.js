@@ -1,4 +1,4 @@
-const PLAYERS = require('garden-common/src/constant').PLAYERS;
+const playerLookup = require('garden-common/src/constant').playerLookup;
 
 function Broadcaster(redis, broadcastAll, boardId) {
   const gameHash = `rapid:viewer:board:${boardId}`;
@@ -9,13 +9,13 @@ function Broadcaster(redis, broadcastAll, boardId) {
     redis.get(`${gameHash}:home`, (err, name) => {
       if (!err && name !== home) {
         home = name;
-        broadcastAll(`${gameHash}:home`, PLAYERS[home]);
+        broadcastAll(`${gameHash}:home`, playerLookup(home));
       }
     });
     redis.get(`${gameHash}:away`, (err, name) => {
       if (!err && name !== away) {
         away = name;
-        broadcastAll(`${gameHash}:away`, PLAYERS[away]);
+        broadcastAll(`${gameHash}:away`, playerLookup(away));
       }
     });
   };

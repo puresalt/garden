@@ -66,6 +66,7 @@ const propTypes = {
   onSelect: PropTypes.func,
   onPromotion: PropTypes.func,
   onLoading: PropTypes.func,
+  onEvaluate: PropTypes.func,
   items: PropTypes.object,
   drawable: PropTypes.object,
   socket: PropTypes.object
@@ -244,6 +245,8 @@ export default class Chessground extends React.PureComponent {
       awayMinutes: awayClock.minutes(),
       awaySeconds: awayClock.seconds()
     });
+
+    this.evaluate();
   }
 
   draw(data) {
@@ -261,9 +264,33 @@ export default class Chessground extends React.PureComponent {
     });
   }
 
+  evaluate() {
+    if (!this.evaluator) {
+      return;
+    }
+    this.evaluator.postMessage('ucinewgame');
+    this.evaluator.postMessage(`position ${this.cj.fen()}`);
+    this.evaluator.postMessage('eval');
+    this.evaluator.postMessage('go depth 10');
+  }
+
   componentDidMount() {
     this.cg = NativeChessground(this.chessBoard, this.buildConfigFromProps(this.props));
     this.cj = new Chess();
+    if (this.props.onEvaluate) {
+      this.evaluator = new Worker('./stockfish.js');
+      this.evaluator.onmessage = (message) => {
+        const incoming = message && typeof message === 'object'
+          ? message.data
+          : message;
+console.log(message);
+        if (incoming === 'uciok' || incoming === 'readyok' || incoming.substr(0, 11) === 'option name') {
+          return;
+        }
+
+        this.props.onEvaluate(incoming);
+      };
+    }
     this.socket = this.props.socket;
     this.boardName = `rapid:viewer:board:${this.props.boardId}`;
     this.socket.on(this.boardName, this.handleEvent);
@@ -300,6 +327,8 @@ export default class Chessground extends React.PureComponent {
     this.stopUpdatingClocks();
     this.cg.destroy();
     this.cj = null;
+    this.evaluator.terminate();
+    this.evaluator = null;
     this.socket.off(this.boardName, this.handleEvent);
   }
 
