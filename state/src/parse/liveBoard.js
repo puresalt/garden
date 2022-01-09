@@ -78,8 +78,8 @@ const extractCoordinates = (movement) => {
 module.exports = (data) => {
   const columns = data.split(' ');
 
-  const home = (columns[17] || '').toUpperCase();
-  const away = (columns[18] || '').toUpperCase();
+  const home = (columns[17] || '');
+  const away = (columns[18] || '');
   const flippedBoard = columns[30] === '1';
   const color = columns[9].toLowerCase();
   const fiftyMoveCount = parseInt(columns[15]);

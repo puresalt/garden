@@ -70,7 +70,9 @@ const PLAYERS = {
   '*GM_NIEMANN': {name: 'GM Niemann', rating: 2638},
   '*GM_VAKHIDOV': {name: 'GM Vakhidov', rating: 2566},
   '*GM_KUZMICZ': {name: 'GM Kuzmicz', rating: 2314},
-  '*GM_VAN': {name: 'GM Van', rating: 2691},
+  '*GM_VANFOREEST': {name: 'GM Van Foreest', rating: 2702},
+  '*GM_VAN_FOREEST': {name: 'GM Van Foreest', rating: 2702},
+  '*GM_VAN': {name: 'GM Van Foreest', rating: 2702},
   '*GM_KOSAKOWSKI': {name: 'GM Kosakowski', rating: 2304},
   '*GM_SOCKO': {name: 'GM Socko', rating: 2562},
   '*GM_KANAREK': {name: 'GM Kanarek', rating: 2296},
@@ -183,12 +185,13 @@ Object.freeze(PLAYERS);
 
 const regex = /(?=[A-Z])/;
 const playerLookup = (player) => {
-  if (PLAYERS[player]) {
-    return PLAYERS[player];
-  }
-
   if (typeof player !== 'string') {
     return PLAYERS[''];
+  }
+
+  const uppercase = player.toUpperCase()
+  if (PLAYERS[uppercase]) {
+    return PLAYERS[uppercase];
   }
 
   const parts = player.replace('*', '').split('(')[0].split('_');

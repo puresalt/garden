@@ -97,7 +97,7 @@ function Board(props) {
       key={boardId}>
       <header>
         <div className="board-header-away">
-          <OrDefault value={awayName}/> <em><OrDefault value={awayRating}/></em>
+          <OrDefault value={awayName}/> <em><OrDefault value={awayRating} defaultValue={''} /></em>
         </div>
       </header>
       <Chessboard
@@ -113,7 +113,7 @@ function Board(props) {
       />
       <footer>
         <div className="board-header-home">
-          <OrDefault value={homeName}/> <em><OrDefault value={homeRating}/></em>
+          <OrDefault value={homeName}/> <em><OrDefault value={homeRating} defaultValue={''} /></em>
         </div>
       </footer>
       {resultContent}
