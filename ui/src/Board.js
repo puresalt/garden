@@ -78,17 +78,13 @@ function Board(props) {
   }
 
   let awayName = 'Unknown';
-  let awayRating = 'N/A';
   if (away && away.name) {
     awayName = away.name;
-    awayRating = away.rating;
   }
 
   let homeName = 'Unknown';
-  let homeRating = 'N/A';
   if (home && home.name) {
     homeName = home.name;
-    homeRating = home.rating;
   }
 
   return (
@@ -97,7 +93,7 @@ function Board(props) {
       key={boardId}>
       <header>
         <div className="board-header-away">
-          <OrDefault value={awayName}/> <em><OrDefault value={awayRating} defaultValue={''} /></em>
+          <OrDefault value={awayName}/>
         </div>
       </header>
       <Chessboard
@@ -113,7 +109,7 @@ function Board(props) {
       />
       <footer>
         <div className="board-header-home">
-          <OrDefault value={homeName}/> <em><OrDefault value={homeRating} defaultValue={''} /></em>
+          <OrDefault value={homeName}/>
         </div>
       </footer>
       {resultContent}
