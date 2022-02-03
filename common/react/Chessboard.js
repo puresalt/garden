@@ -345,19 +345,15 @@ console.log(message);
       props.style.height = this.props.height;
     }
 
-    const awayWinner = this.state.result === 0? ' winner' : '';
-    const awayLoser = this.state.result === 1 ? ' loser' : '';
     const awayActive = this.state.moving === 'away' ? ' active' : '';
     const awayFlagged = !this.state.awayClock ? ' flagged' : '';
     const awayClock = parseClock(this.state.awayHours, this.state.awayMinutes, this.state.awaySeconds);
 
-    const homeWinner = this.state.result === 1 ? ' winner' : '';
-    const homeLoser = this.state.result === 0 ? ' loser' : '';
     const homeActive = this.state.moving === 'home' ? ' active' : '';
     const homeFlagged = !this.state.homeClock ? ' flagged' : '';
     const homeClock = parseClock(this.state.homeHours, this.state.homeMinutes, this.state.homeSeconds);
-    const awayClockHolder = React.createElement('div', {className: `clock awayClock${awayActive}${awayFlagged}${awayWinner}${awayLoser}`}, awayClock);
-    const homeClockHolder = React.createElement('div', {className: `clock homeClock${homeActive}${homeFlagged}${homeWinner}${homeLoser}`}, homeClock);
+    const awayClockHolder = React.createElement('div', {className: `clock awayClock${awayActive}${awayFlagged}`}, awayClock);
+    const homeClockHolder = React.createElement('div', {className: `clock homeClock${homeActive}${homeFlagged}`}, homeClock);
 
     return React.createElement('div', {className: 'board'}, [
       React.createElement('div', {

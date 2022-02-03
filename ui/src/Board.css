@@ -47,11 +47,7 @@
 }
 
 .Board.Faded .winner {
-    color: #050;
-}
-
-.Board.Faded .loser {
-    color: #500;
+    color: #ffca0a;
 }
 
 .cg-wrap {

@@ -41,6 +41,8 @@ function Board(props) {
 
   let resultClassName = '';
   let resultContent = '';
+  let awayWinner = '';
+  let homeWinner = '';
 
   if (typeof result === 'number') {
     resultClassName = result !== 0.5
@@ -54,10 +56,12 @@ function Board(props) {
       if (result === 1) {
         homeScore = 1;
         awayScore = 0;
+        homeWinner = ' winner';
         winner = home.name;
       } else {
         homeScore = 0;
         awayScore = 1;
+        awayWinner = ' winner';
         winner = away.name;
       }
     }
@@ -92,7 +96,7 @@ function Board(props) {
       className={`Board${boardSize} board-${boardId} orientation-${orientation}${resultClassName} size-${appendClassName}`}
       key={boardId}>
       <header>
-        <div className="board-header-away">
+        <div className={`board-header-away${awayWinner}`}>
           <OrDefault value={awayName}/>
         </div>
       </header>
@@ -108,7 +112,7 @@ function Board(props) {
         socket={socket}
       />
       <footer>
-        <div className="board-header-home">
+        <div className={`board-header-home${homeWinner}`}>
           <OrDefault value={homeName}/>
         </div>
       </footer>
