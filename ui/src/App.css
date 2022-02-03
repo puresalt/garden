@@ -35,6 +35,7 @@ em {
 .logo,
 .event-logo {
     padding: 0.5em 0;
+    padding-left: calc(var(--bs-gutter-x) * 0.5);
 }
 
 html.fixed, body.fixed {
