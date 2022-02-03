@@ -21,7 +21,6 @@
 
 .Board.Faded {
     background: rgba(64, 64, 64, 1);
-    filter: grayscale(0.75);
 }
 
 .Board.Faded.fadeIn {
@@ -35,12 +34,24 @@
 
 .Board.Faded header,
 .Board.Faded footer {
-    background: rgb(64, 64, 64);
+    background: #404040;
 }
 
 .Board.Faded span {
     color: #fff;
     opacity: 0.5;
+}
+
+.Board.Faded .board {
+    filter: grayscale(0.75);
+}
+
+.Board.Faded .winner {
+    color: #050;
+}
+
+.Board.Faded .loser {
+    color: #500;
 }
 
 .cg-wrap {
