@@ -50,7 +50,7 @@ function Layout(props) {
         ? <Container fluid className="logos">
           <Row>
             <Col className="logo align-middle">
-              <a href="https://chessclub.com"><img src={logo}/></a>
+              <a href="https://www.chessclub.com"><img src={logo}/></a>
             </Col>
             <Col className="event-logo align-middle">
               <img src={eventLogo}/>
