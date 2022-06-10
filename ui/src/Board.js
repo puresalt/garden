@@ -6,6 +6,7 @@ import './Board.css';
 function Board(props) {
   const {boardId, appendClassName, size, socket} = props;
   const gameHash = `rapid:viewer:board:${boardId}`;
+  const [evaluation, setEvaluation] = useState(50);
 
   const [home, setHome] = useState({name: 'Unknown', rating: 'N/A'});
   const updateHome = (home) => {
@@ -34,6 +35,11 @@ function Board(props) {
   const [isLoading, setIsLoading] = useState(true);
   const handleLoading = (board, loading) => {
     setIsLoading(loading);
+  };
+
+  const handleEvaluate = (pawnAdvantage) => {
+    const winPercentageForWhite = ((1 / (1 + Math.pow(10, ((-1 * pawnAdvantage) / 4)))) * 100);
+    setEvaluation(winPercentageForWhite);
   };
 
   let boardSize = ' fadeIn';
@@ -109,6 +115,7 @@ function Board(props) {
         orientation={orientation}
         onResult={handleResult}
         onLoading={handleLoading}
+        onEvaluate={handleEvaluate}
         socket={socket}
       />
       <footer>
@@ -117,6 +124,12 @@ function Board(props) {
         </div>
       </footer>
       {resultContent}
+      <div className="evaluator-background">
+        <div className="evaluator-container">
+          <div className="evaluator" style={{height: `${evaluation}%`}}/>
+        </div>
+        <div className="evaluator-shadow"/>
+      </div>
     </div>
   );
 }

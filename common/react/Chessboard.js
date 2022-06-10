@@ -6,6 +6,7 @@ import Chess from 'chess.js';
 import './Chessboard/css/chessground.css';
 import './Chessboard.css';
 
+const evaluationRegex = /Total Evaluation: ([0-9.]+)/;
 const padded = num => String(num).padStart(2, '0');
 const parseClock = (hours, minutes, seconds) => {
   if (hours) {
@@ -272,27 +273,29 @@ export default class Chessground extends React.PureComponent {
     if (!this.evaluator) {
       return;
     }
+    this.evaluator.postMessage('uci');
     this.evaluator.postMessage('ucinewgame');
-    this.evaluator.postMessage(`position ${this.cj.fen()}`);
+    this.evaluator.postMessage(`position fen ${this.cj.fen()}`);
     this.evaluator.postMessage('eval');
-    this.evaluator.postMessage('go depth 10');
   }
 
   componentDidMount() {
     this.cg = NativeChessground(this.chessBoard, this.buildConfigFromProps(this.props));
     this.cj = new Chess();
     if (this.props.onEvaluate) {
-      this.evaluator = new Worker('./stockfish.js');
+      this.evaluator = new Worker('/stockfish.js');
+      this.evaluator.onerror = (message) => {
+        console.log('error:', message);
+      };
       this.evaluator.onmessage = (message) => {
         const incoming = message && typeof message === 'object'
           ? message.data
           : message;
-console.log(message);
-        if (incoming === 'uciok' || incoming === 'readyok' || incoming.substr(0, 11) === 'option name') {
+        const evaluation = incoming.match(evaluationRegex);
+        if (evaluation === null) {
           return;
         }
-
-        this.props.onEvaluate(incoming);
+        this.props.onEvaluate(parseFloat(evaluation[1]));
       };
     }
     this.socket = this.props.socket;

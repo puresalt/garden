@@ -234,3 +234,43 @@
     height: 40px !important;
 }
 
+.Board .evaluator-background {
+    height: 100%;
+    width: 10px;
+    position: absolute;
+    top: 0;
+    left: -12px;
+}
+
+.Board .evaluator-container {
+    border-radius: 5px;
+    height: 100%;
+    width: 100%;
+    background: #000;
+    position: relative;
+}
+
+.Board .evaluator {
+    background: #fff;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+}
+
+.Board .evaluator-shadow {
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-shadow: inset 0 0 4px #333;
+    border-radius: 5px;
+}
+
+.orientation-away .evaluator {
+    top: 0;
+}
+
+.orientation-home .evaluator {
+    bottom: 0;
+}
