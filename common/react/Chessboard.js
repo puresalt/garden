@@ -284,9 +284,6 @@ export default class Chessground extends React.PureComponent {
     this.cj = new Chess();
     if (this.props.onEvaluate) {
       this.evaluator = new Worker('/stockfish.js');
-      this.evaluator.onerror = (message) => {
-        console.log('error:', message);
-      };
       this.evaluator.onmessage = (message) => {
         const incoming = message && typeof message === 'object'
           ? message.data
