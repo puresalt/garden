@@ -6,7 +6,8 @@ import Chess from 'chess.js';
 import './Chessboard/css/chessground.css';
 import './Chessboard.css';
 
-const evaluationRegex = /Total Evaluation: ([0-9.]+)/;
+const DEFAULT_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+const EVALUATION_REGEX = /Total Evaluation: ([0-9.]+)/;
 const padded = num => String(num).padStart(2, '0');
 const parseClock = (hours, minutes, seconds) => {
   if (hours) {
@@ -273,9 +274,15 @@ export default class Chessground extends React.PureComponent {
     if (!this.evaluator) {
       return;
     }
+
+    const fen = this.cj.fen();
+    if (fen === DEFAULT_FEN) {
+      return this.props.onEvaluate(0.07);
+    }
+
     this.evaluator.postMessage('uci');
     this.evaluator.postMessage('ucinewgame');
-    this.evaluator.postMessage(`position fen ${this.cj.fen()}`);
+    this.evaluator.postMessage(`position fen "${fen}"`);
     this.evaluator.postMessage('eval');
   }
 
@@ -288,9 +295,12 @@ export default class Chessground extends React.PureComponent {
         const incoming = message && typeof message === 'object'
           ? message.data
           : message;
-        const evaluation = incoming.match(evaluationRegex);
+        const evaluation = incoming.match(EVALUATION_REGEX);
         if (evaluation === null) {
+          console.log('output:', incoming);
           return;
+        } else {
+          console.log('evaluation:', evaluation);
         }
         this.props.onEvaluate(parseFloat(evaluation[1]));
       };
