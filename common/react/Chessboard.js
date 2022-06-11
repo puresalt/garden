@@ -7,7 +7,7 @@ import './Chessboard/css/chessground.css';
 import './Chessboard.css';
 
 const DEFAULT_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const EVALUATION_REGEX = /info depth 12 seldepth [0-9]+ multipv [0-9]+ score cp ([0-9]+)/;
+const EVALUATION_REGEX = /info depth [0-9]+ seldepth [0-9]+ multipv [0-9]+ score cp ([0-9]+)/;
 const padded = num => String(num).padStart(2, '0');
 const parseClock = (hours, minutes, seconds) => {
   if (hours) {
@@ -283,9 +283,7 @@ export default class Chessground extends React.PureComponent {
     this.evaluator.postMessage('uci');
     this.evaluator.postMessage('ucinewgame');
     this.evaluator.postMessage(`position fen "${fen}"`);
-    this.evaluator.postMessage('move d4d7');
-    this.evaluator.postMessage(`go depth 12`);
-    this.evaluator.postMessage('d');
+    this.evaluator.postMessage(`go depth 32`);
   }
 
   componentDidMount() {
@@ -299,10 +297,8 @@ export default class Chessground extends React.PureComponent {
           : message;
         const evaluation = incoming.match(EVALUATION_REGEX);
         if (evaluation === null) {
-          console.log('incoming', incoming);
           return;
         }
-        console.log(evaluation[1] / 100);
         this.props.onEvaluate(parseFloat(evaluation[1] / 100));
       };
     }
