@@ -7,7 +7,8 @@ import './Chessboard/css/chessground.css';
 import './Chessboard.css';
 
 const DEFAULT_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const EVALUATION_REGEX = /info depth ([0-9]+) seldepth [0-9]+ multipv [0-9]+ score cp ([0-9]+)/;
+const EVALUATION_MATE_REGEX = /info depth ([0-9]+) seldepth [0-9]+ multipv [0-9]+ score mate ([-0-9]+)/;
+const EVALUATION_REGEX = /info depth ([0-9]+) seldepth [0-9]+ multipv [0-9]+ score cp ([-0-9]+)/;
 const padded = num => String(num).padStart(2, '0');
 const parseClock = (hours, minutes, seconds) => {
   if (hours) {
@@ -300,11 +301,30 @@ export default class Chessground extends React.PureComponent {
         const incoming = message && typeof message === 'object'
           ? message.data
           : message;
-        const evaluation = incoming.match(EVALUATION_REGEX);
-        if (evaluation === null || parseInt(evaluation[1]) < 6) {
-          return;
+        console.log('incoming:', incoming);
+        const hasMate = incoming.match(EVALUATION_MATE_REGEX);
+        let winPercentageForWhite = null;
+        if (hasMate !== null) {
+          if (this.state.moving === 'home') {
+            winPercentageForWhite = 100;
+          } else {
+            winPercentageForWhite = 0;
+          }
+        } else {
+          const evaluation = incoming.match(EVALUATION_REGEX);
+          if (evaluation === null) {
+            return;
+          }
+          winPercentageForWhite = ((1 / (1 + Math.pow(10, ((-1 * (parseInt(evaluation[2]) / 100)) / 8)))) * 100);
+          console.log('huh?', winPercentageForWhite);
+          if (this.state.moving === 'away') {
+            winPercentageForWhite = 100 - winPercentageForWhite;
+          }
+          console.log('huh?', winPercentageForWhite);
         }
-        this.props.onEvaluate(parseFloat(evaluation[2] / 100), this.state.moving);
+
+        console.log('incoming:', incoming, winPercentageForWhite);
+        this.props.onEvaluate(winPercentageForWhite);
       };
 
       this.evaluator.postMessage('uci');
