@@ -37,9 +37,9 @@ function Board(props) {
     setIsLoading(loading);
   };
 
-  const handleEvaluate = (pawnAdvantage) => {
+  const handleEvaluate = (pawnAdvantage, moving) => {
     const winPercentageForWhite = ((1 / (1 + Math.pow(10, ((-1 * pawnAdvantage) / 4)))) * 100);
-    setEvaluation(winPercentageForWhite);
+    setEvaluation(moving === 'away' ? 100 - winPercentageForWhite : winPercentageForWhite);
   };
 
   let boardSize = ' fadeIn';
