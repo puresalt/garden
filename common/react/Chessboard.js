@@ -299,6 +299,7 @@ export default class Chessground extends React.PureComponent {
         if (evaluation === null) {
           return;
         }
+        console.log('incoming:', incoming);
         this.props.onEvaluate(parseFloat(evaluation[1] / 100));
       };
     }

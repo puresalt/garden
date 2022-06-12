@@ -33,23 +33,4 @@ apps:
     env:
       DIRECT_QUEUE: 1
       BOARD_ID: 4
-  - script: node ./observer.js
-    name: 'rapid:state:observer:5'
-    env:
-      DIRECT_QUEUE: 1
-      BOARD_ID: 5
-  - script: node ./observer.js
-    name: 'rapid:state:observer:6'
-    env:
-      DIRECT_QUEUE: 1
-      BOARD_ID: 6
-  - script: node ./observer.js
-    name: 'rapid:state:observer:7'
-    env:
-      DIRECT_QUEUE: 1
-      BOARD_ID: 7
-  - script: node ./observer.js
-    name: 'rapid:state:observer:8'
-    env:
-      DIRECT_QUEUE: 1
-      BOARD_ID: 8
+

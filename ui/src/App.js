@@ -11,7 +11,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import logo from './logo.png';
 import eventLogo from './eventLogo.jpg';
 
-const BOARDS = [1, 2, 3, 4, 5, 6, 7, 8];
+const BOARDS = [1, 2, 3, 4];
 Object.freeze(BOARDS);
 const CONFIG = Config(process.env.NODE_ENV);
 const socket = socketIoClient(CONFIG.socketIo.url, {
