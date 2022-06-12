@@ -278,7 +278,7 @@ export default class Chessground extends React.PureComponent {
 
     const fen = this.cj.fen();
     if (fen === DEFAULT_FEN) {
-      return this.props.onEvaluate(0.0);
+      return this.props.onEvaluate(50);
     }
 
     this.evaluator.postMessage('stop');
@@ -316,14 +316,11 @@ export default class Chessground extends React.PureComponent {
             return;
           }
           winPercentageForWhite = ((1 / (1 + Math.pow(10, ((-1 * (parseInt(evaluation[2]) / 100)) / 8)))) * 100);
-          console.log('huh?', winPercentageForWhite);
           if (this.state.moving === 'away') {
             winPercentageForWhite = 100 - winPercentageForWhite;
           }
-          console.log('huh?', winPercentageForWhite);
         }
 
-        console.log('incoming:', incoming, winPercentageForWhite);
         this.props.onEvaluate(winPercentageForWhite);
       };
 
