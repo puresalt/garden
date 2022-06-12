@@ -99,7 +99,8 @@ export default class Chessground extends React.PureComponent {
       orientation: getOrientation(this.props.orientation),
       captureKeyEvents: this.props.captureKeyEvents,
       loading: true,
-      result: null
+      result: null,
+      pauseEvaluator: false
     };
     this.handleEvent = this.handleEvent.bind(this);
     this.updateClocks = this.updateClocks.bind(this);
@@ -283,6 +284,8 @@ export default class Chessground extends React.PureComponent {
     }
 
     this.evaluator.postMessage('stop');
+    this.setState({pauseEvaluator: false});
+
     this.evaluator.postMessage('ucinewgame');
     this.evaluator.postMessage(`position fen ${fen}`);
     this.evaluator.postMessage(`go depth 32`);
@@ -299,6 +302,9 @@ export default class Chessground extends React.PureComponent {
       }
 
       this.evaluator.onmessage = (message) => {
+        if (this.state.pauseEvaluator) {
+          return;
+        }
         const incoming = message && typeof message === 'object'
           ? message.data
           : message;
@@ -310,6 +316,8 @@ export default class Chessground extends React.PureComponent {
           } else {
             winPercentageForWhite = 0;
           }
+          this.evaluator.postMessage('stop');
+          this.setState({pauseEvaluator: true});
         } else {
           const evaluation = incoming.match(EVALUATION_REGEX);
           if (evaluation === null || parseInt(evaluation[1]) < 5) {
