@@ -295,11 +295,13 @@ export default class Chessground extends React.PureComponent {
         const incoming = message && typeof message === 'object'
           ? message.data
           : message;
-        const evaluation = incoming.match(EVALUATION_REGEX);
-        if (evaluation === null) {
+        const centipawns = incoming.match(EVALUATION_REGEX);
+        if (centipawns === null) {
           return;
         }
-        console.log('incoming:', incoming);
+
+        const evaluation = (this.state.moving === 'away' ? -1 : 1) * (evaluation[1] / 100);
+        console.log('incoming:', incoming, evaluation);
         this.props.onEvaluate(parseFloat(evaluation[1] / 100));
       };
     }

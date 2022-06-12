@@ -33,4 +33,3 @@ apps:
     env:
       DIRECT_QUEUE: 1
       BOARD_ID: 4
-
