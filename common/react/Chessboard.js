@@ -290,7 +290,7 @@ export default class Chessground extends React.PureComponent {
     this.cg = NativeChessground(this.chessBoard, this.buildConfigFromProps(this.props));
     this.cj = new Chess();
     if (this.props.onEvaluate) {
-      if (typeof crossOriginIsolated !== 'undefined' && crossOriginIsolated) {
+      if (false && typeof crossOriginIsolated !== 'undefined' && crossOriginIsolated) {
         this.evaluator = new Worker('/stockfish-14/stockfish.js');
       } else {
         this.evaluator = new Worker('/stockfish-11/stockfish.js');
