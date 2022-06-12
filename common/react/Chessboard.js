@@ -300,7 +300,7 @@ export default class Chessground extends React.PureComponent {
           return;
         }
 
-        const evaluation = (this.state.moving === 'away' ? -1 : 1) * (evaluation[1] / 100);
+        const evaluation = (this.state.moving === 'away' ? -1 : 1) * (centipawns[1] / 100);
         console.log('incoming:', incoming, evaluation);
         this.props.onEvaluate(parseFloat(evaluation[1] / 100));
       };
