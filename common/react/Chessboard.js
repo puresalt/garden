@@ -320,7 +320,7 @@ export default class Chessground extends React.PureComponent {
           this.setState({pauseEvaluator: true});
         } else {
           const evaluation = incoming.match(EVALUATION_REGEX);
-          if (evaluation === null || parseInt(evaluation[1]) < 5) {
+          if (evaluation === null || parseInt(evaluation[1]) < 7) {
             return;
           }
           const centipawnsForWhite = (this.state.moving === 'away' ? -1 : 1) * (parseInt(evaluation[2]) / 100);
