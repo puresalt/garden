@@ -312,14 +312,13 @@ export default class Chessground extends React.PureComponent {
           }
         } else {
           const evaluation = incoming.match(EVALUATION_REGEX);
-          if (evaluation === null) {
+          if (evaluation === null || parseInt(evaluation[1]) < 5) {
             return;
           }
           const centipawnsForWhite = (this.state.moving === 'away' ? -1 : 1) * (parseInt(evaluation[2]) / 100);
           winPercentageForWhite = ((1 / (1 + Math.pow(10, ((-1 * centipawnsForWhite) / 8)))) * 100);
         }
 
-        console.log('incoming:', incoming, winPercentageForWhite);
         this.props.onEvaluate(winPercentageForWhite);
       };
 
