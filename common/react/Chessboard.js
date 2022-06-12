@@ -7,7 +7,7 @@ import './Chessboard/css/chessground.css';
 import './Chessboard.css';
 
 const DEFAULT_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const EVALUATION_REGEX = /info depth [0-9]+ seldepth [0-9]+ multipv [0-9]+ score cp ([0-9]+)/;
+const EVALUATION_REGEX = /info depth ([0-9]+) seldepth [0-9]+ multipv [0-9]+ score cp ([0-9]+)/;
 const padded = num => String(num).padStart(2, '0');
 const parseClock = (hours, minutes, seconds) => {
   if (hours) {
@@ -277,12 +277,12 @@ export default class Chessground extends React.PureComponent {
 
     const fen = this.cj.fen();
     if (fen === DEFAULT_FEN) {
-      return this.props.onEvaluate(0.07);
+      return this.props.onEvaluate(0.0);
     }
 
-    this.evaluator.postMessage('uci');
+    this.evaluator.postMessage('stop');
     this.evaluator.postMessage('ucinewgame');
-    this.evaluator.postMessage(`position fen "${fen}"`);
+    this.evaluator.postMessage(`position fen ${fen}`);
     this.evaluator.postMessage(`go depth 32`);
   }
 
@@ -290,18 +290,24 @@ export default class Chessground extends React.PureComponent {
     this.cg = NativeChessground(this.chessBoard, this.buildConfigFromProps(this.props));
     this.cj = new Chess();
     if (this.props.onEvaluate) {
-      this.evaluator = new Worker('/stockfish.js');
+      if (typeof crossOriginIsolated !== 'undefined' && crossOriginIsolated) {
+        this.evaluator = new Worker('/stockfish-14/stockfish.js');
+      } else {
+        this.evaluator = new Worker('/stockfish-11/stockfish.js');
+      }
+
       this.evaluator.onmessage = (message) => {
         const incoming = message && typeof message === 'object'
           ? message.data
           : message;
         const evaluation = incoming.match(EVALUATION_REGEX);
-        if (evaluation === null) {
+        if (evaluation === null || parseInt(evaluation[1]) < 6) {
           return;
         }
-        console.log('incoming:', incoming, (evaluation[1] / 100));
-        this.props.onEvaluate(parseFloat(evaluation[1] / 100), this.state.moving);
+        this.props.onEvaluate(parseFloat(evaluation[2] / 100), this.state.moving);
       };
+
+      this.evaluator.postMessage('uci');
     }
     this.socket = this.props.socket;
     this.boardName = `rapid:viewer:board:${this.props.boardId}`;

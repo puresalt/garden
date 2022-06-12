@@ -38,7 +38,7 @@ function Board(props) {
   };
 
   const handleEvaluate = (pawnAdvantage, moving) => {
-    const winPercentageForWhite = ((1 / (1 + Math.pow(10, ((-1 * pawnAdvantage) / 4)))) * 100);
+    const winPercentageForWhite = ((1 / (1 + Math.pow(10, ((-1 * pawnAdvantage) / 8)))) * 100);
     setEvaluation(moving === 'away' ? 100 - winPercentageForWhite : winPercentageForWhite);
   };
 
@@ -128,6 +128,15 @@ function Board(props) {
         <div className="evaluator-container">
           <div className="evaluator" style={{height: `${evaluation}%`}}/>
         </div>
+        <div className="evaluator-bar evaluator-bar-10"/>
+        <div className="evaluator-bar evaluator-bar-20"/>
+        <div className="evaluator-bar evaluator-bar-30"/>
+        <div className="evaluator-bar evaluator-bar-40"/>
+        <div className="evaluator-bar evaluator-bar-50"/>
+        <div className="evaluator-bar evaluator-bar-60"/>
+        <div className="evaluator-bar evaluator-bar-70"/>
+        <div className="evaluator-bar evaluator-bar-80"/>
+        <div className="evaluator-bar evaluator-bar-90"/>
         <div className="evaluator-shadow"/>
       </div>
     </div>

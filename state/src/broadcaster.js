@@ -76,7 +76,7 @@ function Broadcaster(redis, broadcastAll, boardId) {
       let currentEventId;
       let currentEvent;
       let resultEvent;
-      for (currentEventId = lastEventId - 1; currentEventId > 0; --currentEventId) {
+      for (currentEventId = lastEventId - 1; currentEventId >= 0; --currentEventId) {
         try {
           currentEvent = JSON.parse(eventList[currentEventId]);
           if (currentEvent && currentEvent.type) {
@@ -87,7 +87,7 @@ function Broadcaster(redis, broadcastAll, boardId) {
             }
           }
         } catch (e) {
-          console.log('Error parsing:', e);
+          console.warn('Error parsing:', e);
         }
       }
 

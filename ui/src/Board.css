@@ -246,12 +246,12 @@
     border-radius: 5px;
     height: 100%;
     width: 100%;
-    background: #000;
+    background: #888;
     position: relative;
 }
 
 .Board .evaluator {
-    background: #fff;
+    background: #ddd;
     position: absolute;
     bottom: 0;
     width: 100%;
@@ -266,6 +266,51 @@
     left: 0;
     box-shadow: inset 0 0 4px #333;
     border-radius: 5px;
+}
+
+.Board .evaluator-bar {
+    box-shadow: 0 0 1px #333;
+    position: absolute;
+    left: 0;
+    height: 1px;
+    color: #333;
+    width: 100%;
+}
+
+.Board .evaluator-bar-10 {
+    top: calc(10% - 1px);
+}
+
+.Board .evaluator-bar-20 {
+    top: calc(20% - 1px);
+}
+
+.Board .evaluator-bar-30 {
+    top: calc(30% - 1px);
+}
+
+.Board .evaluator-bar-40 {
+    top: calc(40% - 1px);
+}
+
+.Board .evaluator-bar-50 {
+    top: calc(50% - 1px);
+}
+
+.Board .evaluator-bar-60 {
+    top: calc(60% - 1px);
+}
+
+.Board .evaluator-bar-70 {
+    top: calc(70% - 1px);
+}
+
+.Board .evaluator-bar-80 {
+    top: calc(80% - 1px);
+}
+
+.Board .evaluator-bar-90 {
+    top: calc(90% - 1px);
 }
 
 .orientation-away .evaluator {
