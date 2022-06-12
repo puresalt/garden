@@ -38,6 +38,10 @@ em {
     padding-left: calc(var(--bs-gutter-x) * 0.5);
 }
 
+.event-logo {
+    padding-top: 33px;
+}
+
 html.fixed, body.fixed {
     width: 1920px !important;
     height: 1080px !important;
@@ -62,30 +66,37 @@ body.fixed.stream {
 
 .fixed .logos {
     position: absolute;
-    left: 10px;
-    top: 10px;
+    text-align: center;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    max-width: 1920px;
+    margin: 0 auto;
+    height: 1080px;
 }
 
 .fixed .logos div {
-    position: absolute;
+    margin: 0 auto;
+    text-align: center;
+    width: 400px;
 }
 
 .fixed .logos div:first-child {
-    left: 10px;
-    top: 0;
+    position: absolute;
+    left: calc((1920px - 640px) / 2);
+    top: calc((1080px / 3) - 154px);
+}
+
+.fixed .logos div:first-child img {
+    width: 640px;
 }
 
 .fixed .logos div:last-child {
-    left: 10px;
-    top: 856px;
-}
-
-.fixed-holder .boards {
     position: absolute;
-    left: 445px;
-    top: 103px;
+    left: calc((1920px - 420px) / 2);
+    bottom: calc((1080px / 3) - 194px);
 }
 
-.fixed-holder .row {
-    width: 1472px !important;
+.fixed .boards div {
+    margin-bottom: 0 !important;
 }

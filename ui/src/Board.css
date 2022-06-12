@@ -5,8 +5,8 @@
     color: #fff;
     position: relative;
     margin: 0 auto 0.5em auto;
-    height: 343px;
-    width: 291px;
+    height: 510px;
+    width: 456px;
 }
 
 .Board header,
@@ -74,7 +74,7 @@
     position: absolute;
     right: 0;
     top: -26px;
-    height: 343px;
+    height: 510px;
     width: 100px;
 }
 
@@ -84,7 +84,7 @@
     background: rgba(0, 0, 0, 0.25);
     position: absolute;
     line-height: 24px;
-    height: 26px;
+    height: 27px;
     width: 100%;
 }
 
@@ -207,39 +207,36 @@
     height: 27px !important;
 }
 
-.Board.size-stream {
-    font-size: 26px;
-    height: 432px !important;
-    width: 350px !important;
-}
-
-.Board.size-stream .black-square,
-.Board.size-stream .white-square {
-    height: 37px !important;
-    width: 22px !important;
-    left: 10px !important;
-    margin-right: 16px !important;
-    margin-left: 0 !important;
-    top: 0 !important;
-}
-
-.Board.size-stream .eventData {
-    top: -40px !important;
-    height: 431px !important;
-}
-
-.Board.size-stream .eventData .clock {
-    font-size: 30px;
-    line-height: 36px !important;
-    height: 40px !important;
-}
-
 .Board .evaluator-background {
     height: 100%;
-    width: 10px;
+    width: 15px;
     position: absolute;
     top: 0;
-    left: -12px;
+    left: -20px;
+}
+
+.Board.size-stream.board-1 {
+    position: absolute;
+    top: 7px;
+    left: 27px;
+}
+
+.Board.size-stream.board-2 {
+    position: absolute;
+    top: 7px;
+    right: 7px;
+}
+
+.Board.size-stream.board-3 {
+    position: absolute;
+    bottom: 7px;
+    left: 27px;
+}
+
+.Board.size-stream.board-4 {
+    position: absolute;
+    bottom: 7px;
+    right: 7px;
 }
 
 .Board .evaluator-container {
@@ -271,30 +268,32 @@
 .Board .evaluator-bar {
     box-shadow: 0 0 1px #333;
     position: absolute;
+    background-color: rgba(255, 255, 255, 0.25);
     left: 0;
-    height: 1px;
-    color: #333;
+    height: 3px;
     width: 100%;
 }
 
 .Board .evaluator-bar-10 {
-    top: calc(10% - 1px);
+    top: calc(10% - 3px);
 }
 
 .Board .evaluator-bar-20 {
-    top: calc(20% - 1px);
+    top: calc(20% - 3px);
 }
 
 .Board .evaluator-bar-30 {
-    top: calc(30% - 1px);
+    top: calc(30% - 3px);
 }
 
 .Board .evaluator-bar-40 {
-    top: calc(40% - 1px);
+    top: calc(40% - 3px);
 }
 
 .Board .evaluator-bar-50 {
-    top: calc(50% - 1px);
+    height: 5px;
+    background-color: rgba(255, 255, 255, 0.95);
+    top: calc(50% - 3px);
 }
 
 .Board .evaluator-bar-60 {
@@ -302,15 +301,15 @@
 }
 
 .Board .evaluator-bar-70 {
-    top: calc(70% - 1px);
+    top: calc(70% - 3px);
 }
 
 .Board .evaluator-bar-80 {
-    top: calc(80% - 1px);
+    top: calc(80% - 3px);
 }
 
 .Board .evaluator-bar-90 {
-    top: calc(90% - 1px);
+    top: calc(90% - 3px);
 }
 
 .orientation-away .evaluator {

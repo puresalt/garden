@@ -9,7 +9,7 @@ import Board from './Board';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import logo from './logo.png';
-import eventLogo from './eventLogo.jpg';
+import eventLogo from './eventLogo.svg';
 
 const BOARDS = [1, 2, 3, 4];
 Object.freeze(BOARDS);
@@ -26,14 +26,12 @@ function Layout(props) {
     ? parseInt(requestedBoardId)
     : 0;
 
-  let size = 291;
+  const size = 456;
   let appendClassName = '';
 
   if (boardId) {
-    size = 456;
     appendClassName = 'individual';
   } else if (isStreamLayout) {
-    size = 350;
     appendClassName = 'stream';
     document.body.classList.add('stream');
     document.documentElement.classList.add('stream');
@@ -53,7 +51,7 @@ function Layout(props) {
               <a href="https://www.chessclub.com"><img src={logo}/></a>
             </Col>
             <Col className="event-logo align-middle">
-              <img src={eventLogo}/>
+              <img src={eventLogo} />
             </Col>
           </Row>
         </Container>
@@ -62,7 +60,7 @@ function Layout(props) {
     <Container fluid className="boards">
       <Row className="justify-content-center">
         {
-          boardId >= 1 && boardId <= 8
+          boardId >= 1 && boardId <= 4
             ? <Col sm={12}>
               <Board
                 appendClassName={appendClassName}
@@ -72,7 +70,7 @@ function Layout(props) {
               />
             </Col>
             : BOARDS.map((boardId) => {
-              return <Col sm={12} md={6} lg={4} xl={3} key={`board-${boardId}`}>
+              return <Col sm={12} md={6} lg={6} xl={6} key={`board-${boardId}`}>
                 <Board
                   appendClassName={appendClassName}
                   size={size}
@@ -111,10 +109,10 @@ function App() {
           <div className="fixed-holder">
             <div className="logos">
               <div>
-                <img src={logo}/>
+                <img src={eventLogo}/>
               </div>
               <div>
-                <img src={eventLogo}/>
+                <img src={logo}/>
               </div>
             </div>
             <Layout
